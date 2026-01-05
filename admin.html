@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel - PCCM Scheduler</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -101,38 +100,6 @@
       margin-bottom: 16px;
     }
     
-    .form-group {
-      margin-bottom: 24px;
-    }
-    
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #374151;
-      font-size: 14px;
-    }
-    
-    .form-group input[type="file"],
-    .form-group input[type="number"],
-    .form-group input[type="date"],
-    .form-group select {
-      width: 100%;
-      padding: 12px 16px;
-      font-size: 15px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      background: white;
-      transition: all 0.3s;
-    }
-    
-    .form-group input:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-    
     .btn-primary {
       padding: 12px 24px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -148,21 +115,6 @@
     .btn-primary:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-    
-    .btn-danger {
-      padding: 12px 24px;
-      background: #ef4444;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    
-    .btn-danger:hover {
-      background: #dc2626;
     }
     
     .stats-grid {
@@ -241,11 +193,6 @@
       color: #92400e;
     }
     
-    .badge-danger {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-    
     .toggle-switch {
       position: relative;
       display: inline-block;
@@ -320,24 +267,18 @@
       padding: 40px;
       color: #6b7280;
     }
-    
-    .action-buttons {
-      display: flex;
-      gap: 12px;
-      margin-top: 20px;
-    }
   </style>
 </head>
 <body>
   <nav class="top-nav">
     <div class="logo-section">
-      <div class="logo">âš™ï¸</div>
+      <div class="logo">⚙️</div>
       <div class="logo-text">
         <h1>Admin Panel</h1>
         <p>ADMINISTRATOR ACCESS</p>
       </div>
     </div>
-    <a href="dashboard.html" class="btn-back">â† Back to Dashboard</a>
+    <a href="/index.html" class="btn-back">← Back to Home</a>
   </nav>
   
   <div class="container">
@@ -348,10 +289,10 @@
     
     <div id="accessDenied" class="admin-card" style="display: none;">
       <div style="text-align: center; padding: 40px;">
-        <div style="font-size: 64px; margin-bottom: 20px;">ðŸ”’</div>
+        <div style="font-size: 64px; margin-bottom: 20px;">🔒</div>
         <h2 style="font-size: 24px; color: #1f2937; margin-bottom: 12px;">Access Denied</h2>
         <p style="color: #6b7280; margin-bottom: 24px;">You do not have administrator privileges.</p>
-        <a href="dashboard.html" class="btn-primary">Return to Dashboard</a>
+        <a href="/index.html" class="btn-primary">Return to Home</a>
       </div>
     </div>
     
@@ -363,45 +304,27 @@
           <div class="stat-label">Total Faculty</div>
         </div>
         <div class="stat-box">
-          <div class="stat-value" id="totalWeeks">--</div>
-          <div class="stat-label">Total Weeks</div>
-        </div>
-        <div class="stat-box">
           <div class="stat-value" id="activeUsers">--</div>
-          <div class="stat-label">Active Users</div>
+          <div class="stat-label">Active Faculty</div>
         </div>
         <div class="stat-box">
-          <div class="stat-value" id="pendingRequests">--</div>
-          <div class="stat-label">Pending Requests</div>
+          <div class="stat-value" id="adminCount">--</div>
+          <div class="stat-label">Administrators</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="moonlighterCount">--</div>
+          <div class="stat-label">Moonlighters</div>
         </div>
       </div>
       
       <!-- Admin Tabs -->
       <div class="admin-tabs">
         <button class="tab-btn active" onclick="showTab('faculty')">Faculty Management</button>
-        <button class="tab-btn" onclick="showTab('weeks')">Week Management</button>
         <button class="tab-btn" onclick="showTab('reports')">Reports</button>
-        <button class="tab-btn" onclick="showTab('settings')">Settings</button>
       </div>
       
       <!-- Faculty Management Tab -->
       <div id="tab-faculty" class="tab-content active">
-        <div class="admin-card">
-          <h2 class="card-title">Import Faculty Data</h2>
-          <div id="importAlert" class="alert"></div>
-          
-          <div class="form-group">
-            <label for="facultyCsv">Upload Faculty CSV</label>
-            <input type="file" id="facultyCsv" accept=".csv">
-            <p style="font-size: 13px; color: #6b7280; margin-top: 8px;">
-              CSV should include: faculty_id, name, email, rank, clinical_effort_pct<br>
-              Optional: does_moonlighting (true/false)
-            </p>
-          </div>
-          
-          <button class="btn-primary" onclick="importFaculty()">Import Faculty</button>
-        </div>
-        
         <div class="admin-card">
           <h2 class="card-title">Faculty List</h2>
           
@@ -421,72 +344,9 @@
                   <th>Base Points</th>
                   <th>Moonlighting</th>
                   <th>Status</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="facultyTable"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Week Management Tab -->
-      <div id="tab-weeks" class="tab-content">
-        <div class="admin-card">
-          <h2 class="card-title">Generate Weeks</h2>
-          <div id="weeksAlert" class="alert"></div>
-          
-          <div class="form-group">
-            <label for="yearSelect">Academic Year</label>
-            <select id="yearSelect">
-              <option value="2025">2025-2026</option>
-              <option value="2026" selected>2026-2027</option>
-              <option value="2027">2027-2028</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label for="startDate">Start Date (First Tuesday of July)</label>
-            <input type="date" id="startDate" value="2026-07-07">
-          </div>
-          
-          <div class="form-group">
-            <label for="springBreak">Spring Break Start Date</label>
-            <input type="date" id="springBreak" value="2027-03-15">
-          </div>
-          
-          <div class="form-group">
-            <label for="thanksgiving">Thanksgiving Week Start Date</label>
-            <input type="date" id="thanksgiving" value="2026-11-23">
-          </div>
-          
-          <div class="form-group">
-            <label for="christmas">Christmas/Winter Break Start Date</label>
-            <input type="date" id="christmas" value="2026-12-21">
-          </div>
-          
-          <div class="action-buttons">
-            <button class="btn-primary" onclick="generateWeeks()">Generate 52 Weeks</button>
-            <button class="btn-danger" onclick="clearWeeks()">Clear All Weeks</button>
-          </div>
-        </div>
-        
-        <div class="admin-card">
-          <h2 class="card-title">Week Overview</h2>
-          <div id="weeksTableLoading" class="loading">Loading weeks...</div>
-          <div id="weeksTableContainer" style="display: none;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Week #</th>
-                  <th>Date Range</th>
-                  <th>Type</th>
-                  <th>Cost (Off)</th>
-                  <th>Reward (Work)</th>
-                  <th>Faculty Unavailable</th>
-                </tr>
-              </thead>
-              <tbody id="weeksTable"></tbody>
             </table>
           </div>
         </div>
@@ -498,35 +358,14 @@
           <h2 class="card-title">System Reports</h2>
           <p style="color: #6b7280; margin-bottom: 24px;">Generate and export various reports</p>
           
-          <div class="action-buttons">
-            <button class="btn-primary" onclick="exportFacultyReport()">ðŸ“Š Export Faculty Report</button>
-            <button class="btn-primary" onclick="exportWeekReport()">ðŸ“… Export Week Allocations</button>
-            <button class="btn-primary" onclick="exportPointsReport()">ðŸ’Ž Export Points Ledger</button>
-          </div>
-          
           <div style="margin-top: 32px; padding: 20px; background: #f9fafb; border-radius: 8px;">
             <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">Coming Soon</h3>
             <ul style="list-style: none; color: #6b7280; font-size: 14px;">
-              <li style="padding: 8px 0;">âœ“ QGenda export integration</li>
-              <li style="padding: 8px 0;">âœ“ Conflict detection reports</li>
-              <li style="padding: 8px 0;">âœ“ Coverage gap analysis</li>
-              <li style="padding: 8px 0;">âœ“ Historical trending</li>
+              <li style="padding: 8px 0;">✓ QGenda export integration</li>
+              <li style="padding: 8px 0;">✓ Conflict detection reports</li>
+              <li style="padding: 8px 0;">✓ Coverage gap analysis</li>
+              <li style="padding: 8px 0;">✓ Historical trending</li>
             </ul>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Settings Tab -->
-      <div id="tab-settings" class="tab-content">
-        <div class="admin-card">
-          <h2 class="card-title">System Settings</h2>
-          <p style="color: #6b7280; margin-bottom: 24px;">Configure system-wide settings and parameters</p>
-          
-          <div style="padding: 20px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
-            <p style="color: #1e40af; font-size: 14px;">
-              <strong>Note:</strong> Settings management interface coming soon. Contact system administrator 
-              to modify point costs, rank multipliers, or other system parameters.
-            </p>
           </div>
         </div>
       </div>
@@ -534,19 +373,7 @@
   </div>
 
   <script>
-    // ===== CONFIGURATION =====
-    const CONFIG = {
-      SUPABASE_URL: 'https://lbimrbkbsqqeiytuathy.supabase.co',
-      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiaW1yYmtic3FxZWl5dHVhdGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDQ1NzUsImV4cCI6MjA3NjE4MDU3NX0.5yCcxuabKoRO0HUPVdTXUXaZxIpMq13eFqp6SApOouw'
-    };
-    
-    const supabase = window.supabase.createClient(
-      CONFIG.SUPABASE_URL,
-      CONFIG.SUPABASE_ANON_KEY
-    );
-    
-    let currentUser = null;
-    let currentFaculty = null;
+    const API_URL = window.location.origin;
     
     // ===== INITIALIZATION =====
     window.addEventListener('DOMContentLoaded', async () => {
@@ -556,33 +383,29 @@
     // ===== CHECK ADMIN ACCESS =====
     async function checkAdminAccess() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          window.location.href = 'index.html';
+        // Check if user is authenticated and is admin
+        const response = await fetch(`${API_URL}/api/auth/check`, {
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          window.location.href = '/login.html';
           return;
         }
         
-        currentUser = session.user;
+        const data = await response.json();
         
-        // Get faculty record and check admin status
-        const { data: faculty, error } = await supabase
-          .from('faculty')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .single();
-        
-        if (error || !faculty || !faculty.is_admin) {
+        if (!data.authenticated || !data.is_admin) {
           document.getElementById('accessDenied').style.display = 'block';
           return;
         }
         
-        currentFaculty = faculty;
+        // User is admin - show content
         document.getElementById('adminContent').style.display = 'block';
         
         // Load data
         await loadStats();
         await loadFacultyTable();
-        await loadWeeksTable();
         
       } catch (error) {
         console.error('Error checking admin access:', error);
@@ -593,36 +416,18 @@
     // ===== LOAD STATS =====
     async function loadStats() {
       try {
-        // Count faculty
-        const { count: facultyCount } = await supabase
-          .from('faculty')
-          .select('*', { count: 'exact', head: true })
-          .eq('active', true);
+        const response = await fetch(`${API_URL}/api/admin/faculty/stats/summary`, {
+          credentials: 'include'
+        });
         
-        document.getElementById('totalFaculty').textContent = facultyCount || 0;
+        if (!response.ok) throw new Error('Failed to load stats');
         
-        // Count weeks
-        const { count: weeksCount } = await supabase
-          .from('weeks')
-          .select('*', { count: 'exact', head: true });
+        const data = await response.json();
         
-        document.getElementById('totalWeeks').textContent = weeksCount || 0;
-        
-        // Count active users (with user_id)
-        const { count: activeCount } = await supabase
-          .from('faculty')
-          .select('*', { count: 'exact', head: true })
-          .not('user_id', 'is', null);
-        
-        document.getElementById('activeUsers').textContent = activeCount || 0;
-        
-        // Count pending requests
-        const { count: pendingCount } = await supabase
-          .from('points_ledger')
-          .select('*', { count: 'exact', head: true })
-          .eq('reason', 'request');
-        
-        document.getElementById('pendingRequests').textContent = pendingCount || 0;
+        document.getElementById('totalFaculty').textContent = data.total_faculty || 0;
+        document.getElementById('activeUsers').textContent = data.active_faculty || 0;
+        document.getElementById('adminCount').textContent = data.admin_count || 0;
+        document.getElementById('moonlighterCount').textContent = data.moonlighter_count || 0;
         
       } catch (error) {
         console.error('Error loading stats:', error);
@@ -632,41 +437,38 @@
     // ===== LOAD FACULTY TABLE =====
     async function loadFacultyTable() {
       try {
-        const { data, error } = await supabase
-          .from('faculty')
-          .select('*')
-          .order('name');
+        const response = await fetch(`${API_URL}/api/admin/faculty?active_only=false`, {
+          credentials: 'include'
+        });
         
-        if (error) throw error;
+        if (!response.ok) throw new Error('Failed to load faculty');
+        
+        const faculty = await response.json();
         
         const tbody = document.getElementById('facultyTable');
         tbody.innerHTML = '';
         
-        data.forEach(faculty => {
+        faculty.forEach(f => {
           const tr = document.createElement('tr');
           
-          const statusBadge = faculty.user_id ? 
+          const statusBadge = f.password_changed ? 
             '<span class="badge badge-success">Active</span>' :
             '<span class="badge badge-warning">Pending</span>';
           
           tr.innerHTML = `
-            <td>${faculty.name}</td>
-            <td>${formatRank(faculty.rank)}</td>
-            <td>${faculty.clinical_effort_pct}%</td>
-            <td>${faculty.base_points}</td>
+            <td>${f.name}</td>
+            <td>${formatRank(f.rank)}</td>
+            <td>${f.clinical_effort_pct}%</td>
+            <td>${f.base_points}</td>
             <td>
               <label class="toggle-switch">
                 <input type="checkbox" 
-                       ${faculty.does_moonlighting ? 'checked' : ''}
-                       onchange="toggleMoonlighting('${faculty.id}', this.checked)">
+                       ${f.moonlighter ? 'checked' : ''}
+                       onchange="toggleMoonlighting('${f.id}', this.checked)">
                 <span class="slider"></span>
               </label>
             </td>
             <td>${statusBadge}</td>
-            <td>
-              <button style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;" 
-                      onclick="editFaculty('${faculty.id}')">Edit</button>
-            </td>
           `;
           tbody.appendChild(tr);
         });
@@ -676,243 +478,36 @@
         
       } catch (error) {
         console.error('Error loading faculty table:', error);
+        document.getElementById('facultyTableLoading').innerHTML = 
+          '<p style="color: #ef4444;">Error loading faculty. Please refresh.</p>';
       }
     }
     
     // ===== TOGGLE MOONLIGHTING =====
     async function toggleMoonlighting(facultyId, enabled) {
       try {
-        const { error } = await supabase
-          .from('faculty')
-          .update({ does_moonlighting: enabled })
-          .eq('id', facultyId);
+        const response = await fetch(`${API_URL}/api/admin/faculty/${facultyId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ moonlighter: enabled })
+        });
         
-        if (error) throw error;
+        if (!response.ok) throw new Error('Failed to update');
         
-        showAlert('importAlert', 
-          `Successfully ${enabled ? 'enabled' : 'disabled'} moonlighting access`, 
-          'success');
+        console.log(`Moonlighting ${enabled ? 'enabled' : 'disabled'} for ${facultyId}`);
+        
+        // Reload stats to update moonlighter count
+        await loadStats();
         
       } catch (error) {
         console.error('Error updating moonlighting status:', error);
-        showAlert('importAlert', 'Error updating moonlighting status', 'error');
+        alert('Error updating moonlighting status. Please try again.');
         
         // Reload faculty to reset toggle
         await loadFacultyTable();
-      }
-    }
-    
-    // ===== LOAD WEEKS TABLE =====
-    async function loadWeeksTable() {
-      try {
-        const { data, error } = await supabase
-          .from('weeks')
-          .select('*')
-          .order('week_number');
-        
-        if (error) throw error;
-        
-        const tbody = document.getElementById('weeksTable');
-        tbody.innerHTML = '';
-        
-        if (!data || data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">No weeks generated yet. Use the form above to generate weeks.</td></tr>';
-        } else {
-          data.forEach(week => {
-            const tr = document.createElement('tr');
-            
-            const startDate = new Date(week.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const endDate = new Date(week.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            
-            let typeBadge = '';
-            if (week.week_type === 'christmas') {
-              typeBadge = '<span class="badge badge-danger">Christmas</span>';
-            } else if (week.week_type === 'thanksgiving') {
-              typeBadge = '<span class="badge badge-warning">Thanksgiving</span>';
-            } else if (week.week_type === 'spring_break') {
-              typeBadge = '<span class="badge badge-success">Spring Break</span>';
-            } else if (week.week_type === 'summer') {
-              typeBadge = '<span class="badge" style="background: #fef3c7; color: #92400e;">Summer</span>';
-            } else {
-              typeBadge = '<span class="badge" style="background: #e5e7eb; color: #6b7280;">Regular</span>';
-            }
-            
-            tr.innerHTML = `
-              <td>${week.week_number}</td>
-              <td>${startDate} - ${endDate}</td>
-              <td>${typeBadge}</td>
-              <td>${week.point_cost_off} pts</td>
-              <td>${week.point_reward_work} pts</td>
-              <td>--</td>
-            `;
-            tbody.appendChild(tr);
-          });
-        }
-        
-        document.getElementById('weeksTableLoading').style.display = 'none';
-        document.getElementById('weeksTableContainer').style.display = 'block';
-        
-      } catch (error) {
-        console.error('Error loading weeks table:', error);
-      }
-    }
-    
-    // ===== IMPORT FACULTY =====
-    async function importFaculty() {
-      const fileInput = document.getElementById('facultyCsv');
-      const file = fileInput.files[0];
-      
-      if (!file) {
-        showAlert('importAlert', 'Please select a CSV file', 'error');
-        return;
-      }
-      
-      try {
-        const text = await file.text();
-        const lines = text.split('\n');
-        const headers = lines[0].split(',').map(h => h.trim());
-        
-        let imported = 0;
-        for (let i = 1; i < lines.length; i++) {
-          if (!lines[i].trim()) continue;
-          
-          const values = lines[i].split(',').map(v => v.trim());
-          const faculty = {};
-          
-          headers.forEach((header, index) => {
-            faculty[header] = values[index];
-          });
-          
-          // Calculate base points
-          const rank_multiplier = faculty.rank === 'assistant' ? 1.0 : 
-                                  faculty.rank === 'associate' ? 1.75 : 2.5;
-          const base_points = Math.round(100 * (parseInt(faculty.clinical_effort_pct) / 100) * rank_multiplier);
-          
-          // Parse moonlighting flag if present
-          const doesMoonlighting = faculty.does_moonlighting ? 
-            (faculty.does_moonlighting.toLowerCase() === 'true' || faculty.does_moonlighting === '1') : 
-            false;
-          
-          // Upsert faculty
-          const { error } = await supabase
-            .from('faculty')
-            .upsert({
-              faculty_id: faculty.faculty_id,
-              name: faculty.name,
-              email: faculty.email,
-              rank: faculty.rank,
-              clinical_effort_pct: parseInt(faculty.clinical_effort_pct),
-              base_points: base_points,
-              does_moonlighting: doesMoonlighting,
-              active: true
-            }, { onConflict: 'faculty_id' });
-          
-          if (!error) imported++;
-        }
-        
-        showAlert('importAlert', `Successfully imported ${imported} faculty members`, 'success');
-        await loadStats();
-        await loadFacultyTable();
-        
-      } catch (error) {
-        console.error('Error importing faculty:', error);
-        showAlert('importAlert', 'Error importing CSV: ' + error.message, 'error');
-      }
-    }
-    
-    // ===== GENERATE WEEKS =====
-    async function generateWeeks() {
-      const startDate = new Date(document.getElementById('startDate').value);
-      const springBreak = new Date(document.getElementById('springBreak').value);
-      const thanksgiving = new Date(document.getElementById('thanksgiving').value);
-      const christmas = new Date(document.getElementById('christmas').value);
-      
-      try {
-        const weeks = [];
-        let currentDate = new Date(startDate);
-        
-        for (let i = 1; i <= 52; i++) {
-          const endDate = new Date(currentDate);
-          endDate.setDate(endDate.getDate() + 6);
-          
-          // Determine week type
-          let weekType = 'regular';
-          let costOff = 5;
-          let rewardWork = 0;
-          
-          const month = currentDate.getMonth();
-          
-          // Check for holidays
-          if (isSameWeek(currentDate, springBreak)) {
-            weekType = 'spring_break';
-            costOff = 12;
-            rewardWork = 15;
-          } else if (isSameWeek(currentDate, thanksgiving)) {
-            weekType = 'thanksgiving';
-            costOff = 15;
-            rewardWork = 20;
-          } else if (isSameWeek(currentDate, christmas) || isSameWeek(currentDate, new Date(christmas.getTime() + 7 * 24 * 60 * 60 * 1000))) {
-            weekType = 'christmas';
-            costOff = 15;
-            rewardWork = 20;
-          } else if (month >= 5 && month <= 7) { // June-August
-            weekType = 'summer';
-            costOff = 7;
-            rewardWork = 5;
-          }
-          
-          weeks.push({
-            week_number: i,
-            label: `Week ${i} (${currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`,
-            start_date: currentDate.toISOString().split('T')[0],
-            end_date: endDate.toISOString().split('T')[0],
-            week_type: weekType,
-            point_cost_off: costOff,
-            point_reward_work: rewardWork,
-            min_staff_required: 5
-          });
-          
-          currentDate.setDate(currentDate.getDate() + 7);
-        }
-        
-        // Insert all weeks
-        const { error } = await supabase
-          .from('weeks')
-          .insert(weeks);
-        
-        if (error) throw error;
-        
-        showAlert('weeksAlert', 'Successfully generated 52 weeks', 'success');
-        await loadStats();
-        await loadWeeksTable();
-        
-      } catch (error) {
-        console.error('Error generating weeks:', error);
-        showAlert('weeksAlert', 'Error generating weeks: ' + error.message, 'error');
-      }
-    }
-    
-    // ===== CLEAR WEEKS =====
-    async function clearWeeks() {
-      if (!confirm('Are you sure you want to delete all weeks? This will also remove all faculty selections.')) {
-        return;
-      }
-      
-      try {
-        const { error } = await supabase
-          .from('weeks')
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-        
-        if (error) throw error;
-        
-        showAlert('weeksAlert', 'All weeks cleared successfully', 'success');
-        await loadStats();
-        await loadWeeksTable();
-        
-      } catch (error) {
-        console.error('Error clearing weeks:', error);
-        showAlert('weeksAlert', 'Error clearing weeks: ' + error.message, 'error');
       }
     }
     
@@ -939,36 +534,6 @@
         'full': 'Full Professor'
       };
       return ranks[rank] || rank;
-    }
-    
-    function isSameWeek(date1, date2) {
-      const diff = Math.abs(date1 - date2);
-      return diff < 7 * 24 * 60 * 60 * 1000; // Within 7 days
-    }
-    
-    function showAlert(elementId, message, type) {
-      const alert = document.getElementById(elementId);
-      alert.textContent = message;
-      alert.className = 'alert alert-' + type + ' show';
-      setTimeout(() => {
-        alert.classList.remove('show');
-      }, 5000);
-    }
-    
-    function editFaculty(id) {
-      alert('Edit faculty feature coming soon');
-    }
-    
-    function exportFacultyReport() {
-      alert('Export feature coming soon');
-    }
-    
-    function exportWeekReport() {
-      alert('Export feature coming soon');
-    }
-    
-    function exportPointsReport() {
-      alert('Export feature coming soon');
     }
   </script>
 </body>
