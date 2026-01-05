@@ -6,6 +6,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 import os
+import uuid
 
 # Use persistent volume if available, fallback to local
 db_path = "/data/moonlighter.db" if os.path.exists("/data") else "./moonlighter.db"
