@@ -10,3 +10,4 @@ passlib[bcrypt]
 python-jose[cryptography]
 python-multipart
 resend==0.7.0
+pulp
