@@ -126,6 +126,7 @@ class Faculty(Base):
     # Relationships
     unavailability_requests = relationship("UnavailabilityRequest", back_populates="faculty")
     service_assignments = relationship("ServiceWeekAssignment", back_populates="faculty")
+    does_moonlighting = Column(Boolean, default=False, nullable=False)
 
 
 class ServiceWeek(Base):
