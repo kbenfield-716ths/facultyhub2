@@ -12,7 +12,7 @@ import io
 
 from sqlalchemy.orm import Session
 from sqlalchemy import delete
-from .auth import get_current_user
+from .auth import get_current_user, hash_password
 
 from .models import (
     SessionLocal, init_db,
@@ -155,8 +155,6 @@ def startup_event():
     
     # ... rest of your startup code ...
     # Create default admin user if none exists
-    from .models import Faculty, SessionLocal
-    from .auth import hash_password
     
     db = SessionLocal()
     try:
