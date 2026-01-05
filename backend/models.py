@@ -4,7 +4,7 @@ from sqlalchemy import (
     Column, Integer, String, Boolean, Date, DateTime,
     ForeignKey, create_engine, text
 )
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 import os
 import uuid
 
