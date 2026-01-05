@@ -27,6 +27,7 @@ from .routes.auth import router as auth_router
 from .routes.service_requests import router as service_requests_router
 from .routes.service_weeks import router as service_weeks_router
 from .routes.schedule_routes import router as schedule_router
+from .routes.messages import router as messages_router
 from backend.email_service import send_irpa_confirmation
 from backend.sync_utils import sync_provider_from_faculty, sync_all_providers_from_faculty
 import logging
@@ -48,6 +49,7 @@ app.include_router(admin_service_router)
 app.include_router(service_requests_router)
 app.include_router(service_weeks_router)
 app.include_router(schedule_router)
+app.include_router(messages_router)
 
 # Serve static files (HTML, CSS, JS, icons, manifest)
 # HTML files are in the parent directory of backend/
@@ -139,7 +141,20 @@ def startup_event():
     """Initialize database and seed data on startup."""
     # Make sure tables exist
     init_db()
+     @app.on_event("startup")
     
+    # Seed message boards
+    from .models import seed_message_boards
+    db = SessionLocal()
+    try:
+        seed_message_boards(db)
+        print("[Startup] Message boards seeded")
+    except Exception as e:
+        print(f"[Startup] Message boards: {e}")
+    finally:
+        db.close()
+    
+    # ... rest of your startup code ...
     # Create default admin user if none exists
     from .models import Faculty, SessionLocal
     from .auth import hash_password
