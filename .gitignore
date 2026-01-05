@@ -7,22 +7,16 @@ __pycache__/
 # Databases
 *.db
 moonlighter.db
-
 # Virtual environments
 venv/
 .venv/
-
 # MacOS
 .DS_Store
-
 # Fly.io / deployment artifacts
 fly.toml~
 repo_tree.txt
-
 # Node (just in case)
 node_modules/
-
 # Logs
 *.log
-
 .env
