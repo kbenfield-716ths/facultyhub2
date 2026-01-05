@@ -2,7 +2,7 @@
 from datetime import datetime, date
 from sqlalchemy import (
     Column, Integer, String, Boolean, Date, DateTime,
-    ForeignKey, create_engine, text
+    ForeignKey, create_engine, text, Text, Index
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 import os
@@ -202,11 +202,8 @@ class ServiceWeekAssignment(Base):
     week = relationship("ServiceWeek", back_populates="service_assignments")
 
 # ==========================================
-# Message Boards INITIALIZATION
+# Message Boards
 # ==========================================
-
-# Add this field to your existing Faculty model:
-# does_moonlighting = Column(Boolean, default=False, nullable=False)
 
 class MessageBoard(Base):
     """Message boards (General, Moonlighting, etc.)"""
