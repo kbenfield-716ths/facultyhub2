@@ -109,9 +109,17 @@ class ReactRequest(BaseModel):
 
 def can_access_board(faculty: Faculty, board: MessageBoard) -> bool:
     """Check if faculty can access a board"""
+    # Admins can access all boards
+    if faculty.is_admin:
+        return True
+    
+    # Non-moonlighting boards are accessible to everyone
     if not board.requires_moonlighting:
         return True
+    
+    # Moonlighting boards require the does_moonlighting flag
     return faculty.does_moonlighting
+
 
 
 def get_message_with_counts(db: Session, message: Message, current_user_id: str) -> MessageOut:
