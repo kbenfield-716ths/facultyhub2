@@ -299,11 +299,12 @@
         <p>View scheduling statistics and insights. (Coming soon)</p>
       </div>
 
-      <a href="Messages.html" class="card admin" id="messageBoard" style="display:none;">
+      <!-- Message Board Card (shown for all authenticated users) -->
+      <a href="Messages.html" class="card" id="messageBoard" style="display:none;">
         <span class="card-icon">💬</span>
         <h3>Message Boards</h3>
         <p>Faculty Message Boards</p>
-      </diva>
+      </a>
     </div>
   </main>
 
@@ -334,6 +335,10 @@
           
           // Show admin card if user is admin
           if (data.is_admin) {
+          }
+          
+          // Show message board for all authenticated users
+          document.getElementById('messageBoard').style.display = 'block';
             document.getElementById('adminCard').style.display = 'block';
           }
         } else {
@@ -389,6 +394,10 @@ async function checkAuth() {
       document.getElementById('welcomeTitle').textContent = `Welcome back, ${data.faculty_name}!`;
       
       if (data.is_admin) {
+          }
+          
+          // Show message board for all authenticated users
+          document.getElementById('messageBoard').style.display = 'block';
         document.getElementById('adminCard').style.display = 'block';
       }
     } else {
