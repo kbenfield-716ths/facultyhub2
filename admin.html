@@ -3,270 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel - PCCM Scheduler</title>
+  <title>Admin Panel - FacultyHub</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f7f8fc;
-      min-height: 100vh;
-    }
-    
-    .top-nav {
-      background: white;
-      border-bottom: 1px solid #e5e7eb;
-      padding: 0 32px;
-      height: 70px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f7f8fc; min-height: 100vh; }
+    .top-nav { background: white; border-bottom: 1px solid #e5e7eb; padding: 0 32px; height: 70px; display: flex; align-items: center; justify-content: space-between; }
     .logo-section { display: flex; align-items: center; gap: 16px; }
     .logo { font-size: 32px; }
     .logo-text h1 { font-size: 22px; color: #1f2937; font-weight: 700; }
     .logo-text p { font-size: 12px; color: #dc2626; font-weight: 600; }
-    
-    .btn-back {
-      padding: 8px 16px;
-      background: #667eea;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    
+    .btn-back { padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 500; }
     .container { max-width: 1600px; margin: 32px auto; padding: 0 32px; }
-    
     .page-header { margin-bottom: 32px; }
     .page-title { font-size: 32px; font-weight: 700; color: #1f2937; margin-bottom: 8px; }
     .page-subtitle { font-size: 16px; color: #6b7280; }
-    
-    .admin-tabs {
-      background: white;
-      border-radius: 12px;
-      padding: 8px;
-      margin-bottom: 24px;
-      display: flex;
-      gap: 8px;
-      border: 1px solid #e5e7eb;
-    }
-    
-    .tab-btn {
-      padding: 12px 24px;
-      border: none;
-      background: transparent;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #6b7280;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .tab-btn:hover {
-      background: #f3f4f6;
-      color: #1f2937;
-    }
-    
-    .tab-btn.active {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-    
-    .tab-content {
-      display: none;
-    }
-    
-    .tab-content.active {
-      display: block;
-    }
-    
-    .admin-card {
-      background: white;
-      border-radius: 12px;
-      padding: 32px;
-      border: 1px solid #e5e7eb;
-      margin-bottom: 24px;
-    }
-    
-    .card-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #1f2937;
-      margin-bottom: 16px;
-    }
-    
-    .btn-primary {
-      padding: 12px 24px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-    
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 32px;
-    }
-    
-    .stat-box {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 24px;
-      border-radius: 12px;
-      text-align: center;
-    }
-    
-    .stat-value {
-      font-size: 36px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    
-    .stat-label {
-      font-size: 14px;
-      opacity: 0.9;
-    }
-    
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    
-    .data-table thead {
-      background: #f9fafb;
-    }
-    
-    .data-table th {
-      padding: 12px 16px;
-      text-align: left;
-      font-size: 13px;
-      font-weight: 600;
-      color: #6b7280;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid #e5e7eb;
-    }
-    
-    .data-table td {
-      padding: 16px;
-      border-bottom: 1px solid #f3f4f6;
-      font-size: 14px;
-      color: #374151;
-    }
-    
-    .data-table tr:hover {
-      background: #f9fafb;
-    }
-    
-    .badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    
-    .badge-success {
-      background: #d1fae5;
-      color: #065f46;
-    }
-    
-    .badge-warning {
-      background: #fef3c7;
-      color: #92400e;
-    }
-    
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 24px;
-    }
-    
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #e5e7eb;
-      transition: .4s;
-      border-radius: 24px;
-    }
-    
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-    
-    input:checked + .slider {
-      background-color: #10b981;
-    }
-    
-    input:checked + .slider:before {
-      transform: translateX(26px);
-    }
-    
-    .alert {
-      padding: 16px 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      font-size: 14px;
-      display: none;
-    }
-    
-    .alert.show {
-      display: block;
-    }
-    
-    .alert-success {
-      background: #d1fae5;
-      color: #065f46;
-      border-left: 4px solid #10b981;
-    }
-    
-    .alert-error {
-      background: #fee2e2;
-      color: #991b1b;
-      border-left: 4px solid #ef4444;
-    }
-    
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #6b7280;
-    }
+    .admin-tabs { background: white; border-radius: 12px; padding: 8px; margin-bottom: 24px; display: flex; gap: 8px; border: 1px solid #e5e7eb; }
+    .tab-btn { padding: 12px 24px; border: none; background: transparent; border-radius: 8px; font-size: 14px; font-weight: 600; color: #6b7280; cursor: pointer; transition: all 0.2s; }
+    .tab-btn:hover { background: #f3f4f6; color: #1f2937; }
+    .tab-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .admin-card { background: white; border-radius: 12px; padding: 32px; border: 1px solid #e5e7eb; margin-bottom: 24px; }
+    .card-title { font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 16px; }
+    .form-group { margin-bottom: 24px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; font-size: 14px; }
+    .form-group input[type="file"], .form-group input[type="date"], .form-group select { width: 100%; padding: 12px 16px; font-size: 15px; border: 2px solid #e5e7eb; border-radius: 8px; background: white; transition: all 0.3s; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+    .btn-primary { padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+    .btn-danger { padding: 12px 24px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-danger:hover { background: #dc2626; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 32px; }
+    .stat-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 12px; text-align: center; }
+    .stat-value { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+    .stat-label { font-size: 14px; opacity: 0.9; }
+    .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .data-table thead { background: #f9fafb; }
+    .data-table th { padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e5e7eb; }
+    .data-table td { padding: 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: #374151; }
+    .data-table tr:hover { background: #f9fafb; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge-success { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+    .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e5e7eb; transition: .4s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #10b981; }
+    input:checked + .slider:before { transform: translateX(26px); }
+    .alert { padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: none; }
+    .alert.show { display: block; }
+    .alert-success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+    .alert-error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+    .loading { text-align: center; padding: 40px; color: #6b7280; }
+    .action-buttons { display: flex; gap: 12px; margin-top: 20px; }
+    .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 4px; margin-bottom: 20px; font-size: 14px; color: #1e40af; }
   </style>
 </head>
 <body>
@@ -299,54 +91,92 @@
     <div id="adminContent" style="display: none;">
       <!-- Stats Overview -->
       <div class="stats-grid">
-        <div class="stat-box">
-          <div class="stat-value" id="totalFaculty">--</div>
-          <div class="stat-label">Total Faculty</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-value" id="activeUsers">--</div>
-          <div class="stat-label">Active Faculty</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-value" id="adminCount">--</div>
-          <div class="stat-label">Administrators</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-value" id="moonlighterCount">--</div>
-          <div class="stat-label">Moonlighters</div>
-        </div>
+        <div class="stat-box"><div class="stat-value" id="totalFaculty">--</div><div class="stat-label">Total Faculty</div></div>
+        <div class="stat-box"><div class="stat-value" id="totalWeeks">--</div><div class="stat-label">Total Weeks</div></div>
+        <div class="stat-box"><div class="stat-value" id="activeUsers">--</div><div class="stat-label">Active Users</div></div>
+        <div class="stat-box"><div class="stat-value" id="moonlighterCount">--</div><div class="stat-label">Moonlighters</div></div>
       </div>
       
       <!-- Admin Tabs -->
       <div class="admin-tabs">
         <button class="tab-btn active" onclick="showTab('faculty')">Faculty Management</button>
+        <button class="tab-btn" onclick="showTab('weeks')">Week Management</button>
         <button class="tab-btn" onclick="showTab('reports')">Reports</button>
+        <button class="tab-btn" onclick="showTab('settings')">Settings</button>
       </div>
       
       <!-- Faculty Management Tab -->
       <div id="tab-faculty" class="tab-content active">
         <div class="admin-card">
-          <h2 class="card-title">Faculty List</h2>
-          
-          <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 4px; margin-bottom: 20px; font-size: 14px; color: #1e40af;">
-            <strong>💡 Moonlighting Toggle:</strong> Enable the moonlighting toggle for faculty who participate in IRPA/night shifts. 
-            This gives them access to the Moonlighting message board for shift coordination and discussions.
+          <h2 class="card-title">Import Faculty Data</h2>
+          <div id="importAlert" class="alert"></div>
+          <div class="form-group">
+            <label for="facultyCsv">Upload Faculty CSV</label>
+            <input type="file" id="facultyCsv" accept=".csv">
+            <p style="font-size: 13px; color: #6b7280; margin-top: 8px;">
+              CSV format: faculty_id, name, email, rank, clinical_effort_pct, does_moonlighting (optional)
+            </p>
           </div>
-          
+          <button class="btn-primary" onclick="importFaculty()">Import Faculty</button>
+        </div>
+        
+        <div class="admin-card">
+          <h2 class="card-title">Faculty List</h2>
+          <div class="info-box">
+            <strong>💡 Moonlighting Toggle:</strong> Enable moonlighting for faculty who participate in IRPA/night shifts.
+          </div>
           <div id="facultyTableLoading" class="loading">Loading faculty...</div>
           <div id="facultyTableContainer" style="display: none;">
             <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Rank</th>
-                  <th>Clinical Effort</th>
-                  <th>Base Points</th>
-                  <th>Moonlighting</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Name</th><th>Rank</th><th>Clinical Effort</th><th>Base Points</th><th>Moonlighting</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody id="facultyTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Week Management Tab -->
+      <div id="tab-weeks" class="tab-content">
+        <div class="admin-card">
+          <h2 class="card-title">Generate Weeks</h2>
+          <div id="weeksAlert" class="alert"></div>
+          <div class="form-group">
+            <label for="yearSelect">Academic Year</label>
+            <select id="yearSelect">
+              <option value="2025">2025-2026</option>
+              <option value="2026" selected>2026-2027</option>
+              <option value="2027">2027-2028</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="startDate">Start Date (First Tuesday of July)</label>
+            <input type="date" id="startDate" value="2026-07-07">
+          </div>
+          <div class="form-group">
+            <label for="springBreak">Spring Break Start Date</label>
+            <input type="date" id="springBreak" value="2027-03-15">
+          </div>
+          <div class="form-group">
+            <label for="thanksgiving">Thanksgiving Week Start Date</label>
+            <input type="date" id="thanksgiving" value="2026-11-23">
+          </div>
+          <div class="form-group">
+            <label for="christmas">Christmas/Winter Break Start Date</label>
+            <input type="date" id="christmas" value="2026-12-21">
+          </div>
+          <div class="action-buttons">
+            <button class="btn-primary" onclick="generateWeeks()">Generate 52 Weeks</button>
+            <button class="btn-danger" onclick="clearWeeks()">Clear All Weeks</button>
+          </div>
+        </div>
+        
+        <div class="admin-card">
+          <h2 class="card-title">Week Overview</h2>
+          <div id="weeksTableLoading" class="loading">Loading weeks...</div>
+          <div id="weeksTableContainer" style="display: none;">
+            <table class="data-table">
+              <thead><tr><th>Week #</th><th>Date Range</th><th>Type</th><th>Cost (Off)</th><th>Reward (Work)</th></tr></thead>
+              <tbody id="weeksTable"></tbody>
             </table>
           </div>
         </div>
@@ -357,7 +187,11 @@
         <div class="admin-card">
           <h2 class="card-title">System Reports</h2>
           <p style="color: #6b7280; margin-bottom: 24px;">Generate and export various reports</p>
-          
+          <div class="action-buttons">
+            <button class="btn-primary" onclick="exportFacultyReport()">📊 Export Faculty Report</button>
+            <button class="btn-primary" onclick="exportWeekReport()">📅 Export Week Allocations</button>
+            <button class="btn-primary" onclick="exportPointsReport()">💎 Export Points Ledger</button>
+          </div>
           <div style="margin-top: 32px; padding: 20px; background: #f9fafb; border-radius: 8px;">
             <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">Coming Soon</h3>
             <ul style="list-style: none; color: #6b7280; font-size: 14px;">
@@ -369,172 +203,243 @@
           </div>
         </div>
       </div>
+      
+      <!-- Settings Tab -->
+      <div id="tab-settings" class="tab-content">
+        <div class="admin-card">
+          <h2 class="card-title">System Settings</h2>
+          <p style="color: #6b7280; margin-bottom: 24px;">Configure system-wide settings and parameters</p>
+          <div class="info-box">
+            <strong>Note:</strong> Settings management interface coming soon. Contact system administrator 
+            to modify point costs, rank multipliers, or other system parameters.
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
     const API_URL = window.location.origin;
+    window.addEventListener('DOMContentLoaded', () => checkAdminAccess());
     
-    // ===== INITIALIZATION =====
-    window.addEventListener('DOMContentLoaded', async () => {
-      await checkAdminAccess();
-    });
-    
-    // ===== CHECK ADMIN ACCESS =====
     async function checkAdminAccess() {
       try {
-        // Check if user is authenticated and is admin
-        const response = await fetch(`${API_URL}/api/auth/check`, {
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          window.location.href = '/login.html';
-          return;
-        }
-        
+        const response = await fetch(`${API_URL}/api/auth/check`, { credentials: 'include' });
+        if (!response.ok) { window.location.href = '/login.html'; return; }
         const data = await response.json();
-        
-        if (!data.authenticated || !data.is_admin) {
-          document.getElementById('accessDenied').style.display = 'block';
-          return;
-        }
-        
-        // User is admin - show content
+        if (!data.authenticated || !data.is_admin) { document.getElementById('accessDenied').style.display = 'block'; return; }
         document.getElementById('adminContent').style.display = 'block';
-        
-        // Load data
         await loadStats();
         await loadFacultyTable();
-        
+        await loadWeeksTable();
       } catch (error) {
-        console.error('Error checking admin access:', error);
+        console.error('Error:', error);
         document.getElementById('accessDenied').style.display = 'block';
       }
     }
     
-    // ===== LOAD STATS =====
     async function loadStats() {
       try {
-        const response = await fetch(`${API_URL}/api/admin/faculty/stats/summary`, {
-          credentials: 'include'
-        });
-        
-        if (!response.ok) throw new Error('Failed to load stats');
-        
+        const response = await fetch(`${API_URL}/api/admin/faculty/stats/summary`, { credentials: 'include' });
+        if (!response.ok) throw new Error('Failed');
         const data = await response.json();
-        
         document.getElementById('totalFaculty').textContent = data.total_faculty || 0;
         document.getElementById('activeUsers').textContent = data.active_faculty || 0;
-        document.getElementById('adminCount').textContent = data.admin_count || 0;
         document.getElementById('moonlighterCount').textContent = data.moonlighter_count || 0;
         
-      } catch (error) {
-        console.error('Error loading stats:', error);
-      }
+        // Try to get week count (may not exist yet)
+        try {
+          const weeksResp = await fetch(`${API_URL}/api/admin/weeks`, { credentials: 'include' });
+          if (weeksResp.ok) {
+            const weeks = await weeksResp.json();
+            document.getElementById('totalWeeks').textContent = Array.isArray(weeks) ? weeks.length : 0;
+          } else {
+            document.getElementById('totalWeeks').textContent = '0';
+          }
+        } catch (e) {
+          document.getElementById('totalWeeks').textContent = 'N/A';
+        }
+      } catch (error) { console.error('Error loading stats:', error); }
     }
     
-    // ===== LOAD FACULTY TABLE =====
     async function loadFacultyTable() {
       try {
-        const response = await fetch(`${API_URL}/api/admin/faculty?active_only=false`, {
-          credentials: 'include'
-        });
-        
-        if (!response.ok) throw new Error('Failed to load faculty');
-        
+        const response = await fetch(`${API_URL}/api/admin/faculty?active_only=false`, { credentials: 'include' });
+        if (!response.ok) throw new Error('Failed');
         const faculty = await response.json();
-        
         const tbody = document.getElementById('facultyTable');
         tbody.innerHTML = '';
-        
         faculty.forEach(f => {
           const tr = document.createElement('tr');
-          
-          const statusBadge = f.password_changed ? 
-            '<span class="badge badge-success">Active</span>' :
-            '<span class="badge badge-warning">Pending</span>';
-          
-          tr.innerHTML = `
-            <td>${f.name}</td>
-            <td>${formatRank(f.rank)}</td>
-            <td>${f.clinical_effort_pct}%</td>
-            <td>${f.base_points}</td>
-            <td>
-              <label class="toggle-switch">
-                <input type="checkbox" 
-                       ${f.moonlighter ? 'checked' : ''}
-                       onchange="toggleMoonlighting('${f.id}', this.checked)">
-                <span class="slider"></span>
-              </label>
-            </td>
-            <td>${statusBadge}</td>
-          `;
+          const statusBadge = f.password_changed ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-warning">Pending</span>';
+          tr.innerHTML = `<td>${f.name}</td><td>${formatRank(f.rank)}</td><td>${f.clinical_effort_pct}%</td><td>${f.base_points}</td><td><label class="toggle-switch"><input type="checkbox" ${f.moonlighter ? 'checked' : ''} onchange="toggleMoonlighting('${f.id}', this.checked)"><span class="slider"></span></label></td><td>${statusBadge}</td><td><button style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;" onclick="editFaculty('${f.id}')">Edit</button></td>`;
           tbody.appendChild(tr);
         });
-        
         document.getElementById('facultyTableLoading').style.display = 'none';
         document.getElementById('facultyTableContainer').style.display = 'block';
-        
       } catch (error) {
-        console.error('Error loading faculty table:', error);
-        document.getElementById('facultyTableLoading').innerHTML = 
-          '<p style="color: #ef4444;">Error loading faculty. Please refresh.</p>';
+        console.error('Error:', error);
+        document.getElementById('facultyTableLoading').innerHTML = '<p style="color: #ef4444;">Error loading faculty.</p>';
       }
     }
     
-    // ===== TOGGLE MOONLIGHTING =====
+    async function loadWeeksTable() {
+      try {
+        const response = await fetch(`${API_URL}/api/admin/weeks`, { credentials: 'include' });
+        const tbody = document.getElementById('weeksTable');
+        
+        if (!response.ok) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">No weeks generated yet. Use the form above to generate weeks.</td></tr>';
+          document.getElementById('weeksTableLoading').style.display = 'none';
+          document.getElementById('weeksTableContainer').style.display = 'block';
+          return;
+        }
+        
+        const weeks = await response.json();
+        tbody.innerHTML = '';
+        
+        if (!weeks || weeks.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">No weeks generated yet.</td></tr>';
+        } else {
+          weeks.forEach(week => {
+            const tr = document.createElement('tr');
+            const startDate = new Date(week.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const endDate = new Date(week.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            let typeBadge = '<span class="badge" style="background: #e5e7eb; color: #6b7280;">Regular</span>';
+            if (week.week_type === 'christmas') typeBadge = '<span class="badge badge-danger">Christmas</span>';
+            else if (week.week_type === 'thanksgiving') typeBadge = '<span class="badge badge-warning">Thanksgiving</span>';
+            else if (week.week_type === 'spring_break') typeBadge = '<span class="badge badge-success">Spring Break</span>';
+            else if (week.week_type === 'summer') typeBadge = '<span class="badge" style="background: #fef3c7; color: #92400e;">Summer</span>';
+            tr.innerHTML = `<td>${week.week_number}</td><td>${startDate} - ${endDate}</td><td>${typeBadge}</td><td>${week.point_cost_off} pts</td><td>${week.point_reward_work} pts</td>`;
+            tbody.appendChild(tr);
+          });
+        }
+        
+        document.getElementById('weeksTableLoading').style.display = 'none';
+        document.getElementById('weeksTableContainer').style.display = 'block';
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('weeksTableLoading').innerHTML = '<p style="color: #ef4444;">Error loading weeks.</p>';
+      }
+    }
+    
     async function toggleMoonlighting(facultyId, enabled) {
       try {
         const response = await fetch(`${API_URL}/api/admin/faculty/${facultyId}`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ moonlighter: enabled })
         });
-        
-        if (!response.ok) throw new Error('Failed to update');
-        
-        console.log(`Moonlighting ${enabled ? 'enabled' : 'disabled'} for ${facultyId}`);
-        
-        // Reload stats to update moonlighter count
+        if (!response.ok) throw new Error('Failed');
         await loadStats();
-        
       } catch (error) {
-        console.error('Error updating moonlighting status:', error);
-        alert('Error updating moonlighting status. Please try again.');
-        
-        // Reload faculty to reset toggle
+        console.error('Error:', error);
+        alert('Error updating. Please try again.');
         await loadFacultyTable();
       }
     }
     
-    // ===== TAB MANAGEMENT =====
-    function showTab(tabName) {
-      // Hide all tabs
-      document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-      });
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
+    async function importFaculty() {
+      const fileInput = document.getElementById('facultyCsv');
+      const file = fileInput.files[0];
+      if (!file) { showAlert('importAlert', 'Please select a CSV file', 'error'); return; }
       
-      // Show selected tab
-      document.getElementById('tab-' + tabName).classList.add('active');
-      event.target.classList.add('active');
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch(`${API_URL}/api/admin/faculty/import`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        });
+        
+        if (!response.ok) throw new Error('Import failed');
+        const result = await response.json();
+        
+        showAlert('importAlert', `Successfully imported ${result.imported || 0} faculty members`, 'success');
+        await loadStats();
+        await loadFacultyTable();
+      } catch (error) {
+        console.error('Error:', error);
+        showAlert('importAlert', 'Error importing CSV. Feature may not be implemented yet.', 'error');
+      }
     }
     
-    // ===== HELPER FUNCTIONS =====
+    async function generateWeeks() {
+      try {
+        const data = {
+          year: parseInt(document.getElementById('yearSelect').value),
+          start_date: document.getElementById('startDate').value,
+          spring_break: document.getElementById('springBreak').value,
+          thanksgiving: document.getElementById('thanksgiving').value,
+          christmas: document.getElementById('christmas').value
+        };
+        
+        const response = await fetch(`${API_URL}/api/admin/weeks/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) throw new Error('Failed');
+        
+        showAlert('weeksAlert', 'Successfully generated 52 weeks', 'success');
+        await loadStats();
+        await loadWeeksTable();
+      } catch (error) {
+        console.error('Error:', error);
+        showAlert('weeksAlert', 'Error generating weeks. Endpoint may not be implemented yet.', 'error');
+      }
+    }
+    
+    async function clearWeeks() {
+      if (!confirm('Are you sure you want to delete all weeks?')) return;
+      
+      try {
+        const response = await fetch(`${API_URL}/api/admin/weeks`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('Failed');
+        
+        showAlert('weeksAlert', 'All weeks cleared', 'success');
+        await loadStats();
+        await loadWeeksTable();
+      } catch (error) {
+        console.error('Error:', error);
+        showAlert('weeksAlert', 'Error clearing weeks. Endpoint may not be implemented yet.', 'error');
+      }
+    }
+    
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+      event.target.classList.add('active');
+      
+      if (tabName === 'weeks') loadWeeksTable();
+    }
+    
     function formatRank(rank) {
-      const ranks = {
-        'assistant': 'Assistant Prof',
-        'associate': 'Associate Prof',
-        'full': 'Full Professor'
-      };
+      const ranks = { 'assistant': 'Assistant Prof', 'associate': 'Associate Prof', 'full': 'Full Professor' };
       return ranks[rank] || rank;
     }
+    
+    function showAlert(elementId, message, type) {
+      const alert = document.getElementById(elementId);
+      alert.textContent = message;
+      alert.className = 'alert alert-' + type + ' show';
+      setTimeout(() => alert.classList.remove('show'), 5000);
+    }
+    
+    function editFaculty(id) { alert('Edit faculty feature coming soon'); }
+    function exportFacultyReport() { alert('Export feature coming soon'); }
+    function exportWeekReport() { alert('Export feature coming soon'); }
+    function exportPointsReport() { alert('Export feature coming soon'); }
   </script>
 </body>
 </html>
