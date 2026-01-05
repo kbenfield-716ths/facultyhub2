@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Message Boards - PCCM Scheduler</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f7f8fc;
+      min-height: 100vh;
+    }
+    
+    .top-nav {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 0 32px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    .logo-section { display: flex; align-items: center; gap: 16px; }
+    .logo { font-size: 32px; }
+    .logo-text h1 { font-size: 22px; color: #1f2937; font-weight: 700; }
+    .logo-text p { font-size: 12px; color: #6b7280; }
+    
+    .btn-back {
+      padding: 8px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 32px auto;
+      padding: 0 32px;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+    }
+    
+    /* Board Sidebar */
+    .board-sidebar {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+      border: 1px solid #e5e7eb;
+    }
+    
+    .sidebar-header {
+      font-size: 14px;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+    
+    .board-list {
+      list-style: none;
+    }
+    
+    .board-item {
+      padding: 12px;
+      margin-bottom: 4px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+    
+    .board-item:hover {
+      background: #f3f4f6;
+    }
+    
+    .board-item.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .board-icon {
+      font-size: 20px;
+    }
+    
+    .board-info {
+      flex: 1;
+    }
+    
+    .board-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .board-description {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    
+    .board-item.active .board-description {
+      color: rgba(255,255,255,0.8);
+    }
+    
+    .unread-badge {
+      background: #ef4444;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    
+    .board-item.active .unread-badge {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    /* Main Content */
+    .main-content {
+      min-height: 500px;
+    }
+    
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .content-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+    
+    .btn-new-thread {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-new-thread:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* Thread List */
+    .thread-list {
+      list-style: none;
+    }
+    
+    .thread-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    
+    .thread-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+    }
+    
+    .thread-card.pinned {
+      border-left: 4px solid #f59e0b;
+      background: #fffbeb;
+    }
+    
+    .pinned-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #f59e0b;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .thread-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .author-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    
+    .thread-meta {
+      flex: 1;
+    }
+    
+    .author-name {
+      font-weight: 600;
+      color: #1f2937;
+      font-size: 14px;
+    }
+    
+    .thread-time {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    
+    .thread-subject {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+    
+    .thread-preview {
+      color: #4b5563;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    
+    .thread-footer {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid #f3f4f6;
+    }
+    
+    .thread-stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+    
+    .thread-stat strong {
+      color: #1f2937;
+    }
+    
+    /* Thread Detail View */
+    .thread-detail {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 24px;
+    }
+    
+    .back-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #f3f4f6;
+      border: none;
+      border-radius: 6px;
+      color: #4b5563;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: all 0.2s;
+    }
+    
+    .back-button:hover {
+      background: #e5e7eb;
+    }
+    
+    .thread-content {
+      margin-top: 16px;
+      line-height: 1.8;
+      color: #374151;
+      font-size: 15px;
+      white-space: pre-wrap;
+    }
+    
+    .reaction-bar {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .reaction-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .reaction-btn:hover {
+      background: #f3f4f6;
+      border-color: #667eea;
+    }
+    
+    .reaction-btn.reacted {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1e40af;
+    }
+    
+    /* Replies */
+    .replies-section {
+      margin-top: 32px;
+    }
+    
+    .replies-header {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+    
+    .reply-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid #e5e7eb;
+    }
+    
+    /* Composer */
+    .composer {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 24px;
+    }
+    
+    .composer-header {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #374151;
+      font-size: 14px;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 15px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      background: white;
+      transition: all 0.3s;
+      font-family: inherit;
+    }
+    
+    .form-group textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .composer-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    
+    .btn-cancel {
+      padding: 12px 24px;
+      background: #f3f4f6;
+      color: #4b5563;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    .btn-submit {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: #6b7280;
+    }
+    
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+    
+    .empty-state-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+    
+    .empty-state-text {
+      font-size: 15px;
+    }
+    
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6b7280;
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f4f6;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+      
+      .board-sidebar {
+        position: static;
+        margin-bottom: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="logo-section">
+      <div class="logo">💬</div>
+      <div class="logo-text">
+        <h1>Message Boards</h1>
+        <p>Faculty Discussion</p>
+      </div>
+    </div>
+    <a href="dashboard.html" class="btn-back">← Back to Dashboard</a>
+  </nav>
+  
+  <div class="container">
+    <!-- Board Sidebar -->
+    <aside class="board-sidebar">
+      <div class="sidebar-header">Message Boards</div>
+      <ul class="board-list" id="boardList">
+        <li class="loading">Loading boards...</li>
+      </ul>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Board View (Thread List) -->
+      <div id="boardView" style="display: none;">
+        <div class="content-header">
+          <h1 class="content-title" id="boardTitle">Loading...</h1>
+          <button class="btn-new-thread" onclick="showComposer()">
+            <span>➕</span>
+            <span>New Thread</span>
+          </button>
+        </div>
+        
+        <!-- New Thread Composer -->
+        <div class="composer" id="composer" style="display: none;">
+          <div class="composer-header">New Thread</div>
+          <form onsubmit="submitThread(event)">
+            <div class="form-group">
+              <label for="threadSubject">Subject</label>
+              <input type="text" id="threadSubject" placeholder="What's your thread about?" required>
+            </div>
+            <div class="form-group">
+              <label for="threadContent">Message</label>
+              <textarea id="threadContent" placeholder="Share your thoughts..." required></textarea>
+            </div>
+            <div class="composer-actions">
+              <button type="button" class="btn-cancel" onclick="hideComposer()">Cancel</button>
+              <button type="submit" class="btn-submit">Post Thread</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Thread List -->
+        <ul class="thread-list" id="threadList">
+          <li class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading threads...</p>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Thread Detail View -->
+      <div id="threadView" style="display: none;">
+        <button class="back-button" onclick="backToBoard()">
+          <span>←</span>
+          <span>Back to Board</span>
+        </button>
+        
+        <div class="thread-detail" id="threadDetail">
+          <!-- Populated by JavaScript -->
+        </div>
+        
+        <!-- Reply Composer -->
+        <div class="composer">
+          <div class="composer-header">Reply to Thread</div>
+          <form onsubmit="submitReply(event)">
+            <div class="form-group">
+              <label for="replyContent">Your Reply</label>
+              <textarea id="replyContent" placeholder="Share your thoughts..." required></textarea>
+            </div>
+            <div class="composer-actions">
+              <button type="submit" class="btn-submit">Post Reply</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Replies -->
+        <div class="replies-section">
+          <div class="replies-header" id="repliesHeader">Replies</div>
+          <div id="repliesList">
+            <!-- Populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const CONFIG = {
+      SUPABASE_URL: 'https://lbimrbkbsqqeiytuathy.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiaW1yYmtic3FxZWl5dHVhdGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDQ1NzUsImV4cCI6MjA3NjE4MDU3NX0.5yCcxuabKoRO0HUPVdTXUXaZxIpMq13eFqp6SApOouw'
+    };
+    
+    const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    
+    let currentUser = null;
+    let currentFaculty = null;
+    let currentBoard = null;
+    let currentThread = null;
+    let boards = [];
+    
+    // ===== INITIALIZATION =====
+    window.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth();
+      await loadBoards();
+      setupRealtimeSubscriptions();
+      
+      // Check URL params for direct links
+      const params = new URLSearchParams(window.location.search);
+      const boardSlug = params.get('board');
+      const threadId = params.get('thread');
+      
+      if (threadId) {
+        await loadThread(threadId);
+      } else if (boardSlug) {
+        const board = boards.find(b => b.slug === boardSlug);
+        if (board) selectBoard(board);
+      } else if (boards.length > 0) {
+        selectBoard(boards[0]);
+      }
+    });
+    
+    // ===== AUTH CHECK =====
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      currentUser = session.user;
+      
+      const { data: faculty } = await supabase
+        .from('faculty')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .single();
+      
+      currentFaculty = faculty;
+    }
+    
+    // ===== LOAD BOARDS =====
+    async function loadBoards() {
+      try {
+        const { data, error } = await supabase
+          .rpc('get_accessible_boards', { p_faculty_id: currentFaculty.id });
+        
+        if (error) throw error;
+        
+        boards = data || [];
+        renderBoardList();
+        
+      } catch (error) {
+        console.error('Error loading boards:', error);
+        document.getElementById('boardList').innerHTML = 
+          '<li style="padding: 12px; color: #ef4444;">Error loading boards</li>';
+      }
+    }
+    
+    // ===== RENDER BOARD LIST =====
+    function renderBoardList() {
+      const list = document.getElementById('boardList');
+      
+      if (boards.length === 0) {
+        list.innerHTML = '<li style="padding: 12px; color: #6b7280;">No boards available</li>';
+        return;
+      }
+      
+      list.innerHTML = boards.map(board => `
+        <li class="board-item ${currentBoard?.id === board.id ? 'active' : ''}" 
+            onclick="selectBoard(${JSON.stringify(board).replace(/"/g, '&quot;')})">
+          <span class="board-icon">${board.icon}</span>
+          <div class="board-info">
+            <div class="board-name">${board.name}</div>
+            <div class="board-description">${board.description}</div>
+          </div>
+          ${board.unread_count > 0 ? `<span class="unread-badge">${board.unread_count}</span>` : ''}
+        </li>
+      `).join('');
+    }
+    
+    // ===== SELECT BOARD =====
+    async function selectBoard(board) {
+      currentBoard = board;
+      currentThread = null;
+      
+      // Update URL
+      const url = new URL(window.location);
+      url.searchParams.set('board', board.slug);
+      url.searchParams.delete('thread');
+      window.history.pushState({}, '', url);
+      
+      // Update UI
+      renderBoardList();
+      document.getElementById('boardTitle').textContent = board.name;
+      document.getElementById('boardView').style.display = 'block';
+      document.getElementById('threadView').style.display = 'none';
+      
+      // Load threads
+      await loadThreads();
+    }
+    
+    // ===== LOAD THREADS =====
+    async function loadThreads() {
+      try {
+        const { data, error } = await supabase
+          .from('message_threads')
+          .select('*')
+          .eq('board_id', currentBoard.id);
+        
+        if (error) throw error;
+        
+        const list = document.getElementById('threadList');
+        
+        if (data.length === 0) {
+          list.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">💬</div>
+              <div class="empty-state-title">No threads yet</div>
+              <div class="empty-state-text">Be the first to start a discussion!</div>
+            </div>
+          `;
+          return;
+        }
+        
+        list.innerHTML = data.map(thread => {
+          const initials = thread.author_name.split(' ').map(n => n[0]).join('');
+          const timeAgo = formatTimeAgo(new Date(thread.created_at));
+          
+          return `
+            <li class="thread-card ${thread.is_pinned ? 'pinned' : ''}" onclick="loadThread('${thread.id}')">
+              ${thread.is_pinned ? '<div class="pinned-badge">📌 Pinned</div>' : ''}
+              <div class="thread-header">
+                <div class="author-avatar">${initials}</div>
+                <div class="thread-meta">
+                  <div class="author-name">${thread.author_name}</div>
+                  <div class="thread-time">${timeAgo}</div>
+                </div>
+              </div>
+              <div class="thread-subject">${thread.subject}</div>
+              <div class="thread-preview">${truncate(thread.content, 200)}</div>
+              <div class="thread-footer">
+                <div class="thread-stat">
+                  <span>💬</span>
+                  <span><strong>${thread.reply_count}</strong> ${thread.reply_count === 1 ? 'reply' : 'replies'}</span>
+                </div>
+                ${thread.reaction_count > 0 ? `
+                  <div class="thread-stat">
+                    <span>❤️</span>
+                    <span><strong>${thread.reaction_count}</strong> reactions</span>
+                  </div>
+                ` : ''}
+                ${thread.last_reply_at ? `
+                  <div class="thread-stat">
+                    <span>Last reply ${formatTimeAgo(new Date(thread.last_reply_at))} by ${thread.last_reply_by}</span>
+                  </div>
+                ` : ''}
+              </div>
+            </li>
+          `;
+        }).join('');
+        
+      } catch (error) {
+        console.error('Error loading threads:', error);
+      }
+    }
+    
+    // ===== LOAD THREAD DETAIL =====
+    async function loadThread(threadId) {
+      try {
+        // Load main thread
+        const { data: thread, error: threadError } = await supabase
+          .from('message_thread_details')
+          .select('*')
+          .eq('id', threadId)
+          .is('parent_id', null)
+          .single();
+        
+        if (threadError) throw threadError;
+        
+        currentThread = thread;
+        
+        // Load replies
+        const { data: replies, error: repliesError } = await supabase
+          .from('message_thread_details')
+          .select('*')
+          .eq('parent_id', threadId)
+          .order('created_at', { ascending: true });
+        
+        if (repliesError) throw repliesError;
+        
+        // Update URL
+        const url = new URL(window.location);
+        url.searchParams.set('thread', threadId);
+        window.history.pushState({}, '', url);
+        
+        // Render thread
+        renderThreadDetail(thread, replies);
+        
+        // Mark as read
+        await supabase.rpc('mark_thread_read', {
+          p_thread_id: threadId,
+          p_faculty_id: currentFaculty.id
+        });
+        
+        // Show thread view
+        document.getElementById('boardView').style.display = 'none';
+        document.getElementById('threadView').style.display = 'block';
+        
+      } catch (error) {
+        console.error('Error loading thread:', error);
+      }
+    }
+    
+    // ===== RENDER THREAD DETAIL =====
+    function renderThreadDetail(thread, replies) {
+      const initials = thread.author_name.split(' ').map(n => n[0]).join('');
+      const timeAgo = formatTimeAgo(new Date(thread.created_at));
+      
+      document.getElementById('threadDetail').innerHTML = `
+        <div class="thread-header">
+          <div class="author-avatar">${initials}</div>
+          <div class="thread-meta">
+            <div class="author-name">${thread.author_name}</div>
+            <div class="thread-time">${timeAgo}${thread.is_edited ? ' (edited)' : ''}</div>
+          </div>
+        </div>
+        <div class="thread-subject">${thread.subject}</div>
+        <div class="thread-content">${thread.content}</div>
+        <div class="reaction-bar">
+          <button class="reaction-btn" onclick="addReaction('${thread.id}', '👍')">
+            <span>👍</span>
+            <span>${thread.thumbs_up || 0}</span>
+          </button>
+          <button class="reaction-btn" onclick="addReaction('${thread.id}', '❤️')">
+            <span>❤️</span>
+            <span>${thread.hearts || 0}</span>
+          </button>
+          <button class="reaction-btn" onclick="addReaction('${thread.id}', '🎉')">
+            <span>🎉</span>
+            <span>${thread.celebrations || 0}</span>
+          </button>
+        </div>
+      `;
+      
+      // Render replies
+      document.getElementById('repliesHeader').textContent = 
+        `${replies.length} ${replies.length === 1 ? 'Reply' : 'Replies'}`;
+      
+      if (replies.length === 0) {
+        document.getElementById('repliesList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-text">No replies yet. Be the first to respond!</div>
+          </div>
+        `;
+      } else {
+        document.getElementById('repliesList').innerHTML = replies.map(reply => {
+          const initials = reply.author_name.split(' ').map(n => n[0]).join('');
+          const timeAgo = formatTimeAgo(new Date(reply.created_at));
+          
+          return `
+            <div class="reply-card">
+              <div class="thread-header">
+                <div class="author-avatar">${initials}</div>
+                <div class="thread-meta">
+                  <div class="author-name">${reply.author_name}</div>
+                  <div class="thread-time">${timeAgo}${reply.is_edited ? ' (edited)' : ''}</div>
+                </div>
+              </div>
+              <div class="thread-content">${reply.content}</div>
+              <div class="reaction-bar">
+                <button class="reaction-btn" onclick="addReaction('${reply.id}', '👍')">
+                  <span>👍</span>
+                  <span>${reply.thumbs_up || 0}</span>
+                </button>
+                <button class="reaction-btn" onclick="addReaction('${reply.id}', '❤️')">
+                  <span>❤️</span>
+                  <span>${reply.hearts || 0}</span>
+                </button>
+                <button class="reaction-btn" onclick="addReaction('${reply.id}', '🎉')">
+                  <span>🎉</span>
+                  <span>${reply.celebrations || 0}</span>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+    
+    // ===== COMPOSER =====
+    function showComposer() {
+      document.getElementById('composer').style.display = 'block';
+      document.getElementById('threadSubject').focus();
+    }
+    
+    function hideComposer() {
+      document.getElementById('composer').style.display = 'none';
+      document.getElementById('threadSubject').value = '';
+      document.getElementById('threadContent').value = '';
+    }
+    
+    async function submitThread(event) {
+      event.preventDefault();
+      
+      const subject = document.getElementById('threadSubject').value;
+      const content = document.getElementById('threadContent').value;
+      
+      try {
+        const { error } = await supabase
+          .from('messages')
+          .insert({
+            board_id: currentBoard.id,
+            author_id: currentFaculty.id,
+            subject,
+            content
+          });
+        
+        if (error) throw error;
+        
+        hideComposer();
+        await loadThreads();
+        
+      } catch (error) {
+        console.error('Error posting thread:', error);
+        alert('Failed to post thread. Please try again.');
+      }
+    }
+    
+    async function submitReply(event) {
+      event.preventDefault();
+      
+      const content = document.getElementById('replyContent').value;
+      
+      try {
+        const { error } = await supabase
+          .from('messages')
+          .insert({
+            board_id: currentBoard.id,
+            author_id: currentFaculty.id,
+            parent_id: currentThread.id,
+            subject: '', // Not needed for replies
+            content
+          });
+        
+        if (error) throw error;
+        
+        document.getElementById('replyContent').value = '';
+        await loadThread(currentThread.id);
+        
+      } catch (error) {
+        console.error('Error posting reply:', error);
+        alert('Failed to post reply. Please try again.');
+      }
+    }
+    
+    // ===== REACTIONS =====
+    async function addReaction(messageId, reaction) {
+      try {
+        const { error } = await supabase
+          .from('message_reactions')
+          .insert({
+            message_id: messageId,
+            faculty_id: currentFaculty.id,
+            reaction
+          });
+        
+        if (error) {
+          // If already reacted, remove it
+          if (error.code === '23505') {
+            await supabase
+              .from('message_reactions')
+              .delete()
+              .eq('message_id', messageId)
+              .eq('faculty_id', currentFaculty.id)
+              .eq('reaction', reaction);
+          } else {
+            throw error;
+          }
+        }
+        
+        // Reload thread to show updated counts
+        await loadThread(currentThread.id);
+        
+      } catch (error) {
+        console.error('Error adding reaction:', error);
+      }
+    }
+    
+    // ===== NAVIGATION =====
+    function backToBoard() {
+      if (currentBoard) {
+        selectBoard(currentBoard);
+      }
+    }
+    
+    // ===== REALTIME SUBSCRIPTIONS =====
+    function setupRealtimeSubscriptions() {
+      // Subscribe to new messages
+      supabase
+        .channel('messages')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        }, () => {
+          if (currentThread) {
+            loadThread(currentThread.id);
+          } else if (currentBoard) {
+            loadThreads();
+          }
+          loadBoards(); // Update unread counts
+        })
+        .subscribe();
+    }
+    
+    // ===== HELPER FUNCTIONS =====
+    function formatTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+      if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+      if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+      
+      return date.toLocaleDateString();
+    }
+    
+    function truncate(text, length) {
+      if (text.length <= length) return text;
+      return text.substring(0, length) + '...';
+    }
+  </script>
+</body>
+</html>
