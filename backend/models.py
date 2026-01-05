@@ -201,7 +201,116 @@ class ServiceWeekAssignment(Base):
     faculty = relationship("Faculty", back_populates="service_assignments")
     week = relationship("ServiceWeek", back_populates="service_assignments")
 
+# ==========================================
+# Message Boards INITIALIZATION
+# ==========================================
 
+# Add this field to your existing Faculty model:
+# does_moonlighting = Column(Boolean, default=False, nullable=False)
+
+class MessageBoard(Base):
+    """Message boards (General, Moonlighting, etc.)"""
+    __tablename__ = "message_boards"
+    
+    id = Column(String, primary_key=True)  # 'general', 'moonlighting'
+    name = Column(String(100), nullable=False)
+    description = Column(Text)
+    icon = Column(String(10))  # Emoji
+    requires_moonlighting = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    display_order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    messages = relationship("Message", back_populates="board", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<MessageBoard(id={self.id}, name={self.name})>"
+
+
+class Message(Base):
+    """Messages (threads and replies)"""
+    __tablename__ = "messages"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    board_id = Column(String, ForeignKey("message_boards.id", ondelete="CASCADE"), nullable=False)
+    author_id = Column(String, ForeignKey("faculty.id", ondelete="CASCADE"), nullable=False)
+    parent_id = Column(String, ForeignKey("messages.id", ondelete="CASCADE"), nullable=True)
+    
+    subject = Column(Text)  # Only for top-level threads
+    content = Column(Text, nullable=False)
+    is_pinned = Column(Boolean, default=False)
+    is_edited = Column(Boolean, default=False)
+    edited_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    board = relationship("MessageBoard", back_populates="messages")
+    author = relationship("Faculty", foreign_keys=[author_id])
+    parent = relationship("Message", remote_side=[id], backref="replies")
+    reactions = relationship("MessageReaction", back_populates="message", cascade="all, delete-orphan")
+    read_status = relationship("MessageReadStatus", back_populates="message", cascade="all, delete-orphan")
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_messages_board', 'board_id'),
+        Index('idx_messages_author', 'author_id'),
+        Index('idx_messages_parent', 'parent_id'),
+        Index('idx_messages_created', 'created_at'),
+    )
+    
+    def __repr__(self):
+        return f"<Message(id={self.id}, author={self.author_id}, board={self.board_id})>"
+
+
+class MessageReaction(Base):
+    """Emoji reactions to messages"""
+    __tablename__ = "message_reactions"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    message_id = Column(String, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
+    faculty_id = Column(String, ForeignKey("faculty.id", ondelete="CASCADE"), nullable=False)
+    reaction = Column(String(10), nullable=False)  # Emoji
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    message = relationship("Message", back_populates="reactions")
+    faculty = relationship("Faculty")
+    
+    # Unique constraint: one reaction type per faculty per message
+    __table_args__ = (
+        Index('idx_reactions_message', 'message_id'),
+        Index('idx_reactions_unique', 'message_id', 'faculty_id', 'reaction', unique=True),
+    )
+    
+    def __repr__(self):
+        return f"<MessageReaction(message={self.message_id}, faculty={self.faculty_id}, reaction={self.reaction})>"
+
+
+class MessageReadStatus(Base):
+    """Track which messages faculty have read"""
+    __tablename__ = "message_read_status"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    message_id = Column(String, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
+    faculty_id = Column(String, ForeignKey("faculty.id", ondelete="CASCADE"), nullable=False)
+    read_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    message = relationship("Message", back_populates="read_status")
+    faculty = relationship("Faculty")
+    
+    # Unique constraint: one read status per faculty per message
+    __table_args__ = (
+        Index('idx_read_status_faculty', 'faculty_id'),
+        Index('idx_read_status_message', 'message_id'),
+        Index('idx_read_status_unique', 'message_id', 'faculty_id', unique=True),
+    )
+    
+    def __repr__(self):
+        return f"<MessageReadStatus(message={self.message_id}, faculty={self.faculty_id})>"
+        
 # ==========================================
 # DATABASE INITIALIZATION
 # ==========================================
@@ -258,6 +367,33 @@ def init_db():
         print(f"[Database] Warning: Could not apply optimizations: {e}")
         print("[Database] Initialization complete (without optimizations)")
 
+def seed_message_boards(db: Session):
+    """Seed default message boards if they don't exist"""
+    boards = [
+        MessageBoard(
+            id="general",
+            name="General Discussion",
+            description="Announcements, questions, and discussions for all faculty",
+            icon="💬",
+            requires_moonlighting=False,
+            display_order=1
+        ),
+        MessageBoard(
+            id="moonlighting",
+            name="Moonlighting",
+            description="IRPA shifts, night coverage, and moonlighting-related discussions",
+            icon="🌙",
+            requires_moonlighting=True,
+            display_order=2
+        )
+    ]
+    
+    for board in boards:
+        existing = db.query(MessageBoard).filter_by(id=board.id).first()
+        if not existing:
+            db.add(board)
+    
+    db.commit()
 
 def get_db():
     """Dependency for FastAPI endpoints"""
