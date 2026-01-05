@@ -316,43 +316,6 @@
     const API_URL = window.location.origin;
 
     // Check authentication status and update UI
-    async function checkAuth() {
-      try {
-        const response = await fetch(`${API_URL}/api/auth/check`, {
-          credentials: 'include'
-        });
-        const data = await response.json();
-        
-        if (data.authenticated) {
-          // User is logged in
-          document.getElementById('userName').textContent = `Welcome, ${data.faculty_name}!`;
-          document.getElementById('userName').style.display = 'inline';
-          document.getElementById('logoutButton').style.display = 'inline-block';
-          document.getElementById('loginButton').style.display = 'none';
-          
-          // Update welcome message
-          document.getElementById('welcomeTitle').textContent = `Welcome back, ${data.faculty_name}!`;
-          
-          // Show admin card if user is admin
-          if (data.is_admin) {
-          }
-          
-          // Show message board for all authenticated users
-          document.getElementById('messageBoard').style.display = 'block';
-            document.getElementById('adminCard').style.display = 'block';
-          }
-        } else {
-          // User is not logged in
-          document.getElementById('loginButton').style.display = 'inline-block';
-          document.getElementById('logoutButton').style.display = 'none';
-          document.getElementById('userName').style.display = 'none';
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        // Show login button on error
-        document.getElementById('loginButton').style.display = 'inline-block';
-      }
-    }
 async function checkAuth() {
   try {
     const response = await fetch(`${API_URL}/api/auth/check`, {
@@ -361,6 +324,7 @@ async function checkAuth() {
     const data = await response.json();
     
     if (data.authenticated) {
+      // User is logged in
       document.getElementById('userName').textContent = `Welcome, ${data.faculty_name}!`;
       document.getElementById('userName').style.display = 'inline';
       document.getElementById('logoutButton').style.display = 'inline-block';
@@ -391,16 +355,18 @@ async function checkAuth() {
         }
       }
       
+      // Update welcome message
       document.getElementById('welcomeTitle').textContent = `Welcome back, ${data.faculty_name}!`;
-      
+            // Show admin card if user is admin
       if (data.is_admin) {
-          }
-          
-          // Show message board for all authenticated users
-          document.getElementById('messageBoard').style.display = 'block';
         document.getElementById('adminCard').style.display = 'block';
       }
+      
+      // Show message board for all authenticated users
+      document.getElementById('messageBoard').style.display = 'block';
+      
     } else {
+      // User is not logged in
       document.getElementById('loginButton').style.display = 'inline-block';
       document.getElementById('logoutButton').style.display = 'none';
       document.getElementById('userName').style.display = 'none';
@@ -410,6 +376,7 @@ async function checkAuth() {
     document.getElementById('loginButton').style.display = 'inline-block';
   }
 }
+
     // Logout handler
     document.getElementById('logoutButton').addEventListener('click', async () => {
       try {
