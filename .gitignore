@@ -20,3 +20,5 @@ node_modules/
 # Logs
 *.log
 .env
+*.db-shm
+*.db-wal
