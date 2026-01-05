@@ -141,7 +141,6 @@ def startup_event():
     """Initialize database and seed data on startup."""
     # Make sure tables exist
     init_db()
-     @app.on_event("startup")
     
     # Seed message boards
     from .models import seed_message_boards
