@@ -201,6 +201,7 @@
       <button class="tab-btn" onclick="showTab('weeks')">📅 Manage Weeks</button>
       <button class="tab-btn" onclick="showTab('testing')">🧪 Testing Tools</button>
       <button class="tab-btn" onclick="showTab('knowledge')">📚 Knowledge Base</button>
+      <button class="tab-btn" onclick="showTab('draft')">📋 Draft System</button>
     </div>
     
     <!-- PROVIDERS TAB -->
@@ -327,6 +328,7 @@
         </form>
       </div>
     </div>
+    
     <!-- KNOWLEDGE BASE TAB -->
 <div id="tab-knowledge" class="tab-content">
   <div class="card">
@@ -448,6 +450,7 @@
     </form>
   </div>
 </div>
+    
     <!-- REQUESTS TAB -->
     <div id="tab-requests" class="tab-content">
       <div class="card">
@@ -471,7 +474,156 @@
         </div>
       </div>
     </div>
-  
+
+<!-- DRAFT CONFIGURATION TAB -->
+<div id="tab-draft" class="tab-content">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">📋 Draft Configuration</h2>
+      <button class="btn-primary" onclick="showCreateDraftModal()">➕ Create New Draft</button>
+    </div>
+    
+    <div id="draftAlert" class="alert"></div>
+    
+    <!-- Active Draft Section -->
+    <div id="activeDraftSection" style="display: none;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
+        <h3 style="margin-bottom: 16px;">🎯 Active Draft</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <div>
+            <div style="font-size: 12px; opacity: 0.9;">Year</div>
+            <div style="font-size: 24px; font-weight: 700;" id="activeDraftYear">-</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; opacity: 0.9;">Status</div>
+            <div style="font-size: 24px; font-weight: 700;" id="activeDraftStatus">-</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; opacity: 0.9;">Window Size</div>
+            <div style="font-size: 24px; font-weight: 700;" id="activeDraftWindow">-</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; opacity: 0.9;">Hours per Slot</div>
+            <div style="font-size: 24px; font-weight: 700;" id="activeDraftHours">-</div>
+          </div>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 12px;">
+          <button class="btn-secondary" onclick="pauseDraft()" id="pauseBtn" style="display: none;">⏸️ Pause Draft</button>
+          <button class="btn-success" onclick="resumeDraft()" id="resumeBtn" style="display: none;">▶️ Resume Draft</button>
+          <button class="btn-primary" onclick="startDraft()" id="startBtn" style="display: none;">🚀 Start Draft</button>
+          <button class="btn-secondary" onclick="checkExpiredSlots()">🔄 Check Expired</button>
+          <button class="btn-danger" onclick="completeDraft()" id="completeBtn">✅ Mark Complete</button>
+        </div>
+      </div>
+      
+      <!-- Draft Progress -->
+      <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px;">Draft Progress</h3>
+      
+      <!-- Stats Summary -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div style="background: #d1fae5; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 28px; font-weight: 700; color: #065f46;" id="submittedCount">0</div>
+          <div style="font-size: 13px; color: #065f46;">Submitted</div>
+        </div>
+        <div style="background: #fef3c7; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 28px; font-weight: 700; color: #92400e;" id="activeCount">0</div>
+          <div style="font-size: 13px; color: #92400e;">Active</div>
+        </div>
+        <div style="background: #dbeafe; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 28px; font-weight: 700; color: #1e40af;" id="waitingCount">0</div>
+          <div style="font-size: 13px; color: #1e40af;">Waiting</div>
+        </div>
+        <div style="background: #fee2e2; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 28px; font-weight: 700; color: #991b1b;" id="expiredCount">0</div>
+          <div style="font-size: 13px; color: #991b1b;">Expired</div>
+        </div>
+      </div>
+      
+      <!-- Slots Table -->
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">Priority</th>
+              <th>Faculty</th>
+              <th>Status</th>
+              <th>Notified</th>
+              <th>Deadline</th>
+              <th>Submitted</th>
+              <th>Time Remaining</th>
+            </tr>
+          </thead>
+          <tbody id="draftSlotsTableBody">
+            <tr><td colspan="7" style="text-align: center; padding: 20px;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- No Active Draft -->
+    <div id="noActiveDraft" style="text-align: center; padding: 60px 20px; color: #6b7280;">
+      <div style="font-size: 64px; margin-bottom: 16px;">📋</div>
+      <h3 style="color: #1f2937; margin-bottom: 8px;">No Active Draft</h3>
+      <p>Create a new draft round to begin the availability selection process.</p>
+    </div>
+    
+    <!-- Past Drafts -->
+    <div id="pastDraftsSection" style="margin-top: 40px; display: none;">
+      <h3 style="margin-bottom: 20px; color: #1f2937; font-size: 18px;">Previous Draft Rounds</h3>
+      <div id="pastDraftsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Draft Modal -->
+<div id="createDraftModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Create New Draft Round</h3>
+      <span class="close-btn" onclick="closeCreateDraftModal()">&times;</span>
+    </div>
+    
+    <form id="createDraftForm">
+      <div class="form-group">
+        <label>Academic Year</label>
+        <select id="draftYear" required>
+          <option value="">Select year</option>
+          <option value="2025">2025-2026</option>
+          <option value="2026">2026-2027</option>
+          <option value="2027">2027-2028</option>
+        </select>
+      </div>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Window Size</label>
+          <input type="number" id="draftWindowSize" value="5" min="1" max="10" required>
+          <small>Number of faculty who can select simultaneously</small>
+        </div>
+        
+        <div class="form-group">
+          <label>Hours per Slot</label>
+          <input type="number" id="draftHoursPerSlot" value="72" min="24" max="168" required>
+          <small>Time each faculty has to submit</small>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Faculty Priority Order</label>
+        <small>Drag to reorder faculty. Top faculty will select first.</small>
+        <div id="facultyPriorityList" style="margin-top: 12px; max-height: 400px; overflow-y: auto; border: 2px solid #e5e7eb; border-radius: 8px; padding: 8px;">
+          <div style="text-align: center; padding: 20px; color: #6b7280;">Loading faculty...</div>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn-primary">Create Draft Round</button>
+        <button type="button" class="btn-secondary" onclick="closeCreateDraftModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+    
     <!-- TESTING TAB -->
     <div id="tab-testing" class="tab-content">
       <div class="card">
@@ -653,6 +805,7 @@
       if (tabName === 'overview') loadOverview();
       if (tabName === 'heatmap') loadHeatmap(currentYear);
       if (tabName === 'knowledge') loadKBArticles(); 
+      if (tabName === 'draft') loadDraftSystem();
     }
     
     // ==================== PROVIDER/FACULTY FUNCTIONS ====================
@@ -1412,6 +1565,401 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+    // ==================== DRAFT SYSTEM FUNCTIONS ====================
+
+let currentDraftRound = null;
+let draftSlots = [];
+let facultyPriorityOrder = [];
+
+async function loadDraftSystem() {
+  try {
+    // Get all draft rounds
+    const response = await fetch('/api/draft/admin/rounds', {
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) throw new Error('Failed to load drafts');
+    
+    const rounds = await response.json();
+    
+    // Find active draft
+    const activeDraft = rounds.find(r => r.status === 'active' || r.status === 'paused' || r.status === 'pending');
+    
+    if (activeDraft) {
+      currentDraftRound = activeDraft;
+      await loadDraftRound(activeDraft.id);
+      document.getElementById('activeDraftSection').style.display = 'block';
+      document.getElementById('noActiveDraft').style.display = 'none';
+    } else {
+      document.getElementById('activeDraftSection').style.display = 'none';
+      document.getElementById('noActiveDraft').style.display = 'block';
+    }
+    
+    // Show past drafts
+    const pastDrafts = rounds.filter(r => r.status === 'completed');
+    if (pastDrafts.length > 0) {
+      renderPastDrafts(pastDrafts);
+      document.getElementById('pastDraftsSection').style.display = 'block';
+    }
+    
+  } catch (error) {
+    console.error('Error loading draft system:', error);
+    showDraftAlert(`Error: ${error.message}`, 'error');
+  }
+}
+
+async function loadDraftRound(roundId) {
+  try {
+    // Get round details
+    const roundResponse = await fetch(`/api/draft/admin/rounds/${roundId}`, {
+      credentials: 'same-origin'
+    });
+    
+    if (!roundResponse.ok) throw new Error('Failed to load draft round');
+    
+    const round = await roundResponse.json();
+    currentDraftRound = round;
+    
+    // Update UI
+    document.getElementById('activeDraftYear').textContent = `${round.year}-${round.year + 1}`;
+    document.getElementById('activeDraftStatus').textContent = round.status.toUpperCase();
+    document.getElementById('activeDraftWindow').textContent = round.window_size;
+    document.getElementById('activeDraftHours').textContent = round.hours_per_slot;
+    
+    // Show appropriate buttons
+    document.getElementById('startBtn').style.display = round.status === 'pending' ? 'inline-block' : 'none';
+    document.getElementById('pauseBtn').style.display = round.status === 'active' ? 'inline-block' : 'none';
+    document.getElementById('resumeBtn').style.display = round.status === 'paused' ? 'inline-block' : 'none';
+    
+    // Get slots
+    const slotsResponse = await fetch(`/api/draft/admin/rounds/${roundId}/slots`, {
+      credentials: 'same-origin'
+    });
+    
+    if (!slotsResponse.ok) throw new Error('Failed to load draft slots');
+    
+    draftSlots = await slotsResponse.json();
+    renderDraftSlots();
+    
+  } catch (error) {
+    console.error('Error loading draft round:', error);
+    showDraftAlert(`Error: ${error.message}`, 'error');
+  }
+}
+
+function renderDraftSlots() {
+  const tbody = document.getElementById('draftSlotsTableBody');
+  
+  // Calculate stats
+  const stats = {
+    submitted: draftSlots.filter(s => s.status === 'submitted').length,
+    active: draftSlots.filter(s => s.status === 'active').length,
+    waiting: draftSlots.filter(s => s.status === 'waiting').length,
+    expired: draftSlots.filter(s => s.status === 'expired').length
+  };
+  
+  document.getElementById('submittedCount').textContent = stats.submitted;
+  document.getElementById('activeCount').textContent = stats.active;
+  document.getElementById('waitingCount').textContent = stats.waiting;
+  document.getElementById('expiredCount').textContent = stats.expired;
+  
+  // Render table
+  tbody.innerHTML = '';
+  
+  draftSlots.forEach(slot => {
+    const row = document.createElement('tr');
+    
+    // Status badge
+    let statusBadge = '';
+    if (slot.status === 'submitted') {
+      statusBadge = '<span class="badge badge-active">✅ Submitted</span>';
+    } else if (slot.status === 'active') {
+      statusBadge = '<span class="badge badge-moonlighter">⏳ Active</span>';
+    } else if (slot.status === 'waiting') {
+      statusBadge = '<span class="badge" style="background: #dbeafe; color: #1e40af;">⏸️ Waiting</span>';
+    } else if (slot.status === 'expired') {
+      statusBadge = '<span class="badge badge-inactive">⏱️ Expired</span>';
+    }
+    
+    // Time remaining
+    let timeRemaining = '-';
+    if (slot.status === 'active' && slot.deadline) {
+      const deadline = new Date(slot.deadline);
+      const now = new Date();
+      const diff = deadline - now;
+      
+      if (diff > 0) {
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        timeRemaining = `${hours}h ${minutes}m`;
+      } else {
+        timeRemaining = '<span style="color: #ef4444;">OVERDUE</span>';
+      }
+    }
+    
+    row.innerHTML = `
+      <td><strong>#${slot.priority_order}</strong></td>
+      <td>${slot.faculty_name}</td>
+      <td>${statusBadge}</td>
+      <td>${slot.notified_at ? new Date(slot.notified_at).toLocaleString() : '-'}</td>
+      <td>${slot.deadline ? new Date(slot.deadline).toLocaleString() : '-'}</td>
+      <td>${slot.submitted_at ? new Date(slot.submitted_at).toLocaleString() : '-'}</td>
+      <td>${timeRemaining}</td>
+    `;
+    
+    tbody.appendChild(row);
+  });
+}
+
+function showCreateDraftModal() {
+  // Load faculty list
+  loadFacultyForDraft();
+  document.getElementById('createDraftModal').classList.add('show');
+}
+
+function closeCreateDraftModal() {
+  document.getElementById('createDraftModal').classList.remove('show');
+}
+
+async function loadFacultyForDraft() {
+  const container = document.getElementById('facultyPriorityList');
+  
+  try {
+    const response = await fetch('/api/admin/faculty', {
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) throw new Error('Failed to load faculty');
+    
+    const faculty = await response.json();
+    const activeFaculty = faculty.filter(f => f.active);
+    
+    // Sort by name initially
+    activeFaculty.sort((a, b) => a.name.localeCompare(b.name));
+    
+    facultyPriorityOrder = activeFaculty.map(f => f.id);
+    
+    container.innerHTML = activeFaculty.map((f, idx) => `
+      <div class="faculty-priority-item" data-faculty-id="${f.id}" draggable="true" 
+           style="padding: 12px; margin-bottom: 8px; background: white; border: 2px solid #e5e7eb; border-radius: 8px; cursor: move; display: flex; align-items: center; gap: 12px;"
+           ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+        <span style="font-size: 20px;">☰</span>
+        <span style="font-weight: 700; color: #667eea; min-width: 30px;">#${idx + 1}</span>
+        <span style="flex: 1;">${f.name}</span>
+        <span style="font-size: 12px; color: #6b7280;">${f.id}</span>
+      </div>
+    `).join('');
+    
+  } catch (error) {
+    console.error('Error loading faculty:', error);
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Error loading faculty</div>';
+  }
+}
+
+// Drag and drop handlers
+let draggedElement = null;
+
+function handleDragStart(e) {
+  draggedElement = e.target;
+  e.target.style.opacity = '0.4';
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  return false;
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  
+  if (draggedElement !== e.target) {
+    const allItems = Array.from(document.querySelectorAll('.faculty-priority-item'));
+    const draggedIndex = allItems.indexOf(draggedElement);
+    const targetIndex = allItems.indexOf(e.target);
+    
+    if (draggedIndex < targetIndex) {
+      e.target.parentNode.insertBefore(draggedElement, e.target.nextSibling);
+    } else {
+      e.target.parentNode.insertBefore(draggedElement, e.target);
+    }
+    
+    // Update priority numbers
+    const items = document.querySelectorAll('.faculty-priority-item');
+    facultyPriorityOrder = [];
+    items.forEach((item, idx) => {
+      const facultyId = item.getAttribute('data-faculty-id');
+      facultyPriorityOrder.push(facultyId);
+      item.querySelector('span:nth-child(2)').textContent = `#${idx + 1}`;
+    });
+  }
+  
+  draggedElement.style.opacity = '1';
+  return false;
+}
+
+document.getElementById('createDraftForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const year = parseInt(document.getElementById('draftYear').value);
+  const windowSize = parseInt(document.getElementById('draftWindowSize').value);
+  const hoursPerSlot = parseInt(document.getElementById('draftHoursPerSlot').value);
+  
+  if (!year || facultyPriorityOrder.length === 0) {
+    alert('Please select a year and arrange faculty priority');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/draft/admin/rounds', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        year,
+        faculty_priority: facultyPriorityOrder,
+        window_size: windowSize,
+        hours_per_slot: hoursPerSlot
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to create draft');
+    }
+    
+    showDraftAlert('✅ Draft round created successfully', 'success');
+    closeCreateDraftModal();
+    await loadDraftSystem();
+    
+  } catch (error) {
+    alert(`Error: ${error.message}`);
+  }
+});
+
+async function startDraft() {
+  if (!confirm('Start the draft? This will notify the first batch of faculty.')) return;
+  
+  try {
+    const response = await fetch(`/api/draft/admin/rounds/${currentDraftRound.id}/start`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) throw new Error('Failed to start draft');
+    
+    const data = await response.json();
+    showDraftAlert(`✅ Draft started! ${data.activated_count} faculty notified.`, 'success');
+    await loadDraftRound(currentDraftRound.id);
+    
+  } catch (error) {
+    showDraftAlert(`❌ Error: ${error.message}`, 'error');
+  }
+}
+
+async function pauseDraft() {
+  if (!confirm('Pause the draft? Active faculty will keep their deadlines.')) return;
+  
+  try {
+    const response = await fetch(`/api/draft/admin/rounds/${currentDraftRound.id}/pause`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) throw new Error('Failed to pause draft');
+    
+    showDraftAlert('✅ Draft paused', 'success');
+    await loadDraftRound(currentDraftRound.id);
+    
+  } catch (error) {
+    showDraftAlert(`❌ Error: ${error.message}`, 'error');
+  }
+}
+
+async function resumeDraft() {
+  if (!confirm('Resume the draft?')) return;
+  
+  try {
+    const response = await fetch(`/api/draft/admin/rounds/${currentDraftRound.id}/resume`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) throw new Error('Failed to resume draft');
+    
+    showDraftAlert('✅ Draft resumed', 'success');
+    await loadDraftRound(currentDraftRound.id);
+    
+  } catch (error) {
+    showDraftAlert(`❌ Error: ${error.message}`, 'error');
+  }
+}
+
+async function completeDraft() {
+  if (!confirm('Mark draft as complete? This cannot be undone.')) return;
+  
+  try {
+    const response = await fetch(`/api/draft/admin/rounds/${currentDraftRound.id}/complete`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) throw new Error('Failed to complete draft');
+    
+    showDraftAlert('✅ Draft marked as complete', 'success');
+    await loadDraftSystem();
+    
+  } catch (error) {
+    showDraftAlert(`❌ Error: ${error.message}`, 'error');
+  }
+}
+
+async function checkExpiredSlots() {
+  try {
+    const response = await fetch(`/api/draft/admin/rounds/${currentDraftRound.id}/check-expired`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) throw new Error('Failed to check expired slots');
+    
+    const data = await response.json();
+    showDraftAlert(`✅ Checked: ${data.expired_count} expired, ${data.activated_count} activated`, 'success');
+    await loadDraftRound(currentDraftRound.id);
+    
+  } catch (error) {
+    showDraftAlert(`❌ Error: ${error.message}`, 'error');
+  }
+}
+
+function renderPastDrafts(drafts) {
+  const container = document.getElementById('pastDraftsList');
+  
+  container.innerHTML = drafts.map(draft => `
+    <div style="padding: 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>AY ${draft.year}-${draft.year + 1}</strong>
+          <span class="badge badge-inactive" style="margin-left: 12px;">Completed</span>
+        </div>
+        <div style="font-size: 12px; color: #6b7280;">
+          ${new Date(draft.completed_at).toLocaleDateString()}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showDraftAlert(message, type) {
+  const alert = document.getElementById('draftAlert');
+  alert.textContent = message;
+  alert.className = `alert alert-${type} show`;
+  setTimeout(() => { alert.classList.remove('show'); }, 5000);
+}
+
+// Update showTab function to load draft system
+// Add this case to your existing showTab function:
+// if (tabName === 'draft') loadDraftSystem();
+    
   </script>
 </body>
 </html>
