@@ -31,10 +31,11 @@ from backend.email_service import send_irpa_confirmation
 from backend.sync_utils import sync_provider_from_faculty, sync_all_providers_from_faculty
 from .routes import knowledge_base
 from .routes import draft
+from .models import Base, engine
 import logging
 
 logger = logging.getLogger(__name__)
-
+Base.metadata.create_all(bind=engine)
 # ---------- App Health Check/Start -----------
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
