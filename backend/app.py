@@ -19,7 +19,6 @@ from .models import (
     Provider, Month, Shift, Signup, Assignment, Faculty
 )
 from .optimizer_bridge import run_optimizer_for_month
-from .notion_integration import get_notion_kb
 from fastapi.middleware.gzip import GZipMiddleware
 from .routes.admin_faculty import router as admin_faculty_router
 from .routes.admin_service import router as admin_service_router
@@ -30,6 +29,7 @@ from .routes.schedule_routes import router as schedule_router
 from .routes.messages import router as messages_router
 from backend.email_service import send_irpa_confirmation
 from backend.sync_utils import sync_provider_from_faculty, sync_all_providers_from_faculty
+from .routes import knowledge_base
 import logging
 
 logger = logging.getLogger(__name__)
@@ -50,6 +50,7 @@ app.include_router(service_requests_router)
 app.include_router(service_weeks_router)
 app.include_router(schedule_router)
 app.include_router(messages_router)
+app.include_router(knowledge_base.router)
 
 # Serve static files (HTML, CSS, JS, icons, manifest)
 # HTML files are in the parent directory of backend/
