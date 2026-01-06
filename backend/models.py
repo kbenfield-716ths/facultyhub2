@@ -44,6 +44,49 @@ class KnowledgeBaseArticle(Base):
     author = relationship("Faculty", foreign_keys=[created_by])
 
 # ==========================================
+# DRAFT SYSTEM BASE
+# ==========================================
+
+
+class DraftRound(Base):
+    __tablename__ = "draft_rounds"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    year = Column(Integer, nullable=False)
+    round_number = Column(Integer, default=1)
+    status = Column(String, default='pending')  # 'pending', 'active', 'paused', 'completed'
+    window_size = Column(Integer, default=5)  # How many faculty can select at once
+    hours_per_slot = Column(Integer, default=72)  # Hours each faculty has to submit
+    
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    slots = relationship("DraftSlot", back_populates="draft_round", cascade="all, delete-orphan")
+
+
+class DraftSlot(Base):
+    __tablename__ = "draft_slots"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    round_id = Column(String, ForeignKey("draft_rounds.id"), nullable=False)
+    faculty_id = Column(String, ForeignKey("faculty.id"), nullable=False)
+    priority_order = Column(Integer, nullable=False)  # 1, 2, 3, etc.
+    
+    status = Column(String, default='waiting')  # 'waiting', 'active', 'submitted', 'expired', 'skipped'
+    notified_at = Column(DateTime, nullable=True)
+    deadline = Column(DateTime, nullable=True)
+    submitted_at = Column(DateTime, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    draft_round = relationship("DraftRound", back_populates="slots")
+    faculty = relationship("Faculty")
+
+# ==========================================
 # MOONLIGHTING MODELS (Existing)
 # ==========================================
 
