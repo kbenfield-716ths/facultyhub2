@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel - PCCM Faculty Hub</title>
+  <!-- Marked.js for Markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f7f8fc; }
@@ -80,6 +82,104 @@
     .status-critical { background: #fee2e2 !important; border-color: #ef4444 !important; }
     .status-critical .week-count { color: #991b1b !important; }
     .status-critical .week-status { color: #991b1b !important; }
+
+    .markdown-content {
+  line-height: 1.8;
+  color: #374151;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  color: #1f2937;
+  font-weight: 700;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.markdown-content h1 { font-size: 28px; }
+.markdown-content h2 { font-size: 24px; }
+.markdown-content h3 { font-size: 20px; }
+.markdown-content h4 { font-size: 18px; }
+
+.markdown-content p {
+  margin-bottom: 16px;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-bottom: 16px;
+  padding-left: 24px;
+}
+
+.markdown-content li {
+  margin-bottom: 8px;
+}
+
+.markdown-content code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.markdown-content pre {
+  background: #1f2937;
+  color: #f3f4f6;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+.markdown-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid #667eea;
+  padding-left: 16px;
+  margin: 16px 0;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.markdown-content a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+
+.markdown-content th,
+.markdown-content td {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.markdown-content th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.markdown-content hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 24px 0;
+}
   </style>
 </head>
 <body>
@@ -100,6 +200,7 @@
       <button class="tab-btn" onclick="showTab('requests')">📈 View Requests</button>
       <button class="tab-btn" onclick="showTab('weeks')">📅 Manage Weeks</button>
       <button class="tab-btn" onclick="showTab('testing')">🧪 Testing Tools</button>
+      <button class="tab-btn" onclick="showTab('knowledge')">📚 Knowledge Base</button>
     </div>
     
     <!-- PROVIDERS TAB -->
@@ -226,7 +327,127 @@
         </form>
       </div>
     </div>
+    <!-- KNOWLEDGE BASE TAB -->
+<div id="tab-knowledge" class="tab-content">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Knowledge Base Management</h2>
+      <button class="btn-primary" onclick="showKBEditor()">➕ New Article</button>
+    </div>
     
+    <div style="margin-bottom: 20px;">
+      <input 
+        type="text" 
+        id="kbAdminSearch" 
+        placeholder="Search articles..." 
+        style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;"
+        oninput="filterKBArticles()"
+      >
+    </div>
+    
+    <div id="kbArticlesLoading" class="loading">Loading articles...</div>
+    <div id="kbArticlesContent" style="display: none;">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Author</th>
+              <th>Updated</th>
+              <th>Status</th>
+              <th style="width: 200px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="kbArticlesTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Knowledge Base Editor Modal -->
+<div id="kbEditorModal" class="modal">
+  <div class="modal-content" style="max-width: 1400px; max-height: 95vh;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="kbEditorTitle">New Article</h3>
+      <span class="close-btn" onclick="closeKBEditor()">&times;</span>
+    </div>
+    
+    <form id="kbEditorForm">
+      <input type="hidden" id="kbArticleId">
+      
+      <div class="form-grid" style="grid-template-columns: 2fr 1fr 1fr;">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="kbTitle" required placeholder="e.g., Vacation Request Policy">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="kbCategory" required>
+            <option value="">Select category</option>
+            <option value="Policies">Policies</option>
+            <option value="Procedures">Procedures</option>
+            <option value="Clinical Guidelines">Clinical Guidelines</option>
+            <option value="IT Support">IT Support</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Display Order</label>
+          <input type="number" id="kbDisplayOrder" value="0" min="0">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Short Description</label>
+        <input type="text" id="kbDescription" required placeholder="Brief summary that appears in article list" maxlength="200">
+        <small>Max 200 characters - appears in search results</small>
+      </div>
+      
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="kbPublished" checked style="width: auto; margin-right: 8px;">
+          Published (visible to faculty)
+        </label>
+      </div>
+      
+      <div class="form-group">
+        <label>Content (Markdown)</label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+          <!-- Editor Pane -->
+          <div style="display: flex; flex-direction: column;">
+            <div style="padding: 12px; background: #f9fafb; border-bottom: 2px solid #e5e7eb; font-weight: 600; color: #374151; display: flex; justify-content: space-between; align-items: center;">
+              <span>✏️ Markdown Editor</span>
+              <button type="button" class="btn-secondary" onclick="insertMarkdownHelp()" style="font-size: 11px; padding: 4px 8px;">? Syntax Help</button>
+            </div>
+            <textarea 
+              id="kbContent" 
+              required 
+              style="flex: 1; min-height: 400px; padding: 16px; border: none; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; font-size: 13px; line-height: 1.6; resize: vertical;"
+              placeholder="# Article Title&#10;&#10;Write your content here using Markdown...&#10;&#10;## Section Heading&#10;&#10;- Bullet point&#10;- Another point&#10;&#10;**Bold text** and *italic text*"
+              oninput="updateKBPreview()"
+            ></textarea>
+          </div>
+          
+          <!-- Preview Pane -->
+          <div style="display: flex; flex-direction: column; background: white;">
+            <div style="padding: 12px; background: #f9fafb; border-bottom: 2px solid #e5e7eb; font-weight: 600; color: #374151;">
+              👁️ Live Preview
+            </div>
+            <div id="kbPreview" style="flex: 1; padding: 16px; overflow-y: auto; min-height: 400px;" class="markdown-content">
+              <p style="color: #9ca3af; font-style: italic;">Preview will appear here as you type...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+        <button type="submit" class="btn-primary">💾 Save Article</button>
+        <button type="button" class="btn-secondary" onclick="closeKBEditor()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
     <!-- REQUESTS TAB -->
     <div id="tab-requests" class="tab-content">
       <div class="card">
@@ -431,6 +652,7 @@
       if (tabName === 'weeks') loadWeeks();
       if (tabName === 'overview') loadOverview();
       if (tabName === 'heatmap') loadHeatmap(currentYear);
+      if (tabName === 'knowledge') loadKBArticles(); 
     }
     
     // ==================== PROVIDER/FACULTY FUNCTIONS ====================
@@ -945,6 +1167,251 @@
         alert.className = 'alert alert-error show';
       }
     });
+    // ==================== KNOWLEDGE BASE FUNCTIONS ====================
+
+let allKBArticles = [];
+
+async function loadKBArticles() {
+  const loading = document.getElementById('kbArticlesLoading');
+  const content = document.getElementById('kbArticlesContent');
+  const tbody = document.getElementById('kbArticlesTableBody');
+  
+  loading.style.display = 'block';
+  content.style.display = 'none';
+  
+  try {
+    const response = await fetch('/api/knowledge-base/admin/articles', { credentials: 'same-origin' });
+    if (!response.ok) throw new Error('Failed to load articles');
+    
+    allKBArticles = await response.json();
+    renderKBArticles(allKBArticles);
+    
+    loading.style.display = 'none';
+    content.style.display = 'block';
+  } catch (error) {
+    console.error('Error loading KB articles:', error);
+    loading.textContent = `Error: ${error.message}`;
+  }
+}
+
+function renderKBArticles(articles) {
+  const tbody = document.getElementById('kbArticlesTableBody');
+  
+  if (articles.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #6b7280;">No articles yet. Click "New Article" to create one.</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = '';
+  articles.forEach(article => {
+    const row = document.createElement('tr');
+    const updatedDate = new Date(article.updated_at).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+    
+    row.innerHTML = `
+      <td><strong>${escapeHtml(article.title)}</strong></td>
+      <td>${article.category}</td>
+      <td>${escapeHtml(article.author_name)}</td>
+      <td>${updatedDate}</td>
+      <td>
+        <span class="badge badge-${article.is_published ? 'active' : 'inactive'}">
+          ${article.is_published ? 'Published' : 'Draft'}
+        </span>
+      </td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn-secondary" onclick="editKBArticle('${article.id}')">Edit</button>
+          <button class="btn-danger" onclick="deleteKBArticle('${article.id}', '${escapeHtml(article.title)}')">Delete</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function filterKBArticles() {
+  const searchTerm = document.getElementById('kbAdminSearch').value.toLowerCase();
+  const filtered = allKBArticles.filter(article => 
+    article.title.toLowerCase().includes(searchTerm) ||
+    article.description.toLowerCase().includes(searchTerm) ||
+    article.category.toLowerCase().includes(searchTerm)
+  );
+  renderKBArticles(filtered);
+}
+
+function showKBEditor(articleId = null) {
+  document.getElementById('kbEditorTitle').textContent = articleId ? 'Edit Article' : 'New Article';
+  document.getElementById('kbArticleId').value = articleId || '';
+  
+  if (articleId) {
+    const article = allKBArticles.find(a => a.id === articleId);
+    if (article) {
+      document.getElementById('kbTitle').value = article.title;
+      document.getElementById('kbDescription').value = article.description;
+      document.getElementById('kbCategory').value = article.category;
+      document.getElementById('kbDisplayOrder').value = article.display_order;
+      document.getElementById('kbPublished').checked = article.is_published;
+      document.getElementById('kbContent').value = article.content;
+      updateKBPreview();
+    }
+  } else {
+    document.getElementById('kbEditorForm').reset();
+    document.getElementById('kbPublished').checked = true;
+    document.getElementById('kbDisplayOrder').value = 0;
+    document.getElementById('kbPreview').innerHTML = '<p style="color: #9ca3af; font-style: italic;">Preview will appear here as you type...</p>';
+  }
+  
+  document.getElementById('kbEditorModal').classList.add('show');
+}
+
+function closeKBEditor() {
+  document.getElementById('kbEditorModal').classList.remove('show');
+}
+
+function editKBArticle(articleId) {
+  showKBEditor(articleId);
+}
+
+async function deleteKBArticle(articleId, title) {
+  if (!confirm(`Delete article "${title}"?\n\nThis cannot be undone.`)) return;
+  
+  try {
+    const response = await fetch(`/api/knowledge-base/admin/articles/${articleId}`, {
+      method: 'DELETE',
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) throw new Error('Failed to delete article');
+    
+    alert('Article deleted successfully');
+    await loadKBArticles();
+  } catch (error) {
+    alert(`Error: ${error.message}`);
+  }
+}
+
+function updateKBPreview() {
+  const content = document.getElementById('kbContent').value;
+  const preview = document.getElementById('kbPreview');
+  
+  if (!content.trim()) {
+    preview.innerHTML = '<p style="color: #9ca3af; font-style: italic;">Preview will appear here as you type...</p>';
+    return;
+  }
+  
+  // Use marked.js to render Markdown
+  if (typeof marked !== 'undefined') {
+    preview.innerHTML = marked.parse(content);
+  } else {
+    preview.innerHTML = '<p style="color: #ef4444;">Markdown parser not loaded. Preview unavailable.</p>';
+  }
+}
+
+function insertMarkdownHelp() {
+  const helpText = `# Markdown Syntax Guide
+
+## Headers
+# H1 Header
+## H2 Header  
+### H3 Header
+
+## Text Formatting
+**Bold text**
+*Italic text*
+***Bold and italic***
+
+## Lists
+- Unordered item
+- Another item
+
+1. Ordered item
+2. Another item
+
+## Links & Images
+[Link text](https://example.com)
+![Image alt text](image-url.jpg)
+
+## Code
+Inline \`code\` with backticks
+
+\`\`\`
+Code block with triple backticks
+\`\`\`
+
+## Quotes
+> Blockquote text
+
+## Tables
+| Header 1 | Header 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |
+
+## Horizontal Rule
+---`;
+
+  const currentContent = document.getElementById('kbContent').value;
+  if (currentContent.trim() === '') {
+    document.getElementById('kbContent').value = helpText;
+    updateKBPreview();
+  } else {
+    alert('Markdown syntax guide:\n\n' + helpText);
+  }
+}
+
+document.getElementById('kbEditorForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const articleId = document.getElementById('kbArticleId').value;
+  const articleData = {
+    title: document.getElementById('kbTitle').value,
+    description: document.getElementById('kbDescription').value,
+    content: document.getElementById('kbContent').value,
+    category: document.getElementById('kbCategory').value,
+    is_published: document.getElementById('kbPublished').checked,
+    display_order: parseInt(document.getElementById('kbDisplayOrder').value)
+  };
+  
+  try {
+    let response;
+    if (articleId) {
+      // Update existing
+      response = await fetch(`/api/knowledge-base/admin/articles/${articleId}`, {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(articleData)
+      });
+    } else {
+      // Create new
+      response = await fetch('/api/knowledge-base/admin/articles', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(articleData)
+      });
+    }
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to save article');
+    }
+    
+    alert(`Article ${articleId ? 'updated' : 'created'} successfully`);
+    closeKBEditor();
+    await loadKBArticles();
+  } catch (error) {
+    alert(`Error: ${error.message}`);
+  }
+});
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
   </script>
 </body>
 </html>
