@@ -18,6 +18,30 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
+# ==========================================
+# KNOWLEDGE BASE
+# ==========================================
+
+class KnowledgeBaseArticle(Base):
+    __tablename__ = "knowledge_base_articles"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=False)  # Short summary
+    content = Column(Text, nullable=False)  # Full Markdown content
+    category = Column(String, nullable=False)  # Policies, Procedures, Clinical Guidelines, IT Support
+    
+    # Publishing
+    is_published = Column(Boolean, default=True)
+    display_order = Column(Integer, default=0)
+    
+    # Metadata
+    created_by = Column(String, ForeignKey("faculty.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    author = relationship("Faculty", foreign_keys=[created_by])
 
 # ==========================================
 # MOONLIGHTING MODELS (Existing)
