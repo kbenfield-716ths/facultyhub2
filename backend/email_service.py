@@ -467,3 +467,123 @@ def send_feedback_email(
     
     # Include reply-to so you can reply directly to the user
     return send_email(admin_email, "Admin", subject, html_content, reply_to=user_email)
+
+def send_draft_notification(faculty_id: str, priority: int, deadline: datetime, round_year: int):
+    """
+    Send email notification when faculty's draft window opens
+    """
+    from .models import SessionLocal, Faculty
+    
+    db = SessionLocal()
+    try:
+        faculty = db.query(Faculty).filter(Faculty.id == faculty_id).first()
+        
+        if not faculty or not faculty.email:
+            print(f"No email found for faculty {faculty_id}")
+            return
+        
+        # Format deadline
+        deadline_str = deadline.strftime("%A, %B %d at %I:%M %p")
+        
+        subject = f"Your Service Availability Window is Now Open - Priority #{priority}"
+        
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }}
+                .content {{ background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }}
+                .priority-badge {{ background: #667eea; color: white; padding: 8px 16px; border-radius: 20px; display: inline-block; font-weight: bold; margin: 20px 0; }}
+                .deadline {{ background: #fff; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; }}
+                .button {{ background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; margin: 20px 0; }}
+                .footer {{ text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; }}
+                .tips {{ background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🎯 Your Turn to Select!</h1>
+                    <p>Service Availability Draft - AY {round_year}-{round_year + 1}</p>
+                </div>
+                <div class="content">
+                    <p>Dear Dr. {faculty.name.split()[-1]},</p>
+                    
+                    <p>Your service availability selection window is now open!</p>
+                    
+                    <div class="priority-badge">Priority #{priority}</div>
+                    
+                    <div class="deadline">
+                        <strong>⏰ Deadline:</strong> {deadline_str}<br>
+                        <strong>Time Remaining:</strong> 72 hours
+                    </div>
+                    
+                    <div class="tips">
+                        <strong>💡 Quick Tips:</strong>
+                        <ul>
+                            <li>Week costs increase as more faculty request them</li>
+                            <li>Up to 5 faculty can select simultaneously</li>
+                            <li>Submit early to see more availability</li>
+                            <li>You can volunteer for weeks to earn points</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        <a href="https://facultyhub.pccm.uva.edu/service-availability.html" class="button">
+                            Submit Your Selections Now →
+                        </a>
+                    </div>
+                    
+                    <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
+                        Available Points: <strong>{faculty.base_points + faculty.bonus_points}</strong><br>
+                        Current Status: <strong>ACTIVE - Window Open</strong>
+                    </p>
+                </div>
+                <div class="footer">
+                    <p>This is an automated notification from the PCCM Faculty Hub</p>
+                    <p>University of Virginia - Division of Pulmonary and Critical Care Medicine</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        text_body = f"""
+        Your Service Availability Window is Now Open
+        
+        Dear Dr. {faculty.name.split()[-1]},
+        
+        Your service availability selection window is now open for AY {round_year}-{round_year + 1}.
+        
+        Priority: #{priority}
+        Deadline: {deadline_str}
+        Time Remaining: 72 hours
+        
+        Submit your selections at: https://facultyhub.pccm.uva.edu/service-availability.html
+        
+        Available Points: {faculty.base_points + faculty.bonus_points}
+        
+        Tips:
+        - Week costs increase as more faculty request them
+        - Up to 5 faculty can select simultaneously
+        - Submit early to see more availability
+        - You can volunteer for weeks to earn points
+        
+        ---
+        PCCM Faculty Hub - University of Virginia
+        """
+        
+        send_email(
+            to_email=faculty.email,
+            subject=subject,
+            html_body=html_body,
+            text_body=text_body
+        )
+        
+        print(f"Draft notification sent to {faculty.name} ({faculty.email})")
+        
+    finally:
+        db.close()
