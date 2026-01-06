@@ -30,6 +30,7 @@ from .routes.messages import router as messages_router
 from backend.email_service import send_irpa_confirmation
 from backend.sync_utils import sync_provider_from_faculty, sync_all_providers_from_faculty
 from .routes import knowledge_base
+from .routes import draft
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ app.include_router(service_weeks_router)
 app.include_router(schedule_router)
 app.include_router(messages_router)
 app.include_router(knowledge_base.router)
+app.include_router(draft.router)
 
 # Serve static files (HTML, CSS, JS, icons, manifest)
 # HTML files are in the parent directory of backend/
