@@ -180,8 +180,8 @@ class Faculty(Base):
     bonus_points = Column(Integer, default=0)  # Earned from volunteering
     active = Column(Boolean, default=True)
     
-    # Moonlighting participation
-    moonlighter = Column(Boolean, default=False)  # Whether faculty does moonlighting shifts
+    # Moonlighting participation (single source of truth)
+    moonlighter = Column(Boolean, default=False, nullable=False)  # Whether faculty does moonlighting shifts
     
     # Service week commitments (for inpatient scheduling)
     # These define how many weeks per year this faculty member is expected to work each service
@@ -193,7 +193,18 @@ class Faculty(Base):
     # Relationships
     unavailability_requests = relationship("UnavailabilityRequest", back_populates="faculty")
     service_assignments = relationship("ServiceWeekAssignment", back_populates="faculty")
-    does_moonlighting = Column(Boolean, default=False, nullable=False)
+    
+    # Property for compatibility with message board access control
+    # This ensures moonlighter and does_moonlighting are always synchronized
+    @property
+    def does_moonlighting(self):
+        """Alias for moonlighter field - used by message board access control"""
+        return self.moonlighter
+    
+    @does_moonlighting.setter
+    def does_moonlighting(self, value):
+        """Setter to keep fields synchronized"""
+        self.moonlighter = value
 
 
 class ServiceWeek(Base):
