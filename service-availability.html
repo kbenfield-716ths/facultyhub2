@@ -128,44 +128,43 @@
       color: #1f2937;
     }
 
-<!-- Draft Status Card -->
-<div id="draftStatusCard" class="draft-status-card" style="display: none;">
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
-    <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 12px;">
-      <span style="font-size: 32px;">🎯</span>
-      <span>Draft Status</span>
-    </h3>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
-      <div>
-        <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">Your Priority</div>
-        <div style="font-size: 28px; font-weight: 700;" id="draftPriority">-</div>
-      </div>
-      <div>
-        <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">Status</div>
-        <div style="font-size: 20px; font-weight: 700;" id="draftStatus">-</div>
-      </div>
-      <div id="draftDeadlineSection" style="display: none;">
-        <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">Time Remaining</div>
-        <div style="font-size: 28px; font-weight: 700;" id="draftTimeRemaining">-</div>
-      </div>
-    </div>
-    
-    <div id="draftMessage" style="background: rgba(255,255,255,0.2); padding: 16px; border-radius: 8px; margin-top: 16px;">
-      <p id="draftMessageText" style="margin: 0;">Loading draft status...</p>
-    </div>
-    
-    <!-- Other Active Faculty -->
-    <div id="otherActiveSection" style="margin-top: 20px; display: none;">
-      <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">
-        Also Selecting Now:
-      </div>
-      <div id="otherActiveList" style="display: flex; flex-wrap: wrap; gap: 8px;">
-      </div>
-    </div>
-  </div>
-</div>
-    
+    /* Draft Status Card Styles */
+    .draft-status-card {
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .other-active-badge {
+      background: rgba(255,255,255,0.3);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .countdown-urgent {
+      color: #fef3c7 !important;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
     /* Instructions */
     .instructions {
       background: rgba(255, 255, 255, 0.95);
@@ -580,9 +579,7 @@
       border: 2px solid #16a34a;
     }
 
-    /* ========================================
-       NEW CODE: Service Preference Comment Styles
-       ======================================== */
+    /* Service Preference Comment Styles */
     .service-preference {
       margin-top: 12px;
       display: none;  /* Hidden by default, shown when week is selected */
@@ -656,9 +653,6 @@
       color: white;
       border-color: #667eea;
     }
-    /* ======================================== 
-       END NEW CODE (Service Preference)
-       ======================================== */
 
     /* Submit Button */
     .submit-container {
@@ -792,79 +786,79 @@
       color: #4b5563;
     }
 
-  
-      /* Demand indicator styles */
-.demand-indicator {
-  margin-top: 8px;
-  margin-bottom: 12px;
-}
+    /* Demand indicator styles */
+    .demand-indicator {
+      margin-top: 8px;
+      margin-bottom: 12px;
+    }
 
-.demand-bar-container {
-  background: #e5e7eb;
-  height: 8px;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 6px;
-}
+    .demand-bar-container {
+      background: #e5e7eb;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
 
-.demand-bar {
-  height: 100%;
-  transition: width 0.3s ease;
-  border-radius: 4px;
-}
+    .demand-bar {
+      height: 100%;
+      transition: width 0.3s ease;
+      border-radius: 4px;
+    }
 
-.demand-bar.low { background: #10b981; }
-.demand-bar.medium { background: #f59e0b; }
-.demand-bar.high { background: #ef4444; }
-.demand-bar.critical { background: #991b1b; }
-.demand-bar.full { background: #991b1b; }
+    .demand-bar.low { background: #10b981; }
+    .demand-bar.medium { background: #f59e0b; }
+    .demand-bar.high { background: #ef4444; }
+    .demand-bar.critical { background: #991b1b; }
+    .demand-bar.full { background: #991b1b; }
 
-.demand-text {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 600;
-}
+    .demand-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 600;
+    }
 
-.demand-badge {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
+    .demand-badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
 
-.demand-badge.low { background: #d1fae5; color: #065f46; }
-.demand-badge.medium { background: #fed7aa; color: #92400e; }
-.demand-badge.high { background: #fecaca; color: #991b1b; }
-.demand-badge.critical { background: #fca5a5; color: #7f1d1d; }
-.demand-badge.full { background: #991b1b; color: white; }
+    .demand-badge.low { background: #d1fae5; color: #065f46; }
+    .demand-badge.medium { background: #fed7aa; color: #92400e; }
+    .demand-badge.high { background: #fecaca; color: #991b1b; }
+    .demand-badge.critical { background: #fca5a5; color: #7f1d1d; }
+    .demand-badge.full { background: #991b1b; color: white; }
 
-.cost-change {
-  font-size: 11px;
-  color: #ef4444;
-  font-weight: 700;
-}
+    .cost-change {
+      font-size: 11px;
+      color: #ef4444;
+      font-weight: 700;
+    }
 
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+    .action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
-.full-badge {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background: #991b1b;
-  color: white;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 700;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-      @media (max-width: 640px) {
+    .full-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #991b1b;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    @media (max-width: 640px) {
       .week-actions {
         grid-template-columns: 1fr;
       }
@@ -874,42 +868,6 @@
         align-items: flex-start;
       }
     }
-.draft-status-card {
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.other-active-badge {
-  background: rgba(255,255,255,0.3);
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.countdown-urgent {
-  color: #fef3c7 !important;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-    
   </style>
 </head>
 <body>
@@ -952,14 +910,49 @@
       <ul>
         <li><strong>Request Unavailable:</strong> Select weeks you are UNAVAILABLE for service (costs points)</li>
         <li><strong>Volunteer:</strong> Select weeks you're willing to work (earns points)</li>
-        <!-- ========================================
-             NEW CODE: Added instruction about comments
-             ======================================== -->
         <li><strong>Service Preference:</strong> Add optional comments about preferred service type (MICU, Procedures, Consults, etc.)</li>
-        <!-- ======================================== -->
         <li><strong>Draft system</strong> allocates final assignments based on seniority and coverage</li>
       </ul>
     </div>
+
+    <!-- Draft Status Card -->
+    <div id="draftStatusCard" class="draft-status-card" style="display: none;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
+        <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 32px;">🎯</span>
+          <span>Draft Status</span>
+        </h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          <div>
+            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">Your Priority</div>
+            <div style="font-size: 28px; font-weight: 700;" id="draftPriority">-</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">Status</div>
+            <div style="font-size: 20px; font-weight: 700;" id="draftStatus">-</div>
+          </div>
+          <div id="draftDeadlineSection" style="display: none;">
+            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">Time Remaining</div>
+            <div style="font-size: 28px; font-weight: 700;" id="draftTimeRemaining">-</div>
+          </div>
+        </div>
+        
+        <div id="draftMessage" style="background: rgba(255,255,255,0.2); padding: 16px; border-radius: 8px; margin-top: 16px;">
+          <p id="draftMessageText" style="margin: 0;">Loading draft status...</p>
+        </div>
+        
+        <!-- Other Active Faculty -->
+        <div id="otherActiveSection" style="margin-top: 20px; display: none;">
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">
+            Also Selecting Now:
+          </div>
+          <div id="otherActiveList" style="display: flex; flex-wrap: wrap; gap: 8px;">
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div class="weeks-container">
@@ -1009,13 +1002,13 @@
     let allWeeks = [];
     let selectedWeeks = new Set(); // Set of week IDs for unavailable (requesting OFF)
     let availableWeeks = new Set(); // Set of week IDs for available (volunteering)
+    let weekPreferences = {}; // Object to store preferences by week_id
     let currentFilter = 'all';
     let currentView = 'list'; // 'list' or 'calendar'
     
-    // ========================================
-    // NEW CODE: Service preference storage
-    // ========================================
-    let weekPreferences = {}; // Object to store preferences by week_id
+    // Draft status variables
+    let draftStatus = null;
+    let countdownInterval = null;
     
     function getPreference(weekId) {
       return weekPreferences[weekId] || '';
@@ -1051,7 +1044,6 @@
         setPreference(weekId, input.value);
       }
     }
-    // ======================================== 
 
     // Load current user from auth
     async function loadCurrentUser() {
@@ -1103,13 +1095,9 @@
             } else if (req.status === 'available') {
               availableWeeks.add(req.week_id);
             }
-            // ========================================
-            // NEW CODE: Load existing service preferences
-            // ========================================
             if (req.service_preference) {
               weekPreferences[req.week_id] = req.service_preference;
             }
-            // ======================================== 
           });
         }
       } catch (error) {
@@ -1334,12 +1322,8 @@
         // Determine if can request off
         const canRequestOff = !week.is_full || isRequestedOff;
         
-        // ========================================
-        // NEW CODE: Get existing preference for this week
-        // ========================================
         const existingPreference = getPreference(week.id);
         const hasPreference = existingPreference.length > 0;
-        // ======================================== 
         
         return `
           <div class="week-card">
@@ -1391,10 +1375,6 @@
               </button>
             </div>
             
-            <!-- ========================================
-                 NEW CODE: Service Preference Comment Field
-                 Shows when week is selected (unavailable or volunteer)
-                 ======================================== -->
             <div class="service-preference ${isSelected ? 'visible' : ''}">
               <div class="preference-label">
                 <span class="icon">💬</span>
@@ -1417,9 +1397,6 @@
                 <span class="suggestion-chip" onclick="addSuggestion('${week.id}', 'Flexible')">Flexible</span>
               </div>
             </div>
-            <!-- ======================================== 
-                 END NEW CODE (Service Preference)
-                 ======================================== -->
           </div>
         `;
       }).join('');
@@ -1509,22 +1486,14 @@
       const unavailableCount = selectedWeeks.size;
       const availableCount = availableWeeks.size;
       
-      // ========================================
-      // NEW CODE: Count weeks with preferences
-      // ========================================
       const preferencesCount = Object.keys(weekPreferences).filter(
         weekId => selectedWeeks.has(weekId) || availableWeeks.has(weekId)
       ).length;
-      // ======================================== 
       
       let message = `You are requesting:<br><br>`;
       if (unavailableCount > 0) message += `<strong>${unavailableCount} weeks UNAVAILABLE</strong> from service<br>`;
       if (availableCount > 0) message += `<strong>${availableCount} weeks AVAILABLE</strong> to volunteer<br>`;
-      // ========================================
-      // NEW CODE: Show preferences count in confirmation
-      // ========================================
       if (preferencesCount > 0) message += `<br><em>${preferencesCount} week(s) with service preferences noted</em><br>`;
-      // ======================================== 
       message += `<br>Submit these requests?`;
 
       document.getElementById('confirmMessage').innerHTML = message;
@@ -1548,11 +1517,7 @@
               status: 'unavailable',
               points_spent: week.point_cost_off,
               points_earned: 0,
-              // ========================================
-              // NEW CODE: Include service preference
-              // ========================================
               service_preference: weekPreferences[weekId] || null
-              // ======================================== 
             });
           }
         });
@@ -1566,11 +1531,7 @@
               status: 'available',
               points_spent: 0,
               points_earned: week.point_reward_work,
-              // ========================================
-              // NEW CODE: Include service preference
-              // ========================================
               service_preference: weekPreferences[weekId] || null
-              // ======================================== 
             });
           }
         });
@@ -1593,7 +1554,7 @@
         // Reload to show updated state
         selectedWeeks.clear();
         availableWeeks.clear();
-        weekPreferences = {}; // Clear preferences too
+        weekPreferences = {};
         await loadWeeks();
 
       } catch (error) {
@@ -1601,6 +1562,133 @@
         alert(`❌ Error: ${error.message}`);
         closeModal();
       }
+    }
+
+    // Draft Status Functions
+    async function loadDraftStatus() {
+      try {
+        const response = await fetch(`${API_BASE}/api/draft/my-status`, {
+          credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('Failed to load draft status');
+        
+        draftStatus = await response.json();
+        renderDraftStatus();
+        
+        // Start countdown if active
+        if (draftStatus.in_draft && draftStatus.my_status === 'active') {
+          startCountdown();
+        }
+        
+      } catch (error) {
+        console.error('Error loading draft status:', error);
+      }
+    }
+
+    function renderDraftStatus() {
+      const card = document.getElementById('draftStatusCard');
+      
+      if (!draftStatus || !draftStatus.has_active_draft || !draftStatus.in_draft) {
+        card.style.display = 'none';
+        return;
+      }
+      
+      card.style.display = 'block';
+      
+      // Update priority
+      document.getElementById('draftPriority').textContent = `#${draftStatus.my_priority}`;
+      
+      // Update status
+      const statusEl = document.getElementById('draftStatus');
+      const messageEl = document.getElementById('draftMessageText');
+      const deadlineSection = document.getElementById('draftDeadlineSection');
+      
+      switch (draftStatus.my_status) {
+        case 'waiting':
+          statusEl.innerHTML = '⏸️ WAITING';
+          messageEl.textContent = `You're in the queue. You'll be notified when it's your turn to select.`;
+          deadlineSection.style.display = 'none';
+          break;
+          
+        case 'active':
+          statusEl.innerHTML = '⏳ ACTIVE';
+          messageEl.innerHTML = `<strong>Your selection window is open!</strong> Make your choices below and submit before the deadline.`;
+          deadlineSection.style.display = 'block';
+          updateCountdown();
+          break;
+          
+        case 'submitted':
+          statusEl.innerHTML = '✅ SUBMITTED';
+          const submittedTime = new Date(draftStatus.submitted_at).toLocaleString();
+          messageEl.textContent = `You submitted your selections on ${submittedTime}. Thank you!`;
+          deadlineSection.style.display = 'none';
+          break;
+          
+        case 'expired':
+          statusEl.innerHTML = '⏱️ EXPIRED';
+          messageEl.innerHTML = `<strong>Your deadline has passed.</strong> Please contact administration if you need to submit late.`;
+          deadlineSection.style.display = 'none';
+          break;
+      }
+      
+      // Show other active faculty
+      if (draftStatus.other_active && draftStatus.other_active.length > 0) {
+        const otherActiveSection = document.getElementById('otherActiveSection');
+        const otherActiveList = document.getElementById('otherActiveList');
+        
+        otherActiveSection.style.display = 'block';
+        
+        otherActiveList.innerHTML = draftStatus.other_active.map(other => {
+          const icon = other.submitted ? '✅' : '⏳';
+          return `
+            <div class="other-active-badge">
+              ${icon} ${other.name} (#${other.priority})
+            </div>
+          `;
+        }).join('');
+      } else {
+        document.getElementById('otherActiveSection').style.display = 'none';
+      }
+    }
+
+    function startCountdown() {
+      // Clear any existing interval
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+      }
+      
+      // Update every second
+      countdownInterval = setInterval(updateCountdown, 1000);
+    }
+
+    function updateCountdown() {
+      if (!draftStatus || !draftStatus.time_remaining) return;
+      
+      const remaining = draftStatus.time_remaining.total_seconds;
+      
+      if (remaining <= 0) {
+        document.getElementById('draftTimeRemaining').innerHTML = '<span style="color: #fef3c7;">EXPIRED</span>';
+        clearInterval(countdownInterval);
+        return;
+      }
+      
+      const hours = Math.floor(remaining / 3600);
+      const minutes = Math.floor((remaining % 3600) / 60);
+      const seconds = Math.floor(remaining % 60);
+      
+      const timeEl = document.getElementById('draftTimeRemaining');
+      
+      if (hours > 0) {
+        timeEl.textContent = `${hours}h ${minutes}m`;
+      } else if (minutes > 0) {
+        timeEl.textContent = `${minutes}m ${seconds}s`;
+      } else {
+        timeEl.innerHTML = `<span class="countdown-urgent">${seconds}s</span>`;
+      }
+      
+      // Decrease time remaining
+      draftStatus.time_remaining.total_seconds -= 1;
     }
 
     // Service Worker Registration
@@ -1615,225 +1703,15 @@
     window.addEventListener('DOMContentLoaded', async () => {
       await loadCurrentUser();
       await loadWeeks();
+      await loadDraftStatus();
     });
 
-    // ==================== DRAFT SYSTEM FUNCTIONS ====================
-
-let draftStatus = null;
-let countdownInterval = null;
-
-async function loadDraftStatus() {
-  try {
-    const response = await fetch('/api/draft/my-status', {
-      credentials: 'include'
-    });
-    
-    if (!response.ok) throw new Error('Failed to load draft status');
-    
-    draftStatus = await response.json();
-    renderDraftStatus();
-    
-    // Start countdown if active
-    if (draftStatus.in_draft && draftStatus.my_status === 'active') {
-      startCountdown();
-    }
-    
-  } catch (error) {
-    console.error('Error loading draft status:', error);
-  }
-}
-
-function renderDraftStatus() {
-  const card = document.getElementById('draftStatusCard');
-  
-  if (!draftStatus.has_active_draft || !draftStatus.in_draft) {
-    card.style.display = 'none';
-    return;
-  }
-  
-  card.style.display = 'block';
-  
-  // Update priority
-  document.getElementById('draftPriority').textContent = `#${draftStatus.my_priority}`;
-  
-  // Update status
-  const statusEl = document.getElementById('draftStatus');
-  const messageEl = document.getElementById('draftMessageText');
-  const deadlineSection = document.getElementById('draftDeadlineSection');
-  
-  switch (draftStatus.my_status) {
-    case 'waiting':
-      statusEl.innerHTML = '⏸️ WAITING';
-      messageEl.textContent = `You're in the queue. You'll be notified when it's your turn to select.`;
-      deadlineSection.style.display = 'none';
-      break;
-      
-    case 'active':
-      statusEl.innerHTML = '⏳ ACTIVE';
-      messageEl.innerHTML = `<strong>Your selection window is open!</strong> Make your choices below and submit before the deadline.`;
-      deadlineSection.style.display = 'block';
-      updateCountdown();
-      break;
-      
-    case 'submitted':
-      statusEl.innerHTML = '✅ SUBMITTED';
-      const submittedTime = new Date(draftStatus.submitted_at).toLocaleString();
-      messageEl.textContent = `You submitted your selections on ${submittedTime}. Thank you!`;
-      deadlineSection.style.display = 'none';
-      break;
-      
-    case 'expired':
-      statusEl.innerHTML = '⏱️ EXPIRED';
-      messageEl.innerHTML = `<strong>Your deadline has passed.</strong> Please contact administration if you need to submit late.`;
-      deadlineSection.style.display = 'none';
-      break;
-  }
-  
-  // Show other active faculty
-  if (draftStatus.other_active && draftStatus.other_active.length > 0) {
-    const otherActiveSection = document.getElementById('otherActiveSection');
-    const otherActiveList = document.getElementById('otherActiveList');
-    
-    otherActiveSection.style.display = 'block';
-    
-    otherActiveList.innerHTML = draftStatus.other_active.map(other => {
-      const icon = other.submitted ? '✅' : '⏳';
-      return `
-        <div class="other-active-badge">
-          ${icon} ${other.name} (#${other.priority})
-        </div>
-      `;
-    }).join('');
-  } else {
-    document.getElementById('otherActiveSection').style.display = 'none';
-  }
-}
-
-function startCountdown() {
-  // Clear any existing interval
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-  }
-  
-  // Update every second
-  countdownInterval = setInterval(updateCountdown, 1000);
-}
-
-function updateCountdown() {
-  if (!draftStatus || !draftStatus.time_remaining) return;
-  
-  const remaining = draftStatus.time_remaining.total_seconds;
-  
-  if (remaining <= 0) {
-    document.getElementById('draftTimeRemaining').innerHTML = '<span style="color: #fef3c7;">EXPIRED</span>';
-    clearInterval(countdownInterval);
-    return;
-  }
-  
-  const hours = Math.floor(remaining / 3600);
-  const minutes = Math.floor((remaining % 3600) / 60);
-  const seconds = Math.floor(remaining % 60);
-  
-  const timeEl = document.getElementById('draftTimeRemaining');
-  
-  if (hours > 0) {
-    timeEl.textContent = `${hours}h ${minutes}m`;
-  } else if (minutes > 0) {
-    timeEl.textContent = `${minutes}m ${seconds}s`;
-  } else {
-    timeEl.innerHTML = `<span class="countdown-urgent">${seconds}s</span>`;
-  }
-  
-  // Decrease time remaining
-  draftStatus.time_remaining.total_seconds -= 1;
-}
-
-// Modify the confirmSubmit function to mark draft as submitted
-async function confirmSubmit() {
-  const unavailableCount = Object.values(weekSelections).filter(s => s === 'unavailable').length;
-  const volunteerCount = Object.values(weekSelections).filter(s => s === 'volunteer').length;
-  const preferencesCount = Object.keys(weekPreferences).filter(k => weekPreferences[k]).length;
-  
-  let confirmMessage = `Submit your selections?\n\n`;
-  confirmMessage += `• ${unavailableCount} weeks requested OFF\n`;
-  confirmMessage += `• ${volunteerCount} weeks volunteered\n`;
-  if (preferencesCount > 0) {
-    confirmMessage += `• ${preferencesCount} service preferences noted\n`;
-  }
-  confirmMessage += `• ${pointsSpent} points will be spent\n`;
-  confirmMessage += `• ${pointsEarned} points will be earned\n\n`;
-  
-  if (draftStatus && draftStatus.my_status === 'active') {
-    confirmMessage += `This will complete your draft submission.`;
-  }
-  
-  if (!confirm(confirmMessage)) return;
-  
-  try {
-    const response = await fetch('/api/service/requests', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        requests: Object.entries(weekSelections).map(([weekId, status]) => ({
-          week_id: weekId,
-          status,
-          service_preference: weekPreferences[weekId] || null
-        }))
-      })
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to submit requests');
-    }
-    
-    // If in active draft, mark as submitted
-    if (draftStatus && draftStatus.my_status === 'active') {
-      try {
-        const draftResponse = await fetch('/api/draft/submit', {
-          method: 'POST',
-          credentials: 'include'
-        });
-        
-        if (draftResponse.ok) {
-          const draftData = await draftResponse.json();
-          
-          if (draftData.draft_completed) {
-            alert(`✅ Selections submitted successfully!\n\nThe draft is now complete. All faculty have submitted their selections.`);
-          } else {
-            alert(`✅ Selections submitted successfully!\n\n${draftData.activated_count} additional faculty have been notified.`);
-          }
-        }
-      } catch (draftError) {
-        console.error('Draft submission error:', draftError);
-        // Still show success for the main submission
-        alert('✅ Selections submitted successfully!');
+    // Refresh draft status every 60 seconds
+    setInterval(async () => {
+      if (draftStatus && draftStatus.my_status === 'active') {
+        await loadDraftStatus();
       }
-    } else {
-      alert('✅ Selections submitted successfully!');
-    }
-    
-    // Reload page
-    window.location.reload();
-    
-  } catch (error) {
-    alert(`❌ Error: ${error.message}`);
-  }
-}
-
-// Load draft status on page load
-window.addEventListener('DOMContentLoaded', async () => {
-  await loadDraftStatus();
-  // ... rest of your existing DOMContentLoaded code
-});
-
-// Refresh draft status every 60 seconds
-setInterval(async () => {
-  if (draftStatus && draftStatus.my_status === 'active') {
-    await loadDraftStatus();
-  }
-}, 60000);
+    }, 60000);
   </script>
 </body>
 </html>
