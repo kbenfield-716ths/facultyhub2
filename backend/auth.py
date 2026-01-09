@@ -7,14 +7,106 @@ NOTE: Uses bcrypt directly instead of passlib due to version compatibility issue
 
 from datetime import datetime, timedelta
 from typing import Optional
-import secrets
-import bcrypt
-
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
-
 from .models import Faculty, get_db
+from .config import settings
+from .security import log_audit, check_password_strength, validate_session_timeout
+import logging
+import secrets
+import bcrypt
+
+logger = logging.getLogger(__name__)
+#=============================================
+# Improving Site Security
+#=============================================
+
+def optional_get_current_user(
+    request: Request,
+    db: Session = Depends(get_db)
+) -> Optional[Faculty]:
+    """
+    Get current user if authenticated, None otherwise.
+    For backward compatibility during migration.
+    """
+    try:
+        return get_current_user(request, db)
+    except HTTPException:
+        return None
+
+
+def require_admin(current_user: Faculty = Depends(get_current_user)) -> Faculty:
+    """
+    Dependency that requires admin privileges.
+    Raises 403 if user is not admin.
+    """
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    return current_user
+
+
+def optional_require_admin(
+    current_user: Optional[Faculty] = Depends(optional_get_current_user)
+) -> Optional[Faculty]:
+    """
+    Optionally require admin - for transitional period.
+    Returns None if no auth, raises 403 if auth but not admin.
+    """
+    if settings.SECURITY_MODE == "strict":
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        if not current_user.is_admin:
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+        return current_user
+    
+    if settings.SECURITY_MODE == "transitional":
+        # Warn but allow access
+        if not current_user:
+            logger.warning("Unauthenticated admin access in transitional mode")
+            return None
+        if not current_user.is_admin:
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+        return current_user
+    
+    # Permissive mode - allow everything
+    return current_user
+
+
+def check_account_locked(faculty: Faculty) -> None:
+    """Check if account is locked due to failed login attempts"""
+    if faculty.account_locked_until:
+        if datetime.utcnow() < faculty.account_locked_until:
+            remaining = (faculty.account_locked_until - datetime.utcnow()).seconds // 60
+            raise HTTPException(
+                status_code=403,
+                detail=f"Account locked. Try again in {remaining} minutes."
+            )
+        else:
+            # Unlock account
+            faculty.account_locked_until = None
+            faculty.failed_login_attempts = 0
+
+
+def handle_failed_login(db: Session, faculty: Faculty) -> None:
+    """Handle failed login attempt"""
+    faculty.failed_login_attempts += 1
+    
+    # Lock account after 5 failed attempts
+    if faculty.failed_login_attempts >= 5:
+        faculty.account_locked_until = datetime.utcnow() + timedelta(minutes=30)
+        logger.warning(f"Account locked for {faculty.id} after {faculty.failed_login_attempts} failed attempts")
+    
+    db.commit()
+
+
+def handle_successful_login(db: Session, faculty: Faculty, request: Request) -> None:
+    """Handle successful login"""
+    faculty.failed_login_attempts = 0
+    faculty.account_locked_until = None
+    faculty.last_login_at = datetime.utcnow()
+    faculty.last_login_ip = request.client.host if request.client else None
+    db.commit()
 
 # HTTP Basic Auth (for initial testing, we'll use sessions in production)
 security = HTTPBasic()
