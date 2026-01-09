@@ -18,6 +18,78 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
+#===========================================
+# SECURITY UPGRADE
+#===========================================
+# Add to backend/models.py
+
+from datetime import datetime
+from sqlalchemy import Column, String, DateTime, Text, Integer, Index
+
+class AuditLog(Base):
+    """Audit log for tracking admin actions"""
+    __tablename__ = "audit_logs"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    user_id = Column(String, nullable=False, index=True)  # Faculty ID who performed action
+    user_name = Column(String, nullable=False)
+    action = Column(String, nullable=False, index=True)  # e.g., "DELETE_PROVIDER", "CLEAR_MONTH"
+    resource_type = Column(String, nullable=True, index=True)  # e.g., "Provider", "Month"
+    resource_id = Column(String, nullable=True)
+    details = Column(Text, nullable=True)  # JSON string with before/after state
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+    
+    __table_args__ = (
+        Index('ix_audit_logs_timestamp_user', 'timestamp', 'user_id'),
+        Index('ix_audit_logs_action_resource', 'action', 'resource_type'),
+    )
+
+
+class SessionToken(Base):
+    """Enhanced session management with timeout tracking"""
+    __tablename__ = "session_tokens"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(String, unique=True, nullable=False, index=True)
+    faculty_id = Column(String, nullable=False, index=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    last_activity = Column(DateTime, nullable=False, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False)
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+    invalidated = Column(Boolean, default=False)
+    invalidated_at = Column(DateTime, nullable=True)
+
+
+class PasswordResetToken(Base):
+    """Tokens for password reset functionality"""
+    __tablename__ = "password_reset_tokens"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    faculty_id = Column(String, nullable=False, index=True)
+    token = Column(String, unique=True, nullable=False, index=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+    used_at = Column(DateTime, nullable=True)
+
+
+# Add to Faculty model (modifications)
+class Faculty(Base):
+    __tablename__ = "faculty"
+    
+    # ... existing fields ...
+    
+    # Add these new fields (with defaults for backward compatibility)
+    password_reset_required = Column(Boolean, default=False)
+    password_last_changed = Column(DateTime, nullable=True)
+    failed_login_attempts = Column(Integer, default=0)
+    account_locked_until = Column(DateTime, nullable=True)
+    last_login_at = Column(DateTime, nullable=True)
+    last_login_ip = Column(String, nullable=True)
+
 # ==========================================
 # KNOWLEDGE BASE
 # ==========================================
