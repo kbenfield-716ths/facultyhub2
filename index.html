@@ -235,85 +235,8 @@
       display: block;
     }
   </style>
-  <style>
-  #cold-start-loader {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    color: white;
-    transition: opacity 0.5s ease-out;
-  }
-  
-  #cold-start-loader.hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-  
-  .loader-spinner {
-    width: 60px;
-    height: 60px;
-    border: 5px solid rgba(255,255,255,0.2);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 24px;
-  }
-  
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  
-  .loader-text {
-    font-size: 20px;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 8px;
-  }
-  
-  .loader-subtext {
-    font-size: 14px;
-    opacity: 0.9;
-    text-align: center;
-  }
-</style>
 </head>
 <body>
-  <!-- Loading Screen for VM warmup -->
-<div id="cold-start-loader">
-  <div class="loader-spinner"></div>
-  <div class="loader-text">PCCM Faculty Hub</div>
-  <div class="loader-subtext">Waking up the system...</div>
-</div>
-
-<script>
-  // Hide loader once DOM is ready and initial content loaded
-  function hideLoader() {
-    const loader = document.getElementById('cold-start-loader');
-    if (loader) {
-      loader.classList.add('hidden');
-      // Remove from DOM after transition completes
-      setTimeout(() => loader.remove(), 500);
-    }
-  }
-  
-  // Hide when page is interactive
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', hideLoader);
-  } else {
-    hideLoader();
-  }
-  
-  // Safety timeout - hide after 30 seconds no matter what
-  setTimeout(hideLoader, 30000);
-</script>
   <div class="offline-indicator" id="offlineIndicator">
     📡 You're offline. Some features may be limited.
   </div>
@@ -393,66 +316,66 @@
     const API_URL = window.location.origin;
 
     // Check authentication status and update UI
-async function checkAuth() {
-  try {
-    const response = await fetch(`${API_URL}/api/auth/check`, {
-      credentials: 'include'
-    });
-    const data = await response.json();
-    
-    if (data.authenticated) {
-      // User is logged in
-      document.getElementById('userName').textContent = `Welcome, ${data.faculty_name}!`;
-      document.getElementById('userName').style.display = 'inline';
-      document.getElementById('logoutButton').style.display = 'inline-block';
-      document.getElementById('loginButton').style.display = 'none';
-      
-      // Show "Return to Admin" button if impersonating
-      if (data.is_impersonating) {
-        const existingBtn = document.getElementById('returnToAdminBtn');
-        if (!existingBtn) {
-          const returnBtn = document.createElement('button');
-          returnBtn.id = 'returnToAdminBtn';
-          returnBtn.className = 'logout-button';
-          returnBtn.textContent = '🔓 Return to Admin';
-          returnBtn.style.background = '#ff5722';
-          returnBtn.onclick = async () => {
-            const res = await fetch(`${API_URL}/api/admin/return-to-admin`, {
-              method: 'POST',
-              credentials: 'include'
-            });
-            if (res.ok) {
-              window.location.href = '/admin.html';
+    async function checkAuth() {
+      try {
+        const response = await fetch(`${API_URL}/api/auth/check`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.authenticated) {
+          // User is logged in
+          document.getElementById('userName').textContent = `Welcome, ${data.faculty_name}!`;
+          document.getElementById('userName').style.display = 'inline';
+          document.getElementById('logoutButton').style.display = 'inline-block';
+          document.getElementById('loginButton').style.display = 'none';
+          
+          // Show "Return to Admin" button if impersonating
+          if (data.is_impersonating) {
+            const existingBtn = document.getElementById('returnToAdminBtn');
+            if (!existingBtn) {
+              const returnBtn = document.createElement('button');
+              returnBtn.id = 'returnToAdminBtn';
+              returnBtn.className = 'logout-button';
+              returnBtn.textContent = '🔓 Return to Admin';
+              returnBtn.style.background = '#ff5722';
+              returnBtn.onclick = async () => {
+                const res = await fetch(`${API_URL}/api/admin/return-to-admin`, {
+                  method: 'POST',
+                  credentials: 'include'
+                });
+                if (res.ok) {
+                  window.location.href = '/admin.html';
+                }
+              };
+              document.querySelector('.header-right').insertBefore(
+                returnBtn,
+                document.getElementById('logoutButton')
+              );
             }
-          };
-          document.querySelector('.header-right').insertBefore(
-            returnBtn,
-            document.getElementById('logoutButton')
-          );
+          }
+          
+          // Update welcome message
+          document.getElementById('welcomeTitle').textContent = `Welcome back, ${data.faculty_name}!`;
+          
+          // Show admin card if user is admin
+          if (data.is_admin) {
+            document.getElementById('adminCard').style.display = 'block';
+          }
+          
+          // Show message board for all authenticated users
+          document.getElementById('messageBoard').style.display = 'block';
+          
+        } else {
+          // User is not logged in - redirect to login
+          window.location.href = '/login.html';
         }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        // Redirect to login on error
+        window.location.href = '/login.html';
       }
-      
-      // Update welcome message
-      document.getElementById('welcomeTitle').textContent = `Welcome back, ${data.faculty_name}!`;
-            // Show admin card if user is admin
-      if (data.is_admin) {
-        document.getElementById('adminCard').style.display = 'block';
-      }
-      
-      // Show message board for all authenticated users
-      document.getElementById('messageBoard').style.display = 'block';
-      
-    } else {
-      // User is not logged in
-      document.getElementById('loginButton').style.display = 'inline-block';
-      document.getElementById('logoutButton').style.display = 'none';
-      document.getElementById('userName').style.display = 'none';
     }
-  } catch (error) {
-    console.error('Auth check failed:', error);
-    document.getElementById('loginButton').style.display = 'inline-block';
-  }
-}
 
     // Logout handler
     document.getElementById('logoutButton').addEventListener('click', async () => {
@@ -462,15 +385,15 @@ async function checkAuth() {
           credentials: 'include'
         });
         localStorage.removeItem('currentUser');
-        window.location.reload();
+        window.location.href = '/login.html';
       } catch (error) {
         console.error('Logout failed:', error);
-        // Reload anyway
-        window.location.reload();
+        // Redirect to login anyway
+        window.location.href = '/login.html';
       }
     });
 
-    // Check auth on page load
+    // Check auth on page load - MUST be authenticated
     checkAuth();
 
     // Service Worker Registration
@@ -530,6 +453,6 @@ async function checkAuth() {
     window.addEventListener('offline', updateOnlineStatus);
     updateOnlineStatus();
   </script>
-   <script src="/feedback-button.js"></script>
+  <script src="/feedback-button.js"></script>
 </body>
 </html>
