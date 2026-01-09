@@ -11,21 +11,65 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def find_database():
+    """Find the correct database file"""
+    possible_paths = [
+        Path("/data/moonlighter.db"),  # Production
+        Path(__file__).parent.parent / "moonlighter.db",  # Development default
+        Path(__file__).parent.parent / "faculty_hub.db",  # Alternative name
+        Path(__file__).parent / "moonlighter.db",  # In backend dir
+        Path(__file__).parent / "faculty_hub.db",  # In backend dir
+    ]
+    
+    for path in possible_paths:
+        if path.exists():
+            # Verify it has the faculty table
+            try:
+                conn = sqlite3.connect(path)
+                cursor = conn.cursor()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='faculty'")
+                if cursor.fetchone():
+                    conn.close()
+                    logger.info(f"Found database with faculty table: {path}")
+                    return path
+                conn.close()
+            except Exception as e:
+                logger.debug(f"Error checking {path}: {e}")
+                continue
+    
+    return None
+
 def migrate_database():
     """Add new tables and columns for security features"""
     
-    # Find database
-    db_path = Path(__file__).parent.parent / "faculty_hub.db"
+    # Find the database
+    db_path = find_database()
     
-    # Also check for moonlighter.db (your models use this name)
-    if not db_path.exists():
-        db_path = Path(__file__).parent.parent / "moonlighter.db"
-    
-    if not db_path.exists():
-        logger.error(f"Database not found. Checked:")
-        logger.error(f"  - faculty_hub.db")
-        logger.error(f"  - moonlighter.db")
-        logger.error("Please ensure database exists before running migration.")
+    if not db_path:
+        logger.error("Could not find database with faculty table!")
+        logger.error("\nSearched for:")
+        logger.error("  - /data/moonlighter.db")
+        logger.error("  - ./moonlighter.db")
+        logger.error("  - ./faculty_hub.db")
+        logger.error("\nPlease ensure your database exists and has a 'faculty' table.")
+        
+        # List available .db files
+        project_root = Path(__file__).parent.parent
+        db_files = list(project_root.glob("*.db"))
+        if db_files:
+            logger.info("\nFound .db files:")
+            for f in db_files:
+                logger.info(f"  - {f}")
+                # Show tables in each
+                try:
+                    conn = sqlite3.connect(f)
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                    tables = [row[0] for row in cursor.fetchall()]
+                    logger.info(f"    Tables: {', '.join(tables)}")
+                    conn.close()
+                except Exception as e:
+                    logger.info(f"    Error reading: {e}")
         return
     
     logger.info(f"Migrating database at: {db_path}")
@@ -34,8 +78,13 @@ def migrate_database():
     cursor = conn.cursor()
     
     try:
+        # First, check what tables already exist
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        existing_tables = [row[0] for row in cursor.fetchall()]
+        logger.info(f"Existing tables: {', '.join(existing_tables)}")
+        
         # Create audit_logs table
-        logger.info("Creating audit_logs table...")
+        logger.info("\nCreating audit_logs table...")
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS audit_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,8 +147,14 @@ def migrate_database():
         cursor.execute("CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_token ON password_reset_tokens(token)")
         logger.info("✓ password_reset_tokens table created")
         
+        # Check current faculty table structure
+        logger.info("\nChecking faculty table structure...")
+        cursor.execute("PRAGMA table_info(faculty)")
+        existing_columns = [row[1] for row in cursor.fetchall()]
+        logger.info(f"Existing columns: {', '.join(existing_columns)}")
+        
         # Add new columns to faculty table
-        logger.info("Adding security columns to faculty table...")
+        logger.info("\nAdding security columns to faculty table...")
         new_columns = [
             ("password_reset_required", "BOOLEAN DEFAULT 0"),
             ("password_last_changed", "DATETIME"),
@@ -110,6 +165,10 @@ def migrate_database():
         ]
         
         for col_name, col_def in new_columns:
+            if col_name in existing_columns:
+                logger.info(f"  Column faculty.{col_name} already exists, skipping")
+                continue
+                
             try:
                 cursor.execute(f"ALTER TABLE faculty ADD COLUMN {col_name} {col_def}")
                 logger.info(f"✓ Added column: faculty.{col_name}")
@@ -122,7 +181,7 @@ def migrate_database():
         # Update existing faculty
         cursor.execute("UPDATE faculty SET password_reset_required = 1 WHERE password_changed = 0")
         count = cursor.rowcount
-        logger.info(f"✓ Marked {count} existing users for password reset")
+        logger.info(f"\n✓ Marked {count} existing users for password reset")
         
         conn.commit()
         
@@ -144,7 +203,7 @@ def migrate_database():
         if 'password_reset_tokens' in tables:
             logger.info("  ✓ password_reset_tokens")
         
-        # Check faculty table columns
+        # Check faculty table columns again
         cursor.execute("PRAGMA table_info(faculty)")
         columns = [row[1] for row in cursor.fetchall()]
         security_cols = ['password_reset_required', 'password_last_changed', 
