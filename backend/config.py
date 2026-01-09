@@ -9,33 +9,30 @@ class Settings(BaseSettings):
     
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
-    SECURITY_MODE: str = os.getenv("SECURITY_MODE", "permissive")  # permissive, transitional, strict
-    ALLOW_DEFAULT_ADMIN: bool = os.getenv("ALLOW_DEFAULT_ADMIN", "true").lower() == "true"
+    SECURITY_MODE: str = "permissive"
+    ALLOW_DEFAULT_ADMIN: bool = True
     
-    # CORS
-    CORS_ORIGINS: List[str] = os.getenv(
-        "CORS_ORIGINS", 
-        "http://localhost:3000,http://localhost:8000"
-    ).split(",")
-    CORS_ALLOW_ALL: bool = os.getenv("CORS_ALLOW_ALL", "true").lower() == "true"
+    # CORS - simplified parsing
+    CORS_ORIGINS: str = "http://localhost:8000,http://localhost:3000"  # String, not List
+    CORS_ALLOW_ALL: bool = True
     
     # Session
-    SESSION_TIMEOUT_MINUTES: int = int(os.getenv("SESSION_TIMEOUT_MINUTES", "480"))  # 8 hours
-    SESSION_ABSOLUTE_TIMEOUT_MINUTES: int = int(os.getenv("SESSION_ABSOLUTE_TIMEOUT_MINUTES", "1440"))  # 24 hours
+    SESSION_TIMEOUT_MINUTES: int = 480
+    SESSION_ABSOLUTE_TIMEOUT_MINUTES: int = 1440
     
     # Rate Limiting
-    RATE_LIMIT_ENABLED: bool = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
-    RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_PER_MINUTE: int = 60
     
     # Email
-    EMAIL_RETRY_ENABLED: bool = os.getenv("EMAIL_RETRY_ENABLED", "true").lower() == "true"
+    EMAIL_RETRY_ENABLED: bool = True
     
     # Audit Logging
-    AUDIT_LOG_ENABLED: bool = os.getenv("AUDIT_LOG_ENABLED", "true").lower() == "true"
+    AUDIT_LOG_ENABLED: bool = True
     
     # Admin Password Generation
     ADMIN_PASSWORD_MIN_LENGTH: int = 12
-    ADMIN_DEFAULT_PASSWORD: str = os.getenv("ADMIN_DEFAULT_PASSWORD", "")  # Only used if ALLOW_DEFAULT_ADMIN=true
+    ADMIN_DEFAULT_PASSWORD: str = ""
     
     class Config:
         env_file = ".env"
@@ -45,7 +42,8 @@ class Settings(BaseSettings):
         """Get CORS origins based on mode"""
         if self.CORS_ALLOW_ALL:
             return ["*"]
-        return self.CORS_ORIGINS
+        # Split the comma-separated string
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
     
     def requires_auth(self) -> bool:
         """Check if authentication is required based on security mode"""
