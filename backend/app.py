@@ -1,13 +1,15 @@
 # backend/app.py
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
-
+import csv
+import io
+import logging
 
 from sqlalchemy.orm import Session
 from sqlalchemy import delete
@@ -15,7 +17,7 @@ from .auth import get_current_user, hash_password
 
 from .models import (
     SessionLocal, init_db,
-    Provider, Month, Shift, Signup, Assignment, Faculty
+    Provider, Month, Shift, Signup, Assignment, Faculty, AuditLog
 )
 from .optimizer_bridge import run_optimizer_for_month
 from fastapi.middleware.gzip import GZipMiddleware
@@ -36,10 +38,16 @@ from .security import SecurityMiddleware, standard_limiter, log_audit, generate_
 from .auth import optional_require_admin, require_admin
 from .routes.admin_auth import router as admin_auth_router
 
-import logging
-import csv
-import io
+logger = logging.getLogger(__name__)
 
+# Create tables
+Base.metadata.create_all(bind=engine)
+
+# ---------- App Initialization -----------
+app = FastAPI()
+
+# Add middleware in correct order
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(SecurityMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -48,8 +56,93 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(admin_auth_router)
 
+# ---------- Health Check -----------
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Fly.io monitoring"""
+    return {"status": "healthy"}
+
+# ---------- Include Routers FIRST - before catch-all routes -----------
+app.include_router(auth_router)
+app.include_router(admin_auth_router)  # New admin auth routes
+app.include_router(admin_faculty_router)
+app.include_router(admin_service_router)
+app.include_router(service_requests_router)
+app.include_router(service_weeks_router)
+app.include_router(schedule_router)
+app.include_router(messages_router)
+app.include_router(knowledge_base.router)
+app.include_router(draft.router)
+
+# ---------- Static File Setup -----------
+STATIC_DIR = Path(__file__).resolve().parent.parent
+BACKEND_STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+if (STATIC_DIR / "icons").exists():
+    app.mount("/icons", StaticFiles(directory=str(STATIC_DIR / "icons")), name="icons")
+
+# ---------- DB Session Dependency -----------
+def get_db():
+    """Database session dependency for FastAPI endpoints."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# ---------- Pydantic Schemas ----------
+class SignupPayload(BaseModel):
+    provider_id: str
+    provider_name: str
+    month: str
+    desired_nights: int
+    dates: List[date]
+    locked_dates: List[date] = []
+
+class SignupOut(BaseModel):
+    provider_id: str
+    provider_name: str
+    date: date
+    month: str
+    desired_nights: int
+    locked: bool
+
+    class Config:
+        from_attributes = True
+
+class ProviderOut(BaseModel):
+    id: str
+    name: str
+    email: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class ProviderCreate(BaseModel):
+    id: str
+    name: str
+    email: Optional[str] = None
+
+class ProviderUpdate(BaseModel):
+    name: str
+    email: Optional[str] = None
+
+class AssignmentOut(BaseModel):
+    provider_id: str
+    provider_name: str
+    date: date
+    month: str
+
+    class Config:
+        from_attributes = True
+
+class FeedbackSubmission(BaseModel):
+    feedback_type: str
+    message: str
+    page_url: Optional[str] = None
+
+# ---------- Startup Event ----------
 @app.on_event("startup")
 def startup_event():
     """Initialize database and seed data on startup."""
@@ -97,7 +190,7 @@ def startup_event():
             admin = Faculty(
                 id="ADMIN",
                 name="Administrator",
-                email="admin@example.com",  # CHANGE THIS
+                email="admin@example.com",  # TODO: Change this
                 rank="full",
                 clinical_effort_pct=0,
                 base_points=0,
@@ -116,158 +209,7 @@ def startup_event():
                 print("[Startup] Admin must use password reset to set secure password")
     except Exception as e:
         print(f"[Startup] Error creating admin user: {e}")
-    finally:
-        db.close()
-
-logger = logging.getLogger(__name__)
-Base.metadata.create_all(bind=engine)
-# ---------- App Health Check/Start -----------
-app = FastAPI()
-app.add_middleware(GZipMiddleware, minimum_size=1000)
-@app.get("/health")
-async def health_check():
-    """Health check endpoint for Fly.io monitoring"""
-    return {"status": "healthy"}
-
-# Include routers FIRST - before catch-all routes
-app.include_router(auth_router)
-app.include_router(admin_faculty_router)
-app.include_router(admin_service_router)
-app.include_router(service_requests_router)
-app.include_router(service_weeks_router)
-app.include_router(schedule_router)
-app.include_router(messages_router)
-app.include_router(knowledge_base.router)
-app.include_router(draft.router)
-
-# Serve static files (HTML, CSS, JS, icons, manifest)
-# HTML files are in the parent directory of backend/
-STATIC_DIR = Path(__file__).resolve().parent.parent  # Go up to root directory
-BACKEND_STATIC_DIR = Path(__file__).resolve().parent / "static"
-
-# Mount icons if they exist
-if (STATIC_DIR / "icons").exists():
-    app.mount("/icons", StaticFiles(directory=str(STATIC_DIR / "icons")), name="icons")
-
-# Allow calls from anywhere (since we're serving the frontend too now)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ---------- DB session dependency ----------
-
-def get_db():
-    """Database session dependency for FastAPI endpoints."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-# ---------- Pydantic Schemas ----------
-
-class SignupPayload(BaseModel):
-    provider_id: str
-    provider_name: str
-    month: str            # "2025-11"
-    desired_nights: int
-    dates: List[date]     # ["2025-11-06", ...]
-    locked_dates: List[date] = []
-
-
-class SignupOut(BaseModel):
-    provider_id: str
-    provider_name: str
-    date: date
-    month: str
-    desired_nights: int
-    locked: bool
-
-    class Config:
-        from_attributes = True
-
-
-class ProviderOut(BaseModel):
-    id: str
-    name: str
-    email: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-
-class ProviderCreate(BaseModel):
-    id: str
-    name: str
-    email: Optional[str] = None
-
-
-class ProviderUpdate(BaseModel):
-    name: str
-    email: Optional[str] = None
-
-
-class AssignmentOut(BaseModel):
-    provider_id: str
-    provider_name: str
-    date: date
-    month: str
-
-    class Config:
-        from_attributes = True
-
-
-
-# ---------- FastAPI lifecycle ----------
-
-@app.on_event("startup")
-def startup_event():
-    """Initialize database and seed data on startup."""
-    # Make sure tables exist
-    init_db()
-    
-    # Seed message boards
-    from .models import seed_message_boards
-    db = SessionLocal()
-    try:
-        seed_message_boards(db)
-        print("[Startup] Message boards seeded")
-    except Exception as e:
-        print(f"[Startup] Message boards: {e}")
-    finally:
-        db.close()
-    
-    # ... rest of your startup code ...
-    # Create default admin user if none exists
-    
-    db = SessionLocal()
-    try:
-        admin_count = db.query(Faculty).filter_by(is_admin=True).count()
-        if admin_count == 0:
-            # Create default admin
-            admin = Faculty(
-                id="ADMIN",
-                name="Administrator",
-                email="admin@example.com",
-                rank="full",
-                clinical_effort_pct=0,
-                base_points=0,
-                is_admin=True,
-                password_hash=hash_password("PCCM2025!"),
-                password_changed=False,
-                registered=True,
-                active=True
-            )
-            db.add(admin)
-            db.commit()
-            print("[Startup] Created default admin user: ADMIN / PCCM2025!")
-    except Exception as e:
-        print(f"[Startup] Error creating admin user: {e}")
+        db.rollback()
     finally:
         db.close()
 
@@ -283,11 +225,16 @@ def startup_event():
 # API ROUTES - MUST COME BEFORE STATIC FILE ROUTES
 # ========================================
 
-# ---------- Signup endpoint ----------
-
+# ---------- Signup Endpoint ----------
 @app.post("/api/signup")
-def save_signup(payload: SignupPayload, db: Session = Depends(get_db)):
+async def save_signup(
+    request: Request,
+    payload: SignupPayload,
+    db: Session = Depends(get_db)
+):
     """Save moonlighting signup for a provider."""
+    await standard_limiter(request)
+    
     # SYNC: Pull email from Faculty table to Provider table
     sync_provider_from_faculty(db, payload.provider_id)
     
@@ -297,7 +244,6 @@ def save_signup(payload: SignupPayload, db: Session = Depends(get_db)):
         provider = Provider(id=payload.provider_id, name=payload.provider_name)
         db.add(provider)
     else:
-        # keep name in sync with whatever comes from the front-end
         provider.name = payload.provider_name
 
     # Ensure Month row exists
@@ -349,7 +295,7 @@ def save_signup(payload: SignupPayload, db: Session = Depends(get_db)):
     # Refresh provider to get synced email
     db.refresh(provider)
     
-    # Send confirmation email (non-blocking - errors won't fail the request)
+    # Send confirmation email (non-blocking)
     try:
         date_strings = [d.isoformat() for d in sorted(payload.dates)]
         
@@ -358,7 +304,6 @@ def save_signup(payload: SignupPayload, db: Session = Depends(get_db)):
         else:
             academic_year = f"{year-1}-{year}"
         
-        # Get provider email if available
         if provider.email:
             send_irpa_confirmation(
                 faculty_name=provider.name,
@@ -368,46 +313,42 @@ def save_signup(payload: SignupPayload, db: Session = Depends(get_db)):
             )
             logger.info(f"IRPA confirmation email sent to {provider.email}")
         else:
-            logger.warning(f"No email on file for provider {provider.name} ({payload.provider_id}), skipping confirmation email")
+            logger.warning(f"No email on file for provider {provider.name} ({payload.provider_id})")
     except Exception as e:
         logger.error(f"Failed to send IRPA confirmation email: {e}")
     
     return {"status": "ok"}
 
 
-# ---------- Admin: Sync Provider/Faculty emails ----------
-
+# ---------- Admin: Sync Provider/Faculty Emails ----------
 @app.post("/api/admin/sync_provider_emails")
-def sync_provider_emails_endpoint(
-    current_user: Faculty = Depends(get_current_user),
+async def sync_provider_emails_endpoint(
+    request: Request,
+    current_user: Faculty = Depends(optional_require_admin),
     db: Session = Depends(get_db)
 ):
-    """
-    One-time sync of all Provider emails from Faculty table.
-    Admin only.
-    """
-    if not current_user.is_admin:
-        raise HTTPException(403, "Admin access required")
+    """One-time sync of all Provider emails from Faculty table."""
+    await standard_limiter(request)
     
     result = sync_all_providers_from_faculty(db)
+    
+    if settings.AUDIT_LOG_ENABLED and current_user:
+        log_audit(db, current_user, "SYNC_PROVIDER_EMAILS", request=request)
+    
     return result
 
 
-# ---------- Admin: list signups ----------
-
+# ---------- Admin: List Signups ----------
 @app.get("/api/admin/signups", response_model=List[SignupOut])
-def list_signups(
+async def list_signups(
+    request: Request,
     month: Optional[str] = None,
+    current_user: Faculty = Depends(optional_require_admin),
     db: Session = Depends(get_db),
 ):
-    """
-    Return one row per provider-date signup:
-    - provider_id, provider_name
-    - date
-    - month (YYYY-MM)
-    - desired_nights
-    - locked
-    """
+    """Return one row per provider-date signup."""
+    await standard_limiter(request)
+    
     q = (
         db.query(
             Signup.provider_id,
@@ -442,19 +383,24 @@ def list_signups(
                 locked=bool(r.locked),
             )
         )
+    
+    if settings.AUDIT_LOG_ENABLED and current_user:
+        log_audit(db, current_user, "VIEW_SIGNUPS", details={"month": month}, request=request)
+    
     return result
 
 
-# ---------- Admin: list assignments (generated schedule) ----------
-
+# ---------- Admin: List Assignments ----------
 @app.get("/api/admin/assignments", response_model=List[AssignmentOut])
-def list_assignments(
+async def list_assignments(
+    request: Request,
     month: Optional[str] = None,
+    current_user: Faculty = Depends(optional_require_admin),
     db: Session = Depends(get_db),
 ):
-    """
-    Return the generated schedule (assignments) for a month.
-    """
+    """Return the generated schedule (assignments) for a month."""
+    await standard_limiter(request)
+    
     q = (
         db.query(
             Assignment.provider_id,
@@ -485,25 +431,37 @@ def list_assignments(
                 month=month_str,
             )
         )
+    
+    if settings.AUDIT_LOG_ENABLED and current_user:
+        log_audit(db, current_user, "VIEW_ASSIGNMENTS", details={"month": month}, request=request)
+    
     return result
 
 
-# ---------- Providers list (for dropdown) ----------
-
+# ---------- Providers List ----------
 @app.get("/api/providers", response_model=List[ProviderOut])
-def list_providers(db: Session = Depends(get_db)):
+async def list_providers(
+    request: Request,
+    db: Session = Depends(get_db)
+):
     """Get all providers for moonlighting system."""
+    await standard_limiter(request)
+    
     providers = db.query(Provider).order_by(Provider.name).all()
     return providers
 
 
-# ---------- Admin: Provider management ----------
-
+# ---------- Admin: Provider Management ----------
 @app.post("/api/admin/providers")
-def create_provider(provider: ProviderCreate, db: Session = Depends(get_db)):
-    """
-    Add a new provider.
-    """
+async def create_provider(
+    request: Request,
+    provider: ProviderCreate,
+    current_user: Faculty = Depends(optional_require_admin),
+    db: Session = Depends(get_db)
+):
+    """Add a new provider."""
+    await standard_limiter(request)
+    
     existing = db.query(Provider).filter(Provider.id == provider.id).first()
     if existing:
         raise HTTPException(400, f"Provider with id '{provider.id}' already exists")
@@ -517,6 +475,14 @@ def create_provider(provider: ProviderCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_provider)
     
+    if settings.AUDIT_LOG_ENABLED and current_user:
+        log_audit(
+            db, current_user, "CREATE_PROVIDER",
+            resource_type="Provider", resource_id=provider.id,
+            details={"name": provider.name, "email": provider.email},
+            request=request
+        )
+    
     return {"status": "ok", "provider": {
         "id": new_provider.id,
         "name": new_provider.name,
@@ -525,14 +491,22 @@ def create_provider(provider: ProviderCreate, db: Session = Depends(get_db)):
 
 
 @app.put("/api/admin/providers/{provider_id}")
-def update_provider(provider_id: str, provider: ProviderUpdate, db: Session = Depends(get_db)):
-    """
-    Update an existing provider's name and/or email.
-    Provider ID cannot be changed.
-    """
+async def update_provider(
+    request: Request,
+    provider_id: str,
+    provider: ProviderUpdate,
+    current_user: Faculty = Depends(optional_require_admin),
+    db: Session = Depends(get_db)
+):
+    """Update an existing provider's name and/or email."""
+    await standard_limiter(request)
+    
     existing = db.query(Provider).filter(Provider.id == provider_id).first()
     if not existing:
         raise HTTPException(404, f"Provider '{provider_id}' not found")
+    
+    # Store old values for audit
+    old_data = {"name": existing.name, "email": existing.email}
     
     # Update fields
     existing.name = provider.name
@@ -540,6 +514,14 @@ def update_provider(provider_id: str, provider: ProviderUpdate, db: Session = De
     
     db.commit()
     db.refresh(existing)
+    
+    if settings.AUDIT_LOG_ENABLED and current_user:
+        log_audit(
+            db, current_user, "UPDATE_PROVIDER",
+            resource_type="Provider", resource_id=provider_id,
+            details={"old": old_data, "new": {"name": provider.name, "email": provider.email}},
+            request=request
+        )
     
     return {"status": "ok", "provider": {
         "id": existing.id,
@@ -549,40 +531,57 @@ def update_provider(provider_id: str, provider: ProviderUpdate, db: Session = De
 
 
 @app.delete("/api/admin/providers/{provider_id}")
-def delete_provider(provider_id: str, db: Session = Depends(get_db)):
-    """
-    Delete a provider and all their signups/assignments.
-    """
+async def delete_provider(
+    request: Request,
+    provider_id: str,
+    current_user: Faculty = Depends(optional_require_admin),
+    db: Session = Depends(get_db)
+):
+    """Delete a provider and all their signups/assignments."""
+    await standard_limiter(request)
+    
     provider = db.query(Provider).filter(Provider.id == provider_id).first()
     if not provider:
         raise HTTPException(404, f"Provider '{provider_id}' not found")
     
-    # Delete related signups and assignments
+    # Store data for audit before deletion
+    provider_data = {"id": provider.id, "name": provider.name, "email": provider.email}
+    
+    # Count related data
+    signup_count = db.query(Signup).filter(Signup.provider_id == provider_id).count()
+    assignment_count = db.query(Assignment).filter(Assignment.provider_id == provider_id).count()
+    
+    # Delete related data
     db.query(Signup).filter(Signup.provider_id == provider_id).delete()
     db.query(Assignment).filter(Assignment.provider_id == provider_id).delete()
-    
-    # Delete provider
     db.delete(provider)
     db.commit()
     
-    return {"status": "ok", "message": f"Provider '{provider.name}' deleted"}
+    if settings.AUDIT_LOG_ENABLED and current_user:
+        log_audit(
+            db, current_user, "DELETE_PROVIDER",
+            resource_type="Provider", resource_id=provider_id,
+            details={
+                "provider": provider_data,
+                "deleted_signups": signup_count,
+                "deleted_assignments": assignment_count
+            },
+            request=request
+        )
+    
+    return {"status": "ok", "message": f"Provider '{provider_data['name']}' deleted"}
 
 
-# ---------- Admin: Clear data ----------
-
+# ---------- Admin: Clear Data ----------
 @app.delete("/api/admin/clear_month")
-def clear_month_data(
+async def clear_month_data(
+    request: Request,
     month: str,
-    current_user: Faculty = Depends(get_current_user),
+    current_user: Faculty = Depends(optional_require_admin),
     db: Session = Depends(get_db)
 ):
-    """
-    Clear all signups and assignments for a specific month.
-    Does not delete providers.
-    Month format: YYYY-MM (e.g., "2026-01")
-    """
-    if not current_user.is_admin:
-        raise HTTPException(403, "Admin access required")
+    """Clear all signups and assignments for a specific month."""
+    await standard_limiter(request)
     
     # Parse and validate month format
     try:
@@ -609,32 +608,37 @@ def clear_month_data(
     shift_ids = [s.id for s in month_row.shifts]
     
     if not shift_ids:
-        # No shifts, just delete the month
         db.delete(month_row)
         db.commit()
         return {"status": "ok", "message": f"Deleted empty month {month}"}
     
     # Use SQLAlchemy delete() to avoid StaleDataError
-    # Delete assignments first
     assignment_count = db.execute(
         delete(Assignment).where(Assignment.shift_id.in_(shift_ids))
     ).rowcount
     
-    # Delete signups
     signup_count = db.execute(
         delete(Signup).where(Signup.shift_id.in_(shift_ids))
     ).rowcount
     
-    # Delete shifts
     shift_count = db.execute(
         delete(Shift).where(Shift.month_id == month_row.id)
     ).rowcount
     
-    # Delete month
     db.delete(month_row)
-    
-    # Commit all deletions
     db.commit()
+    
+    if settings.AUDIT_LOG_ENABLED and current_user:
+        log_audit(
+            db, current_user, "CLEAR_MONTH",
+            resource_type="Month", resource_id=month,
+            details={
+                "signups_deleted": signup_count,
+                "assignments_deleted": assignment_count,
+                "shifts_deleted": shift_count
+            },
+            request=request
+        )
     
     return {
         "status": "ok",
@@ -643,44 +647,60 @@ def clear_month_data(
 
 
 @app.delete("/api/admin/clear_all")
-def clear_all_data(confirm: str, db: Session = Depends(get_db)):
-    """
-    Clear ALL data (signups, assignments, shifts, months).
-    Does not delete providers.
-    Requires confirmation string.
-    """
+async def clear_all_data(
+    request: Request,
+    confirm: str,
+    current_user: Faculty = Depends(require_admin),  # STRICT - always require auth
+    db: Session = Depends(get_db)
+):
+    """Clear ALL data - DESTRUCTIVE OPERATION. Always requires authentication."""
+    await standard_limiter(request)
+    
     if confirm != "DELETE_ALL_DATA":
         raise HTTPException(400, "Confirmation string required: DELETE_ALL_DATA")
     
-    assignment_count = db.query(Assignment).count()
-    signup_count = db.query(Signup).count()
-    shift_count = db.query(Shift).count()
-    month_count = db.query(Month).count()
+    # Count before deletion
+    counts = {
+        "assignments": db.query(Assignment).count(),
+        "signups": db.query(Signup).count(),
+        "shifts": db.query(Shift).count(),
+        "months": db.query(Month).count()
+    }
     
+    # Delete
     db.query(Assignment).delete()
     db.query(Signup).delete()
     db.query(Shift).delete()
     db.query(Month).delete()
     db.commit()
     
+    log_audit(
+        db, current_user, "CLEAR_ALL_DATA",
+        details=counts,
+        request=request
+    )
+    
+    logger.warning(f"ALL DATA CLEARED by {current_user.id} ({current_user.name})")
+    
     return {
         "status": "ok",
-        "message": f"Cleared all data: {assignment_count} assignments, {signup_count} signups, {shift_count} shifts, {month_count} months"
+        "message": f"Cleared all data: {counts['assignments']} assignments, {counts['signups']} signups, {counts['shifts']} shifts, {counts['months']} months"
     }
 
 
-# ---------- Admin: run optimizer for a month ----------
-
+# ---------- Admin: Run Optimizer ----------
 @app.post("/api/admin/run_optimizer")
-def run_optimizer_endpoint(
+async def run_optimizer_endpoint(
+    request: Request,
     month: str,
     strategy: str = "balanced",
     night_slots: int = 1,
+    current_user: Faculty = Depends(optional_require_admin),
     db: Session = Depends(get_db),
 ):
-    """
-    Run the scheduling optimizer for a given month ("YYYY-MM").
-    """
+    """Run the scheduling optimizer for a given month."""
+    await standard_limiter(request)
+    
     try:
         year, month_num = map(int, month.split("-"))
         month_row = (
@@ -706,6 +726,17 @@ def run_optimizer_endpoint(
         
         db.commit()
         
+        if settings.AUDIT_LOG_ENABLED and current_user:
+            log_audit(
+                db, current_user, "RUN_OPTIMIZER",
+                details={
+                    "month": month,
+                    "strategy": strategy,
+                    "assigned_shifts": len(assignments)
+                },
+                request=request
+            )
+        
         return {
             "status": "ok",
             "month": month,
@@ -713,24 +744,23 @@ def run_optimizer_endpoint(
             "strategy": strategy
         }
     except Exception as e:
-        print(f"Optimizer error: {e}")
+        logger.error(f"Optimizer error: {e}")
         raise HTTPException(500, f"Optimizer failed: {str(e)}")
 
 
-# ---------- Admin: CSV export of signups ----------
-
+# ---------- Admin: CSV Export ----------
 @app.get("/api/admin/signups_csv", response_class=PlainTextResponse)
-def signups_csv(
+async def signups_csv(
+    request: Request,
     month: str,
+    current_user: Faculty = Depends(optional_require_admin),
     db: Session = Depends(get_db),
 ):
-    """
-    Export all signups for a given month as CSV in optimizer format:
-    faculty_id,name,desired_nights,requested_dates,priority
-    """
+    """Export all signups for a given month as CSV."""
+    await standard_limiter(request)
+    
     year, mnum = map(int, month.split("-"))
 
-    # Get all signups for this month grouped by provider
     q = (
         db.query(
             Signup.provider_id,
@@ -747,7 +777,6 @@ def signups_csv(
 
     rows = q.all()
     
-    # Group by provider
     from collections import defaultdict
     providers_data = defaultdict(lambda: {"dates": [], "desired_nights": 0, "name": ""})
     
@@ -767,65 +796,89 @@ def signups_csv(
             data["name"],
             data["desired_nights"],
             dates_str,
-            2  # Default priority
+            2
         ])
 
     csv_text = output.getvalue()
     headers = {
         "Content-Disposition": f'attachment; filename="moonlighter_template_{month}.csv"'
     }
+    
+    if settings.AUDIT_LOG_ENABLED and current_user:
+        log_audit(db, current_user, "EXPORT_SIGNUPS_CSV", details={"month": month}, request=request)
+    
     return PlainTextResponse(csv_text, headers=headers)
 
 
-# Notion
-
-@app.get("/api/knowledge-base")
-def get_knowledge_base():
-    """
-    Get all articles from the knowledge base (Notion integration)
-    """
-    notion_kb = get_notion_kb()
-    return notion_kb.get_all_articles()
-
-
-@app.get("/api/knowledge-base/article/{article_id}")
-def get_article(article_id: str):
-    """
-    Get a specific article with full content
-    """
-    notion_kb = get_notion_kb()
-    article = notion_kb.get_article_by_id(article_id)
+# ---------- Admin: Audit Logs ----------
+@app.get("/api/admin/audit-logs")
+async def get_audit_logs(
+    request: Request,
+    limit: int = 100,
+    offset: int = 0,
+    user_id: Optional[str] = None,
+    action: Optional[str] = None,
+    resource_type: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: Faculty = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """View audit logs (admin only)."""
+    await standard_limiter(request)
     
-    if not article:
-        raise HTTPException(404, "Article not found")
+    if not settings.AUDIT_LOG_ENABLED:
+        return {"logs": [], "message": "Audit logging is disabled"}
     
-    return article
+    query = db.query(AuditLog)
+    
+    if user_id:
+        query = query.filter(AuditLog.user_id == user_id)
+    if action:
+        query = query.filter(AuditLog.action == action)
+    if resource_type:
+        query = query.filter(AuditLog.resource_type == resource_type)
+    if start_date:
+        query = query.filter(AuditLog.timestamp >= start_date)
+    if end_date:
+        query = query.filter(AuditLog.timestamp <= end_date)
+    
+    total = query.count()
+    logs = query.order_by(AuditLog.timestamp.desc()).offset(offset).limit(limit).all()
+    
+    return {
+        "logs": [
+            {
+                "id": log.id,
+                "timestamp": log.timestamp.isoformat(),
+                "user_id": log.user_id,
+                "user_name": log.user_name,
+                "action": log.action,
+                "resource_type": log.resource_type,
+                "resource_id": log.resource_id,
+                "details": log.details,
+                "ip_address": log.ip_address
+            }
+            for log in logs
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
 
 
-@app.get("/api/knowledge-base/search")
-def search_knowledge_base(q: str):
-    """
-    Search articles by query
-    """
-    notion_kb = get_notion_kb()
-    articles = notion_kb.search_articles(q)
-    return {"articles": articles}
-
-from pydantic import BaseModel
-
-class FeedbackSubmission(BaseModel):
-    feedback_type: str
-    message: str
-    page_url: str = None
-
+# ---------- Feedback ----------
 @app.post("/api/feedback")
-def submit_feedback(
+async def submit_feedback(
+    request: Request,
     feedback: FeedbackSubmission,
     current_user: Faculty = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Submit user feedback"""
     from .email_service import send_feedback_email
+    
+    await standard_limiter(request)
     
     try:
         success = send_feedback_email(
@@ -843,6 +896,8 @@ def submit_feedback(
     except Exception as e:
         logger.error(f"Feedback submission error: {e}")
         raise HTTPException(500, f"Error: {str(e)}")
+
+
 # ========================================
 # STATIC FILE ROUTES - MUST COME AFTER API ROUTES
 # ========================================
@@ -861,7 +916,6 @@ async def serve_favicon_ico():
     favicon_path = STATIC_DIR / "favicon.ico"
     if favicon_path.exists():
         return FileResponse(favicon_path)
-    # Fallback to SVG
     svg_path = STATIC_DIR / "favicon.svg"
     if svg_path.exists():
         return FileResponse(svg_path, media_type="image/svg+xml")
@@ -921,14 +975,12 @@ async def serve_service_worker_legacy():
 @app.get("/{filename}.html")
 async def serve_html_file(filename: str):
     """Serve any HTML file from root directory"""
-    # Try exact match first
     html_path = STATIC_DIR / f"{filename}.html"
     if html_path.exists():
         response = FileResponse(html_path)
         response.headers["Cache-Control"] = "public, max-age=3600"
         return response
     
-    # Try case-insensitive search
     for file in STATIC_DIR.glob("*.html"):
         if file.stem.lower() == filename.lower():
             response = FileResponse(file)
@@ -941,7 +993,6 @@ async def serve_html_file(filename: str):
             response.headers["Cache-Control"] = "public, max-age=3600"
             return response
     
-    # Also try backend/static directory
     backend_html_path = BACKEND_STATIC_DIR / f"{filename}.html"
     if backend_html_path.exists():
         response = FileResponse(backend_html_path)
@@ -970,6 +1021,7 @@ async def serve_cache_manager():
         return response
     return {"error": "cache-manager.js not found"}
 
+
 @app.get("/{filename}.js")
 async def serve_js_file(filename: str):
     """Serve any JavaScript file from root directory"""
@@ -979,7 +1031,8 @@ async def serve_js_file(filename: str):
         response.headers["Cache-Control"] = "public, max-age=3600"
         return response
     return {"error": f"{filename}.js not found"}
-    
+
+
 @app.get("/static/{path:path}")
 async def serve_static(path: str):
     """Serve any static file from backend/static"""
@@ -989,23 +1042,19 @@ async def serve_static(path: str):
     return {"error": f"Static file {path} not found"}
 
 
-# Catch-all route for paths without extensions (e.g., /dashboard)
-# THIS MUST BE LAST!
+# Catch-all route - THIS MUST BE LAST!
 @app.get("/{path:path}")
 async def serve_catch_all(path: str):
-    """Catch-all for paths without extensions - try adding .html"""
-    # Skip API routes - they should have been handled above
+    """Catch-all for paths without extensions"""
     if path.startswith("api/"):
         raise HTTPException(404, "API endpoint not found")
     
-    # Try as .html file
     html_path = STATIC_DIR / f"{path}.html"
     if html_path.exists():
         response = FileResponse(html_path)
         response.headers["Cache-Control"] = "public, max-age=3600"
         return response
     
-    # Try in backend/static
     backend_html_path = BACKEND_STATIC_DIR / f"{path}.html"
     if backend_html_path.exists():
         response = FileResponse(backend_html_path)
