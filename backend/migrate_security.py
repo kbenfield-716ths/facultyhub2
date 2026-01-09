@@ -1,12 +1,11 @@
 # backend/migrate_security.py
 """
-Database migration script to add security tables and fields.
-Run this ONCE before deploying security updates.
+Database migration script - standalone version
+Run from backend directory: python3 migrate_security.py
 """
 
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from .models import Base, Faculty, AuditLog, SessionToken, PasswordResetToken
+import sqlite3
+from pathlib import Path
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -14,20 +13,93 @@ logger = logging.getLogger(__name__)
 
 def migrate_database():
     """Add new tables and columns for security features"""
-    engine = create_engine("sqlite:///./faculty_hub.db")
-    Session = sessionmaker(bind=engine)
-    db = Session()
+    
+    # Find database
+    db_path = Path(__file__).parent.parent / "faculty_hub.db"
+    
+    # Also check for moonlighter.db (your models use this name)
+    if not db_path.exists():
+        db_path = Path(__file__).parent.parent / "moonlighter.db"
+    
+    if not db_path.exists():
+        logger.error(f"Database not found. Checked:")
+        logger.error(f"  - faculty_hub.db")
+        logger.error(f"  - moonlighter.db")
+        logger.error("Please ensure database exists before running migration.")
+        return
+    
+    logger.info(f"Migrating database at: {db_path}")
+    
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
     
     try:
-        logger.info("Starting database migration...")
+        # Create audit_logs table
+        logger.info("Creating audit_logs table...")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp DATETIME NOT NULL,
+                user_id VARCHAR NOT NULL,
+                user_name VARCHAR NOT NULL,
+                action VARCHAR NOT NULL,
+                resource_type VARCHAR,
+                resource_id VARCHAR,
+                details TEXT,
+                ip_address VARCHAR,
+                user_agent VARCHAR
+            )
+        """)
         
-        # Create new tables
-        Base.metadata.create_all(bind=engine)
-        logger.info("✓ Created new tables (audit_logs, session_tokens, password_reset_tokens)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_audit_logs_timestamp ON audit_logs(timestamp)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_audit_logs_user_id ON audit_logs(user_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_audit_logs_action ON audit_logs(action)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_audit_logs_resource_type ON audit_logs(resource_type)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_audit_logs_timestamp_user ON audit_logs(timestamp, user_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_audit_logs_action_resource ON audit_logs(action, resource_type)")
+        logger.info("✓ audit_logs table created")
         
-        # Add new columns to Faculty table (SQLite doesn't support ALTER COLUMN easily)
-        # We'll check if columns exist and add if missing
+        # Create session_tokens table
+        logger.info("Creating session_tokens table...")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS session_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id VARCHAR UNIQUE NOT NULL,
+                faculty_id VARCHAR NOT NULL,
+                created_at DATETIME NOT NULL,
+                last_activity DATETIME NOT NULL,
+                expires_at DATETIME NOT NULL,
+                ip_address VARCHAR,
+                user_agent VARCHAR,
+                invalidated BOOLEAN DEFAULT 0,
+                invalidated_at DATETIME
+            )
+        """)
         
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_session_tokens_session_id ON session_tokens(session_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_session_tokens_faculty_id ON session_tokens(faculty_id)")
+        logger.info("✓ session_tokens table created")
+        
+        # Create password_reset_tokens table
+        logger.info("Creating password_reset_tokens table...")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                faculty_id VARCHAR NOT NULL,
+                token VARCHAR UNIQUE NOT NULL,
+                created_at DATETIME NOT NULL,
+                expires_at DATETIME NOT NULL,
+                used BOOLEAN DEFAULT 0,
+                used_at DATETIME
+            )
+        """)
+        
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_faculty_id ON password_reset_tokens(faculty_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_token ON password_reset_tokens(token)")
+        logger.info("✓ password_reset_tokens table created")
+        
+        # Add new columns to faculty table
+        logger.info("Adding security columns to faculty table...")
         new_columns = [
             ("password_reset_required", "BOOLEAN DEFAULT 0"),
             ("password_last_changed", "DATETIME"),
@@ -39,37 +111,70 @@ def migrate_database():
         
         for col_name, col_def in new_columns:
             try:
-                db.execute(text(f"ALTER TABLE faculty ADD COLUMN {col_name} {col_def}"))
+                cursor.execute(f"ALTER TABLE faculty ADD COLUMN {col_name} {col_def}")
                 logger.info(f"✓ Added column: faculty.{col_name}")
-            except Exception as e:
-                if "duplicate column name" in str(e).lower():
+            except sqlite3.OperationalError as e:
+                if "duplicate column" in str(e).lower():
                     logger.info(f"  Column faculty.{col_name} already exists, skipping")
                 else:
                     logger.error(f"✗ Error adding column {col_name}: {e}")
         
-        db.commit()
+        # Update existing faculty
+        cursor.execute("UPDATE faculty SET password_reset_required = 1 WHERE password_changed = 0")
+        count = cursor.rowcount
+        logger.info(f"✓ Marked {count} existing users for password reset")
         
-        # Update existing faculty to require password reset
-        result = db.execute(text(
-            "UPDATE faculty SET password_reset_required = 1 WHERE password_changed = 0"
-        ))
-        logger.info(f"✓ Marked {result.rowcount} existing users for password reset")
+        conn.commit()
         
-        db.commit()
+        # Verify tables were created
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = [row[0] for row in cursor.fetchall()]
         
-        logger.info("Migration completed successfully!")
-        logger.info("\nNEXT STEPS:")
-        logger.info("1. Review .env file and set SECURITY_MODE")
-        logger.info("2. Configure CORS_ORIGINS for production")
+        logger.info("\n" + "="*60)
+        logger.info("✅ Migration completed successfully!")
+        logger.info("="*60)
+        logger.info(f"\nDatabase: {db_path}")
+        logger.info(f"Tables found: {len(tables)}")
+        
+        # Verify new tables exist
+        if 'audit_logs' in tables:
+            logger.info("  ✓ audit_logs")
+        if 'session_tokens' in tables:
+            logger.info("  ✓ session_tokens")
+        if 'password_reset_tokens' in tables:
+            logger.info("  ✓ password_reset_tokens")
+        
+        # Check faculty table columns
+        cursor.execute("PRAGMA table_info(faculty)")
+        columns = [row[1] for row in cursor.fetchall()]
+        security_cols = ['password_reset_required', 'password_last_changed', 
+                        'failed_login_attempts', 'account_locked_until',
+                        'last_login_at', 'last_login_ip']
+        
+        logger.info("\nFaculty table security columns:")
+        for col in security_cols:
+            if col in columns:
+                logger.info(f"  ✓ {col}")
+            else:
+                logger.warning(f"  ✗ {col} (missing)")
+        
+        logger.info("\n" + "="*60)
+        logger.info("NEXT STEPS:")
+        logger.info("1. Review .env file and set SECURITY_MODE=permissive")
+        logger.info("2. Start the application:")
+        logger.info("   cd ..")
+        logger.info("   uvicorn backend.app:app --reload")
         logger.info("3. Test login and password change functionality")
-        logger.info("4. Monitor audit logs after deployment")
+        logger.info("4. Monitor startup logs for generated admin password")
+        logger.info("="*60)
         
     except Exception as e:
-        logger.error(f"Migration failed: {e}")
-        db.rollback()
+        logger.error(f"\n❌ Migration failed: {e}")
+        logger.error("Rolling back changes...")
+        conn.rollback()
         raise
     finally:
-        db.close()
+        conn.close()
 
 
 if __name__ == "__main__":
