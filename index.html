@@ -247,13 +247,14 @@
         <h1>UVA PCCM - Faculty Hub</h1>
       </div>
       <div class="header-right">
-        <span class="user-name" id="userName" style="display:none;"></span>
-        <a href="/login.html" class="login-button" id="loginButton" style="display:none;">Sign In</a>
-        <button class="logout-button" id="logoutButton" style="display:none;">Sign Out</button>
-        <button class="install-button" id="installButton">
-          📱 Install App
-        </button>
-      </div>
+  <span class="user-name" id="userName" style="display:none;"></span>
+    <a href="/profile.html" class="login-button" id="profileButton" style="display:none;">👤 Profile</a>
+    <a href="/login.html" class="login-button" id="loginButton" style="display:none;">Sign In</a>
+    < button class="logout-button" id="logoutButton" style="display:none;">Sign Out</button>
+    <button class="install-button" id="installButton">
+    📱 Install App
+  </button>
+</div>
     </div>
   </header>
 
@@ -327,6 +328,7 @@
           // User is logged in
           document.getElementById('userName').textContent = `Welcome, ${data.faculty_name}!`;
           document.getElementById('userName').style.display = 'inline';
+          document.getElementById('profileButton').style.display = 'inline-block'; 
           document.getElementById('logoutButton').style.display = 'inline-block';
           document.getElementById('loginButton').style.display = 'none';
           
