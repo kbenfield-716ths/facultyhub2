@@ -587,3 +587,121 @@ def send_draft_notification(faculty_id: str, priority: int, deadline: datetime, 
         
     finally:
         db.close()
+
+# Password Rest
+def send_password_reset_email(
+    faculty_name: str,
+    faculty_email: str,
+    reset_token: str
+) -> bool:
+    """
+    Send password reset email with token
+    
+    Args:
+        faculty_name: Faculty member's full name
+        faculty_email: Faculty member's email address
+        reset_token: Unique password reset token
+    
+    Returns:
+        bool: True if email sent successfully
+    """
+    # Construct reset URL (update with your actual domain)
+    reset_url = f"https://yourdomain.com/reset-password?token={reset_token}"
+    # For local testing:
+    # reset_url = f"http://localhost:8000/reset-password?token={reset_token}"
+    
+    subject = "Password Reset Request - PCCM Faculty Hub"
+    
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+            }}
+            .header {{
+                background-color: #232D4B;
+                color: #E57200;
+                padding: 20px;
+                text-align: center;
+                border-radius: 5px 5px 0 0;
+            }}
+            .content {{
+                background-color: #f9f9f9;
+                padding: 20px;
+                border: 1px solid #ddd;
+                border-radius: 0 0 5px 5px;
+            }}
+            .button {{
+                display: inline-block;
+                background-color: #E57200;
+                color: white;
+                padding: 12px 24px;
+                text-decoration: none;
+                border-radius: 5px;
+                margin: 20px 0;
+            }}
+            .warning {{
+                background-color: #FFF3CD;
+                border-left: 4px solid #FFC107;
+                padding: 15px;
+                margin: 15px 0;
+            }}
+            .footer {{
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 1px solid #ddd;
+                font-size: 12px;
+                color: #666;
+                text-align: center;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h2>Password Reset Request</h2>
+        </div>
+        <div class="content">
+            <p>Dear Dr. {faculty_name},</p>
+            
+            <p>You recently requested to reset your password for your PCCM Faculty Hub account.</p>
+            
+            <p>Click the button below to reset your password:</p>
+            
+            <p style="text-align: center;">
+                <a href="{reset_url}" class="button">Reset Password</a>
+            </p>
+            
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="font-family: monospace; background-color: #f0f0f0; padding: 10px; word-break: break-all;">
+                {reset_url}
+            </p>
+            
+            <div class="warning">
+                <strong>⚠️ Important:</strong>
+                <ul>
+                    <li>This link will expire in 24 hours</li>
+                    <li>The link can only be used once</li>
+                    <li>If you didn't request this, you can safely ignore this email</li>
+                </ul>
+            </div>
+            
+            <p>If you did not request a password reset, please contact support if you have concerns about account security.</p>
+            
+            <p>Thank you,<br>
+            <strong>PCCM Division IT</strong></p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message from the PCCM Faculty Hub. Please do not reply to this email.</p>
+            <p>University of Virginia Health | Division of Pulmonary and Critical Care Medicine</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return send_email(faculty_email, faculty_name, subject, html_content)
