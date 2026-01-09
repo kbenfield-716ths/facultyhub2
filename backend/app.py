@@ -7,8 +7,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date
 from pathlib import Path
-import csv
-import io
+
 
 from sqlalchemy.orm import Session
 from sqlalchemy import delete
@@ -32,7 +31,93 @@ from backend.sync_utils import sync_provider_from_faculty, sync_all_providers_fr
 from .routes import knowledge_base
 from .routes import draft
 from .models import Base, engine
+from .config import settings
+from .security import SecurityMiddleware, standard_limiter, log_audit, generate_secure_password
+from .auth import optional_require_admin, require_admin
+from .routes.admin_auth import router as admin_auth_router
+
 import logging
+import csv
+import io
+
+app.add_middleware(SecurityMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.get_cors_origins(),  # Dynamic based on config
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.include_router(admin_auth_router)
+
+@app.on_event("startup")
+def startup_event():
+    """Initialize database and seed data on startup."""
+    init_db()
+    
+    # Seed message boards
+    from .models import seed_message_boards
+    db = SessionLocal()
+    try:
+        seed_message_boards(db)
+        print("[Startup] Message boards seeded")
+    except Exception as e:
+        print(f"[Startup] Message boards: {e}")
+    finally:
+        db.close()
+    
+    # Create default admin user with secure handling
+    db = SessionLocal()
+    try:
+        admin_count = db.query(Faculty).filter_by(is_admin=True).count()
+        if admin_count == 0:
+            # Generate secure password or use env var
+            if settings.allows_default_admin() and settings.ADMIN_DEFAULT_PASSWORD:
+                admin_password = settings.ADMIN_DEFAULT_PASSWORD
+                print("[Startup] Using ADMIN_DEFAULT_PASSWORD from environment")
+            else:
+                admin_password = generate_secure_password()
+                print("=" * 80)
+                print("[Startup] GENERATED ADMIN PASSWORD (SAVE THIS IMMEDIATELY):")
+                print(f"  Username: ADMIN")
+                print(f"  Password: {admin_password}")
+                print("=" * 80)
+                print("This password will not be shown again!")
+                print("Admin user must change password on first login.")
+                print("=" * 80)
+                
+                # Optionally write to secure file
+                try:
+                    with open(".admin_initial_password", "w") as f:
+                        f.write(f"Username: ADMIN\nPassword: {admin_password}\nGenerated: {datetime.utcnow()}\n")
+                    print("[Startup] Password also saved to .admin_initial_password (delete after use)")
+                except Exception as e:
+                    print(f"[Startup] Could not save password to file: {e}")
+            
+            admin = Faculty(
+                id="ADMIN",
+                name="Administrator",
+                email="admin@example.com",  # CHANGE THIS
+                rank="full",
+                clinical_effort_pct=0,
+                base_points=0,
+                is_admin=True,
+                password_hash=hash_password(admin_password),
+                password_changed=False,  # Force password change
+                password_reset_required=True,
+                registered=True,
+                active=True
+            )
+            db.add(admin)
+            db.commit()
+            
+            if not settings.allows_default_admin():
+                print("[Startup] Default admin login disabled in strict mode")
+                print("[Startup] Admin must use password reset to set secure password")
+    except Exception as e:
+        print(f"[Startup] Error creating admin user: {e}")
+    finally:
+        db.close()
 
 logger = logging.getLogger(__name__)
 Base.metadata.create_all(bind=engine)
