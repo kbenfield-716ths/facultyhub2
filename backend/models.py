@@ -21,10 +21,29 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 #===========================================
 # SECURITY UPGRADE
 #===========================================
-# Add to backend/models.py
+# backend/models.py
+from datetime import datetime, date
+from sqlalchemy import (
+    Column, Integer, String, Boolean, Date, DateTime, Float,
+    ForeignKey, create_engine, text, Text, Index
+)
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
+import os
+import uuid
 
-from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Text, Integer, Index
+# Use persistent volume if available, fallback to local
+db_path = "/data/moonlighter.db" if os.path.exists("/data") else "./moonlighter.db"
+DATABASE_URL = f"sqlite:///{db_path}"
+
+Base = declarative_base()
+engine = create_engine(
+    DATABASE_URL, connect_args={"check_same_thread": False}
+)
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+
+#===========================================
+# SECURITY MODELS
+#===========================================
 
 class AuditLog(Base):
     """Audit log for tracking admin actions"""
@@ -32,12 +51,12 @@ class AuditLog(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
-    user_id = Column(String, nullable=False, index=True)  # Faculty ID who performed action
+    user_id = Column(String, nullable=False, index=True)
     user_name = Column(String, nullable=False)
-    action = Column(String, nullable=False, index=True)  # e.g., "DELETE_PROVIDER", "CLEAR_MONTH"
-    resource_type = Column(String, nullable=True, index=True)  # e.g., "Provider", "Month"
+    action = Column(String, nullable=False, index=True)
+    resource_type = Column(String, nullable=True, index=True)
     resource_id = Column(String, nullable=True)
-    details = Column(Text, nullable=True)  # JSON string with before/after state
+    details = Column(Text, nullable=True)
     ip_address = Column(String, nullable=True)
     user_agent = Column(String, nullable=True)
     
@@ -76,20 +95,6 @@ class PasswordResetToken(Base):
     used_at = Column(DateTime, nullable=True)
 
 
-# Add to Faculty model (modifications)
-class Faculty(Base):
-    __tablename__ = "faculty"
-    
-    # ... existing fields ...
-    
-    # Add these new fields (with defaults for backward compatibility)
-    password_reset_required = Column(Boolean, default=False)
-    password_last_changed = Column(DateTime, nullable=True)
-    failed_login_attempts = Column(Integer, default=0)
-    account_locked_until = Column(DateTime, nullable=True)
-    last_login_at = Column(DateTime, nullable=True)
-    last_login_ip = Column(String, nullable=True)
-
 # ==========================================
 # KNOWLEDGE BASE
 # ==========================================
@@ -99,26 +104,23 @@ class KnowledgeBaseArticle(Base):
     
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     title = Column(String, nullable=False)
-    description = Column(String, nullable=False)  # Short summary
-    content = Column(Text, nullable=False)  # Full Markdown content
-    category = Column(String, nullable=False)  # Policies, Procedures, Clinical Guidelines, IT Support
+    description = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    category = Column(String, nullable=False)
     
-    # Publishing
     is_published = Column(Boolean, default=True)
     display_order = Column(Integer, default=0)
     
-    # Metadata
     created_by = Column(String, ForeignKey("faculty.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     author = relationship("Faculty", foreign_keys=[created_by])
 
-# ==========================================
-# DRAFT SYSTEM BASE
-# ==========================================
 
+# ==========================================
+# DRAFT SYSTEM
+# ==========================================
 
 class DraftRound(Base):
     __tablename__ = "draft_rounds"
@@ -126,15 +128,14 @@ class DraftRound(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     year = Column(Integer, nullable=False)
     round_number = Column(Integer, default=1)
-    status = Column(String, default='pending')  # 'pending', 'active', 'paused', 'completed'
-    window_size = Column(Integer, default=5)  # How many faculty can select at once
-    hours_per_slot = Column(Integer, default=72)  # Hours each faculty has to submit
+    status = Column(String, default='pending')
+    window_size = Column(Integer, default=5)
+    hours_per_slot = Column(Integer, default=72)
     
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
     slots = relationship("DraftSlot", back_populates="draft_round", cascade="all, delete-orphan")
 
 
@@ -144,9 +145,9 @@ class DraftSlot(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     round_id = Column(String, ForeignKey("draft_rounds.id"), nullable=False)
     faculty_id = Column(String, ForeignKey("faculty.id"), nullable=False)
-    priority_order = Column(Integer, nullable=False)  # 1, 2, 3, etc.
+    priority_order = Column(Integer, nullable=False)
     
-    status = Column(String, default='waiting')  # 'waiting', 'active', 'submitted', 'expired', 'skipped'
+    status = Column(String, default='waiting')
     notified_at = Column(DateTime, nullable=True)
     deadline = Column(DateTime, nullable=True)
     submitted_at = Column(DateTime, nullable=True)
@@ -154,12 +155,12 @@ class DraftSlot(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     draft_round = relationship("DraftRound", back_populates="slots")
     faculty = relationship("Faculty")
 
+
 # ==========================================
-# MOONLIGHTING MODELS (Existing)
+# MOONLIGHTING MODELS
 # ==========================================
 
 class Provider(Base):
@@ -227,7 +228,7 @@ class Assignment(Base):
 
 
 # ==========================================
-# FACULTY SCHEDULING MODELS (Service Availability)
+# FACULTY MODEL (UNIFIED WITH SECURITY FIELDS)
 # ==========================================
 
 class Faculty(Base):
@@ -239,35 +240,40 @@ class Faculty(Base):
     name = Column(String, nullable=False, index=True)
     email = Column(String, unique=True, nullable=False)
     
-    # Authentication
+    # Authentication (existing)
     password_hash = Column(String)
     password_changed = Column(Boolean, default=False)
     registered = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     
+    # NEW SECURITY FIELDS
+    password_reset_required = Column(Boolean, default=False)
+    password_last_changed = Column(DateTime, nullable=True)
+    failed_login_attempts = Column(Integer, default=0)
+    account_locked_until = Column(DateTime, nullable=True)
+    last_login_at = Column(DateTime, nullable=True)
+    last_login_ip = Column(String, nullable=True)
+    
     # Scheduling profile
-    rank = Column(String, nullable=False)  # assistant, associate, full
+    rank = Column(String, nullable=False)
     clinical_effort_pct = Column(Integer, nullable=False)
     base_points = Column(Integer, nullable=False)
-    bonus_points = Column(Integer, default=0)  # Earned from volunteering
+    bonus_points = Column(Integer, default=0)
     active = Column(Boolean, default=True)
     
-    # Moonlighting participation (single source of truth)
-    moonlighter = Column(Boolean, default=False, nullable=False)  # Whether faculty does moonlighting shifts
+    # Moonlighting participation
+    moonlighter = Column(Boolean, default=False, nullable=False)
     
-    # Service week commitments (for inpatient scheduling)
-    # These define how many weeks per year this faculty member is expected to work each service
-    micu_weeks = Column(Integer, default=0)        # Number of MICU weeks per year
-    app_icu_weeks = Column(Integer, default=0)     # Number of APP-ICU weeks per year  
-    procedure_weeks = Column(Integer, default=0)   # Number of Procedure weeks per year
-    consult_weeks = Column(Integer, default=0)     # Number of Consult weeks per year
+    # Service week commitments
+    micu_weeks = Column(Integer, default=0)
+    app_icu_weeks = Column(Integer, default=0)
+    procedure_weeks = Column(Integer, default=0)
+    consult_weeks = Column(Integer, default=0)
     
     # Relationships
     unavailability_requests = relationship("UnavailabilityRequest", back_populates="faculty")
     service_assignments = relationship("ServiceWeekAssignment", back_populates="faculty")
     
-    # Property for compatibility with message board access control
-    # This ensures moonlighter and does_moonlighting are always synchronized
     @property
     def does_moonlighting(self):
         """Alias for moonlighter field - used by message board access control"""
@@ -279,27 +285,28 @@ class Faculty(Base):
         self.moonlighter = value
 
 
+# ==========================================
+# SERVICE SCHEDULING MODELS
+# ==========================================
+
 class ServiceWeek(Base):
     """The 52 weeks of the academic year for service availability scheduling"""
     __tablename__ = "service_weeks"
     
-    id = Column(String, primary_key=True, index=True)  # "W01-2026", "W02-2026", etc.
+    id = Column(String, primary_key=True, index=True)
     week_number = Column(Integer, nullable=False)
-    label = Column(String, nullable=False)  # "Week 1 (Jul 7)"
+    label = Column(String, nullable=False)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     year = Column(Integer, nullable=False)
     
-    # Week characteristics
-    week_type = Column(String, default="regular")  # regular, summer, spring_break, thanksgiving, christmas
-    point_cost_off = Column(Integer, default=5)     # Cost to request unavailability
-    point_reward_work = Column(Integer, default=0)  # Bonus for volunteering
+    week_type = Column(String, default="regular")
+    point_cost_off = Column(Integer, default=5)
+    point_reward_work = Column(Integer, default=0)
     min_staff_required = Column(Integer, default=5)
     
-    # Historic data seeding (for previous years before system was deployed)
-    historic_unavailable_count = Column(Integer, default=0)  # Number of faculty unavailable (from seed data)
+    historic_unavailable_count = Column(Integer, default=0)
     
-    # Relationships
     unavailability_requests = relationship("UnavailabilityRequest", back_populates="week")
     service_assignments = relationship("ServiceWeekAssignment", back_populates="week")
 
@@ -312,20 +319,16 @@ class UnavailabilityRequest(Base):
     faculty_id = Column(String, ForeignKey('faculty.id'), nullable=False, index=True)
     week_id = Column(String, ForeignKey('service_weeks.id'), nullable=False, index=True)
     
-    # Status: "unavailable" (requests time off), "available" (volunteers), "assigned" (final)
     status = Column(String, nullable=False, default="unavailable")
     
-    # Points tracking
-    points_spent = Column(Integer, default=0)   # For requesting unavailability
-    points_earned = Column(Integer, default=0)  # For volunteering
+    points_spent = Column(Integer, default=0)
+    points_earned = Column(Integer, default=0)
     
-    # Draft priority tracking
-    gives_priority = Column(Boolean, default=False)  # Working holiday gives next year priority
+    gives_priority = Column(Boolean, default=False)
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     faculty = relationship("Faculty", back_populates="unavailability_requests")
     week = relationship("ServiceWeek", back_populates="unavailability_requests")
 
@@ -338,37 +341,34 @@ class ServiceWeekAssignment(Base):
     faculty_id = Column(String, ForeignKey('faculty.id'), nullable=False, index=True)
     week_id = Column(String, ForeignKey('service_weeks.id'), nullable=False, index=True)
     
-    # Service type: "MICU", "APP-ICU", "Procedures", "Consults"
     service_type = Column(String, nullable=False, index=True)
     
-    # Import tracking
-    imported = Column(Boolean, default=False)  # True if from historic CSV
+    imported = Column(Boolean, default=False)
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     faculty = relationship("Faculty", back_populates="service_assignments")
     week = relationship("ServiceWeek", back_populates="service_assignments")
 
+
 # ==========================================
-# Message Boards
+# MESSAGE BOARDS
 # ==========================================
 
 class MessageBoard(Base):
     """Message boards (General, Moonlighting, etc.)"""
     __tablename__ = "message_boards"
     
-    id = Column(String, primary_key=True)  # 'general', 'moonlighting'
+    id = Column(String, primary_key=True)
     name = Column(String(100), nullable=False)
     description = Column(Text)
-    icon = Column(String(10))  # Emoji
+    icon = Column(String(10))
     requires_moonlighting = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     display_order = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
     messages = relationship("Message", back_populates="board", cascade="all, delete-orphan")
     
     def __repr__(self):
@@ -384,7 +384,7 @@ class Message(Base):
     author_id = Column(String, ForeignKey("faculty.id", ondelete="CASCADE"), nullable=False)
     parent_id = Column(String, ForeignKey("messages.id", ondelete="CASCADE"), nullable=True)
     
-    subject = Column(Text)  # Only for top-level threads
+    subject = Column(Text)
     content = Column(Text, nullable=False)
     is_pinned = Column(Boolean, default=False)
     is_edited = Column(Boolean, default=False)
@@ -392,14 +392,12 @@ class Message(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     board = relationship("MessageBoard", back_populates="messages")
     author = relationship("Faculty", foreign_keys=[author_id])
     parent = relationship("Message", remote_side=[id], backref="replies")
     reactions = relationship("MessageReaction", back_populates="message", cascade="all, delete-orphan")
     read_status = relationship("MessageReadStatus", back_populates="message", cascade="all, delete-orphan")
     
-    # Indexes
     __table_args__ = (
         Index('idx_messages_board', 'board_id'),
         Index('idx_messages_author', 'author_id'),
@@ -418,14 +416,12 @@ class MessageReaction(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     message_id = Column(String, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
     faculty_id = Column(String, ForeignKey("faculty.id", ondelete="CASCADE"), nullable=False)
-    reaction = Column(String(10), nullable=False)  # Emoji
+    reaction = Column(String(10), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
     message = relationship("Message", back_populates="reactions")
     faculty = relationship("Faculty")
     
-    # Unique constraint: one reaction type per faculty per message
     __table_args__ = (
         Index('idx_reactions_message', 'message_id'),
         Index('idx_reactions_unique', 'message_id', 'faculty_id', 'reaction', unique=True),
@@ -444,11 +440,9 @@ class MessageReadStatus(Base):
     faculty_id = Column(String, ForeignKey("faculty.id", ondelete="CASCADE"), nullable=False)
     read_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
     message = relationship("Message", back_populates="read_status")
     faculty = relationship("Faculty")
     
-    # Unique constraint: one read status per faculty per message
     __table_args__ = (
         Index('idx_read_status_faculty', 'faculty_id'),
         Index('idx_read_status_message', 'message_id'),
@@ -457,7 +451,8 @@ class MessageReadStatus(Base):
     
     def __repr__(self):
         return f"<MessageReadStatus(message={self.message_id}, faculty={self.faculty_id})>"
-        
+
+
 # ==========================================
 # DATABASE INITIALIZATION
 # ==========================================
@@ -467,7 +462,6 @@ def init_db():
     print("[Database] Creating tables and indexes...")
     Base.metadata.create_all(bind=engine)
     
-    # Database optimizations using text() for raw SQL
     try:
         with engine.connect() as conn:
             conn.execute(text("PRAGMA journal_mode=WAL"))
@@ -475,7 +469,6 @@ def init_db():
             conn.execute(text("PRAGMA mmap_size=10485760"))
             conn.execute(text("PRAGMA synchronous=NORMAL"))
             
-            # Add indexes for faculty scheduling tables
             conn.execute(text("""
                 CREATE INDEX IF NOT EXISTS idx_faculty_email ON faculty(email)
             """))
@@ -514,6 +507,7 @@ def init_db():
         print(f"[Database] Warning: Could not apply optimizations: {e}")
         print("[Database] Initialization complete (without optimizations)")
 
+
 def seed_message_boards(db: Session):
     """Seed default message boards if they don't exist"""
     boards = [
@@ -541,6 +535,7 @@ def seed_message_boards(db: Session):
             db.add(board)
     
     db.commit()
+
 
 def get_db():
     """Dependency for FastAPI endpoints"""
