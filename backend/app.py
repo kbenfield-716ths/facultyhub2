@@ -16,8 +16,8 @@ from sqlalchemy import delete
 from .auth import get_current_user, hash_password
 
 from .models import (
-    SessionLocal, init_db,
-    get-db here Provider, Month, Shift, Signup, Assignment, Faculty, AuditLog, _db here     
+    SessionLocal, init_db, get_db,
+    Provider, Month, Shift, Signup, Assignment, Faculty, AuditLog
 )  
 from .optimizer_bridge import run_optimizer_for_month
 from fastapi.middleware.gzip import GZipMiddleware
