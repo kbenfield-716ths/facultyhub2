@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timedelta
 
-from ..models import SessionLocal, Faculty, PasswordResetToken
+from ..models import SessionLocal, Faculty, PasswordResetToken, get_db
 from ..auth import hash_password, verify_password, get_current_user, require_admin
 from ..security import (
     log_audit, check_password_strength, generate_secure_password,
