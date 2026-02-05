@@ -944,25 +944,6 @@ async def serve_service_worker():
         return response
     return {"error": "service-worker.js not found"}
 
-
-@app.get("/Service_Worker.js")
-async def serve_service_worker_legacy():
-    """Legacy route"""
-    sw_path = STATIC_DIR / "service-worker.js"
-    if sw_path.exists():
-        response = FileResponse(sw_path, media_type="application/javascript")
-        response.headers["Cache-Control"] = "no-cache"
-        response.headers["Service-Worker-Allowed"] = "/"
-        return response
-    old_sw_path = STATIC_DIR / "Service_Worker.js"
-    if old_sw_path.exists():
-        response = FileResponse(old_sw_path, media_type="application/javascript")
-        response.headers["Cache-Control"] = "no-cache"
-        response.headers["Service-Worker-Allowed"] = "/"
-        return response
-    return {"error": "Service worker not found"}
-
-
 @app.get("/{filename}.html")
 async def serve_html_file(filename: str):
     """Serve any HTML file from root directory"""
