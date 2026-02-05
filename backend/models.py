@@ -1,29 +1,6 @@
 # backend/models.py
 from datetime import datetime, date
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Date, DateTime,
-    ForeignKey, create_engine, text, Text, Index
-)
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
-import os
-import uuid
-
-# Use persistent volume if available, fallback to local
-db_path = "/data/moonlighter.db" if os.path.exists("/data") else "./moonlighter.db"
-DATABASE_URL = f"sqlite:///{db_path}"
-
-Base = declarative_base()
-engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
-)
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-
-#===========================================
-# SECURITY UPGRADE
-#===========================================
-# backend/models.py
-from datetime import datetime, date
-from sqlalchemy import (
     Column, Integer, String, Boolean, Date, DateTime, Float,
     ForeignKey, create_engine, text, Text, Index
 )
