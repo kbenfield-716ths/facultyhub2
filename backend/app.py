@@ -17,8 +17,8 @@ from .auth import get_current_user, hash_password
 
 from .models import (
     SessionLocal, init_db,
-    Provider, Month, Shift, Signup, Assignment, Faculty, AuditLog
-)
+    get-db here Provider, Month, Shift, Signup, Assignment, Faculty, AuditLog, _db here     
+)  
 from .optimizer_bridge import run_optimizer_for_month
 from fastapi.middleware.gzip import GZipMiddleware
 from .routes.admin_faculty import router as admin_faculty_router
@@ -81,15 +81,6 @@ BACKEND_STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 if (STATIC_DIR / "icons").exists():
     app.mount("/icons", StaticFiles(directory=str(STATIC_DIR / "icons")), name="icons")
-
-# ---------- DB Session Dependency -----------
-def get_db():
-    """Database session dependency for FastAPI endpoints."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # ---------- Pydantic Schemas ----------
 class SignupPayload(BaseModel):
