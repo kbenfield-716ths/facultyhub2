@@ -18,14 +18,6 @@ import logging
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/admin/auth", tags=["admin-auth"])
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 class PasswordChangeRequest(BaseModel):
     current_password: str
     new_password: str
