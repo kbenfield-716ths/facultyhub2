@@ -1,0 +1,45 @@
+{
+  "name": "Enhanced Testing Tools",
+  "id": "testing-tools",
+  "icon": "🧪",
+  "description": "Enhanced testing utilities with clear separation between moonlighting and service availability data",
+  "version": "2.0.0",
+  "category": "development",
+  "author": "FacultyHub Team",
+  "created": "2026-02-06",
+  "features": [
+    "Faculty impersonation for testing workflows",
+    "Separate reset controls for service availability vs moonlighting",
+    "Clear service week assignments (generated schedules)",
+    "Reset faculty bonus points",
+    "Preview before deletion with confirmation",
+    "Safe for repeated testing cycles"
+  ],
+  "improvements_from_legacy": [
+    "Separated 'Clear Requests' into two distinct buttons",
+    "Added preview of what will be deleted",
+    "Year and month filters for targeted cleanup",
+    "Confirmation dialogs showing exact counts",
+    "No ambiguity about which system is being reset"
+  ],
+  "use_cases": [
+    "Testing point allocation system multiple times",
+    "Resetting service availability for new draft rounds",
+    "Cleaning moonlighting signups between test cycles",
+    "Clearing generated schedules to re-run optimizer",
+    "Impersonating faculty to test their workflows"
+  ],
+  "dependencies": ["common", "api"],
+  "api_endpoints": [
+    "/api/admin/testing/reset-points",
+    "/api/admin/testing/clear-service-requests",
+    "/api/admin/testing/clear-moonlighting",
+    "/api/admin/testing/clear-assignments"
+  ],
+  "permissions_required": ["admin"],
+  "safety_warnings": [
+    "These tools are destructive - use only in testing",
+    "Always confirm before deletion",
+    "Production use should be rare and deliberate"
+  ]
+}

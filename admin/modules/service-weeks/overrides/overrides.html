@@ -1,0 +1,257 @@
+<!-- Service Week Overrides Module -->
+<div class="module-container" id="service-overrides-module">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">🛠️ Service Week Overrides</h2>
+      <p style="color: #6b7280; font-size: 14px;">Block faculty from specific weeks or manually assign them (overrides automated scheduler)</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="sub-tabs" style="margin-bottom: 24px;">
+      <button class="sub-tab-btn active" onclick="showOverrideTab('blocks')">
+        🚫 Faculty Blocks
+      </button>
+      <button class="sub-tab-btn" onclick="showOverrideTab('assignments')">
+        📌 Manual Assignments
+      </button>
+    </div>
+
+    <!-- Blocks Tab -->
+    <div id="override-tab-blocks" class="sub-tab-content active">
+      <div style="margin-bottom: 24px; padding: 16px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px;">
+        <strong style="color: #92400e;">🚫 Faculty Blocks</strong>
+        <p style="color: #78350f; margin: 8px 0 0 0; font-size: 13px;">
+          Block faculty from specific weeks (e.g., remote faculty who can't do in-person services).
+          Scheduler will skip blocked combinations when generating assignments.
+        </p>
+      </div>
+
+      <!-- Create New Block -->
+      <div class="action-panel" style="margin-bottom: 24px;">
+        <button class="btn-primary" onclick="showCreateBlockModal()">
+          ➕ Create New Block
+        </button>
+      </div>
+
+      <!-- Blocks Table -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Faculty</th>
+              <th>Week</th>
+              <th>Reason</th>
+              <th>Created By</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="blocksTableBody">
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 40px; color: #9ca3af;">
+                Loading blocks...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Manual Assignments Tab -->
+    <div id="override-tab-assignments" class="sub-tab-content">
+      <div style="margin-bottom: 24px; padding: 16px; background: #dbeafe; border-left: 4px solid #3b82f6; border-radius: 8px;">
+        <strong style="color: #1e40af;">📌 Manual Assignments</strong>
+        <p style="color: #1e3a8a; margin: 8px 0 0 0; font-size: 13px;">
+          Manually assign faculty to specific service/week combinations. These take precedence over automated assignments.
+          Use for special circumstances not captured by the optimizer.
+        </p>
+      </div>
+
+      <!-- Create New Assignment -->
+      <div class="action-panel" style="margin-bottom: 24px;">
+        <button class="btn-primary" onclick="showCreateAssignmentModal()">
+          ➕ Create Manual Assignment
+        </button>
+      </div>
+
+      <!-- Assignments Table -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Faculty</th>
+              <th>Week</th>
+              <th>Service Type</th>
+              <th>Reason</th>
+              <th>Created By</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="assignmentsTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px; color: #9ca3af;">
+                Loading assignments...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Alert Area -->
+    <div id="overridesAlert" class="alert" style="margin-top: 24px;"></div>
+  </div>
+</div>
+
+<!-- Create Block Modal -->
+<div id="createBlockModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Create Faculty Block</h3>
+      <span class="close-btn" onclick="closeCreateBlockModal()">&times;</span>
+    </div>
+    <form id="createBlockForm" onsubmit="submitBlock(event)">
+      <div class="form-group">
+        <label>Faculty *</label>
+        <select id="blockFacultyId" required>
+          <option value="">Select faculty...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Week *</label>
+        <select id="blockWeekId" required>
+          <option value="">Select week...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Reason</label>
+        <textarea id="blockReason" rows="3" placeholder="e.g., Remote faculty - cannot do in-person services"></textarea>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" onclick="closeCreateBlockModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Create Block</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Create Assignment Modal -->
+<div id="createAssignmentModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Create Manual Assignment</h3>
+      <span class="close-btn" onclick="closeCreateAssignmentModal()">&times;</span>
+    </div>
+    <form id="createAssignmentForm" onsubmit="submitAssignment(event)">
+      <div class="form-group">
+        <label>Faculty *</label>
+        <select id="assignFacultyId" required>
+          <option value="">Select faculty...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Week *</label>
+        <select id="assignWeekId" required>
+          <option value="">Select week...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Service Type *</label>
+        <select id="assignServiceType" required>
+          <option value="">Select service...</option>
+          <option value="MICU">MICU (Teaching ICU)</option>
+          <option value="APP-ICU">APP-ICU</option>
+          <option value="Procedures">Procedures</option>
+          <option value="Consults">Consults</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Reason</label>
+        <textarea id="assignReason" rows="3" placeholder="e.g., Special request for research week"></textarea>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" onclick="closeCreateAssignmentModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Create Assignment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.close-btn {
+  font-size: 28px;
+  color: #9ca3af;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #ef4444;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+</style>

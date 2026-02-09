@@ -1,0 +1,38 @@
+{
+  "name": "Service Week Overrides",
+  "id": "service-week-overrides",
+  "icon": "🛠️",
+  "description": "Admin controls for blocking faculty from specific weeks or manually assigning them to services",
+  "version": "1.0.0",
+  "category": "scheduling",
+  "author": "FacultyHub Team",
+  "created": "2026-02-06",
+  "features": [
+    "Block specific faculty from specific weeks (e.g., remote faculty who can't do certain services)",
+    "Manually assign faculty to specific service/week combinations",
+    "Override the automated schedule generator",
+    "View all active blocks and manual assignments",
+    "Edit or remove overrides",
+    "Prevents scheduler from assigning blocked faculty"
+  ],
+  "use_cases": [
+    "Block remote faculty from in-person services",
+    "Reserve specific weeks for specific faculty (e.g., research weeks)",
+    "Make manual adjustments after auto-scheduling",
+    "Handle special circumstances not captured by the optimizer"
+  ],
+  "dependencies": ["common", "api"],
+  "api_endpoints": [
+    "/api/admin/service-weeks/blocks",
+    "/api/admin/service-weeks/manual-assignments",
+    "/api/admin/service-weeks/create-block",
+    "/api/admin/service-weeks/create-assignment",
+    "/api/admin/service-weeks/delete-override"
+  ],
+  "permissions_required": ["admin"],
+  "integration_notes": [
+    "Blocks are checked before schedule generation",
+    "Manual assignments take precedence over automated assignments",
+    "Overrides are preserved when re-running the scheduler"
+  ]
+}

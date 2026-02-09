@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.fuse*
 
 # Databases
 *.db
@@ -22,3 +23,5 @@ node_modules/
 .env
 *.db-shm
 *.db-wal
+#other
+*.md

@@ -1,0 +1,38 @@
+{
+  "name": "Data Management",
+  "id": "data-management",
+  "icon": "🗂️",
+  "description": "Surgical data management tools for cleaning up beta test data while preserving production data",
+  "version": "1.0.0",
+  "category": "admin-tools",
+  "author": "FacultyHub Team",
+  "created": "2026-02-06",
+  "features": [
+    "View and filter unavailability requests by date, faculty, and status",
+    "View and filter moonlighting signups separately",
+    "Bulk select and delete specific records",
+    "Export data before deletion for backup",
+    "Preview deletion impact before confirming",
+    "Separate service weeks data from moonlighting data"
+  ],
+  "use_cases": [
+    "Remove old beta test unavailability requests",
+    "Clean up test moonlighting signups",
+    "Prepare for production go-live",
+    "Manage data surgically without SQL"
+  ],
+  "dependencies": ["common", "api"],
+  "api_endpoints": [
+    "/api/admin/data-management/unavailability-requests",
+    "/api/admin/data-management/moonlighting-signups",
+    "/api/admin/data-management/delete-requests",
+    "/api/admin/data-management/delete-signups"
+  ],
+  "permissions_required": ["admin"],
+  "safety_features": [
+    "Preview before delete",
+    "Export before delete",
+    "Confirmation dialogs",
+    "Cannot delete if linked to assignments"
+  ]
+}

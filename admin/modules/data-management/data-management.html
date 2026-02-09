@@ -1,0 +1,331 @@
+<!-- Data Management Module -->
+<div class="module-container" id="data-management-module">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">🗂️ Data Management</h2>
+      <p style="color: #6b7280; font-size: 14px;">Surgical data cleanup tools - remove beta test data while preserving production records</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="sub-tabs" style="margin-bottom: 24px;">
+      <button class="sub-tab-btn active" onclick="showDataTab('unavailability')">
+        📅 Service Availability Requests
+      </button>
+      <button class="sub-tab-btn" onclick="showDataTab('moonlighting')">
+        🌙 Moonlighting Signups
+      </button>
+    </div>
+
+    <!-- Unavailability Requests Tab -->
+    <div id="data-tab-unavailability" class="sub-tab-content active">
+      <div style="margin-bottom: 24px; padding: 16px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px;">
+        <strong style="color: #92400e;">⚠️ Service Weeks System</strong>
+        <p style="color: #78350f; margin: 8px 0 0 0; font-size: 13px;">
+          These are unavailability requests for the 52-week inpatient service schedule (MICU, APP-ICU, Procedures, Consults).
+          Faculty mark weeks they CANNOT work. Be careful deleting - these affect the service week assignments.
+        </p>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div>
+          <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Year</label>
+          <select id="unavailFilter" class="filter-input" onchange="loadUnavailabilityData()">
+            <option value="all">All Years</option>
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Faculty</label>
+          <select id="unavailFacultyFilter" class="filter-input" onchange="loadUnavailabilityData()">
+            <option value="all">All Faculty</option>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Status</label>
+          <select id="unavailStatusFilter" class="filter-input" onchange="loadUnavailabilityData()">
+            <option value="all">All</option>
+            <option value="unavailable">Unavailable</option>
+            <option value="available">Available</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Date Range</label>
+          <select id="unavailDateFilter" class="filter-input" onchange="loadUnavailabilityData()">
+            <option value="all">All Dates</option>
+            <option value="before-2026">Before 2026</option>
+            <option value="2026-q1">2026 Q1</option>
+            <option value="2026-q2">2026 Q2</option>
+            <option value="after-2026">After 2026</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <button class="btn-secondary" onclick="selectAllUnavail()">
+          ☑️ Select All Visible
+        </button>
+        <button class="btn-secondary" onclick="deselectAllUnavail()">
+          ☐ Deselect All
+        </button>
+        <button class="btn-primary" onclick="exportUnavailData()">
+          💾 Export Selected
+        </button>
+        <button class="btn-danger" onclick="deleteSelectedUnavail()" disabled id="deleteUnavailBtn">
+          🗑️ Delete Selected (<span id="unavailSelectedCount">0</span>)
+        </button>
+      </div>
+
+      <!-- Summary Stats -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
+        <div class="stat-card">
+          <div class="stat-value" id="unavailTotalCount">0</div>
+          <div class="stat-label">Total Requests</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="unavailSelectedSum">0</div>
+          <div class="stat-label">Selected</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="unavailUnavailableCount">0</div>
+          <div class="stat-label">Unavailable</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="unavailAvailableCount">0</div>
+          <div class="stat-label">Available</div>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">
+                <input type="checkbox" id="selectAllUnavailCheckbox" onchange="toggleAllUnavail(this)">
+              </th>
+              <th>Faculty</th>
+              <th>Week</th>
+              <th>Week Number</th>
+              <th>Status</th>
+              <th>Points Spent</th>
+              <th>Points Earned</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody id="unavailTableBody">
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 40px; color: #9ca3af;">
+                Loading...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Moonlighting Signups Tab -->
+    <div id="data-tab-moonlighting" class="sub-tab-content">
+      <div style="margin-bottom: 24px; padding: 16px; background: #dbeafe; border-left: 4px solid #3b82f6; border-radius: 8px;">
+        <strong style="color: #1e40af;">🌙 Moonlighting System</strong>
+        <p style="color: #1e3a8a; margin: 8px 0 0 0; font-size: 13px;">
+          These are moonlighting shift signups. Providers select which nights they want to work.
+          These feed into the moonlighting optimizer that creates the night shift schedule.
+        </p>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div>
+          <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Month</label>
+          <select id="moonlightMonthFilter" class="filter-input" onchange="loadMoonlightingData()">
+            <option value="all">All Months</option>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Provider</label>
+          <select id="moonlightProviderFilter" class="filter-input" onchange="loadMoonlightingData()">
+            <option value="all">All Providers</option>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <button class="btn-secondary" onclick="selectAllMoonlight()">
+          ☑️ Select All Visible
+        </button>
+        <button class="btn-secondary" onclick="deselectAllMoonlight()">
+          ☐ Deselect All
+        </button>
+        <button class="btn-primary" onclick="exportMoonlightData()">
+          💾 Export Selected
+        </button>
+        <button class="btn-danger" onclick="deleteSelectedMoonlight()" disabled id="deleteMoonlightBtn">
+          🗑️ Delete Selected (<span id="moonlightSelectedCount">0</span>)
+        </button>
+      </div>
+
+      <!-- Summary Stats -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
+        <div class="stat-card">
+          <div class="stat-value" id="moonlightTotalCount">0</div>
+          <div class="stat-label">Total Signups</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="moonlightSelectedSum">0</div>
+          <div class="stat-label">Selected</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="moonlightProvidersCount">0</div>
+          <div class="stat-label">Providers</div>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">
+                <input type="checkbox" id="selectAllMoonlightCheckbox" onchange="toggleAllMoonlight(this)">
+              </th>
+              <th>Provider ID</th>
+              <th>Provider Name</th>
+              <th>Month</th>
+              <th>Desired Nights</th>
+              <th>Locked Dates</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody id="moonlightTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px; color: #9ca3af;">
+                Loading...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Alert Area -->
+    <div id="dataManagementAlert" class="alert" style="margin-top: 24px;"></div>
+  </div>
+</div>
+
+<style>
+.module-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.sub-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.sub-tab-btn {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sub-tab-btn:hover {
+  color: #1f2937;
+  background: #f9fafb;
+}
+
+.sub-tab-btn.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+.sub-tab-content {
+  display: none;
+}
+
+.sub-tab-content.active {
+  display: block;
+  animation: fadeIn 0.3s;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.stat-card {
+  padding: 16px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.table-container {
+  overflow-x: auto;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  background: #f9fafb;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+}
+
+.data-table tr:hover {
+  background: #f9fafb;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>

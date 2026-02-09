@@ -1,0 +1,149 @@
+<!-- Enhanced Testing Tools Module -->
+<div class="module-container" id="testing-module">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">🧪 Testing Utilities</h2>
+      <p style="color: #dc2626; font-size: 13px; font-weight: 600;">⚠️ Admin Only - Use for testing workflows</p>
+    </div>
+
+    <!-- Faculty Impersonation Section -->
+    <div style="margin-bottom: 40px;">
+      <h3 style="margin-bottom: 16px; color: #1f2937;">Faculty Impersonation</h3>
+      <p style="color: #6b7280; margin-bottom: 16px; line-height: 1.6;">
+        Click "🔐 Login As" next to any faculty member in the Manage Providers tab to instantly switch to their account.
+        No password required. Perfect for testing the faculty workflow from different perspectives.
+      </p>
+      <div style="padding: 16px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px;">
+        <strong style="color: #92400e;">💡 Tip:</strong>
+        <span style="color: #78350f;">After testing, logout and log back in as admin to return to admin view.</span>
+      </div>
+    </div>
+
+    <!-- Reset Utilities Section -->
+    <div style="margin-bottom: 40px;">
+      <h3 style="margin-bottom: 16px; color: #1f2937;">Reset Utilities</h3>
+      <p style="color: #6b7280; margin-bottom: 24px; line-height: 1.6;">
+        Use these tools to reset data between testing cycles. Each tool targets a specific system component.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+
+        <!-- Reset Faculty Points -->
+        <div class="reset-card">
+          <h4 class="reset-title">Reset Faculty Points</h4>
+          <p class="reset-desc">Reset all faculty bonus points to 0. Base points remain intact.</p>
+          <button class="btn-primary" onclick="resetPoints()" style="width: 100%;">
+            Reset All Points
+          </button>
+        </div>
+
+        <!-- Clear Service Availability Requests -->
+        <div class="reset-card">
+          <h4 class="reset-title">Clear Service Availability</h4>
+          <p class="reset-desc">Delete unavailability requests for SERVICE WEEKS system only.</p>
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Year</label>
+            <select id="clearServiceYear" class="reset-input">
+              <option value="all">All Years</option>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+            </select>
+          </div>
+          <button class="btn-danger" onclick="clearServiceRequests()" style="width: 100%;">
+            Clear Service Requests
+          </button>
+        </div>
+
+        <!-- Clear Moonlighting Signups -->
+        <div class="reset-card">
+          <h4 class="reset-title">Clear Moonlighting Signups</h4>
+          <p class="reset-desc">Delete moonlighting signups only. Service weeks unaffected.</p>
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Month</label>
+            <select id="clearMoonlightMonth" class="reset-input">
+              <option value="all">All Months</option>
+              <option value="current">Current Month</option>
+            </select>
+          </div>
+          <button class="btn-danger" onclick="clearMoonlightingSignups()" style="width: 100%;">
+            Clear Moonlighting
+          </button>
+        </div>
+
+        <!-- Clear Service Assignments -->
+        <div class="reset-card">
+          <h4 class="reset-title">Clear Service Assignments</h4>
+          <p class="reset-desc">Delete generated service week assignments (MICU, APP-ICU, etc).</p>
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Year</label>
+            <select id="clearAssignmentsYear" class="reset-input">
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+            </select>
+          </div>
+          <button class="btn-danger" onclick="clearServiceAssignments()" style="width: 100%;">
+            Clear Assignments
+          </button>
+        </div>
+
+        <!-- Complete Reset -->
+        <div class="reset-card" style="border: 2px solid #dc2626;">
+          <h4 class="reset-title" style="color: #dc2626;">💣 Complete Reset</h4>
+          <p class="reset-desc">Reset everything: points, service requests, moonlighting, assignments.</p>
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Year</label>
+            <select id="resetAllYear" class="reset-input">
+              <option value="2026" selected>2026</option>
+              <option value="all">All Years</option>
+            </select>
+          </div>
+          <button class="btn-danger" onclick="resetAll()" style="width: 100%; background: #dc2626;">
+            Complete Reset
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Alert Area -->
+    <div id="testingAlert" class="alert"></div>
+  </div>
+</div>
+
+<style>
+.reset-card {
+  padding: 24px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.reset-title {
+  margin-bottom: 12px;
+  color: #1f2937;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.reset-desc {
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.reset-input {
+  width: 100%;
+  padding: 8px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+</style>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FacultyHub Admin Panel</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/admin/modules/common/styles.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f3f4f6;
+    }
+
+    .admin-header {
+      background: white;
+      border-bottom: 2px solid #e5e7eb;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .admin-header h1 {
+      margin: 0;
+      font-size: 24px;
+      color: #1f2937;
+    }
+
+    .admin-header .user-info {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .admin-nav {
+      background: white;
+      border-bottom: 2px solid #e5e7eb;
+      padding: 0 24px;
+      display: flex;
+      gap: 4px;
+    }
+
+    .nav-tab {
+      padding: 16px 24px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      color: #6b7280;
+      transition: all 0.2s;
+      margin-bottom: -2px;
+    }
+
+    .nav-tab:hover {
+      color: #3b82f6;
+      background: #f9fafb;
+    }
+
+    .nav-tab.active {
+      color: #3b82f6;
+      border-bottom-color: #3b82f6;
+      background: #f9fafb;
+    }
+
+    .admin-content {
+      min-height: calc(100vh - 140px);
+    }
+
+    .module-view {
+      display: none;
+    }
+
+    .module-view.active {
+      display: block;
+    }
+
+    .admin-footer {
+      background: white;
+      border-top: 2px solid #e5e7eb;
+      padding: 16px 24px;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 13px;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .loading-spinner {
+      font-size: 24px;
+      color: #3b82f6;
+    }
+
+    .back-button {
+      background: #6b7280;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .back-button:hover {
+      background: #4b5563;
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner">⏳ Loading module...</div>
+  </div>
+
+  <!-- Admin Header -->
+  <header class="admin-header">
+    <div>
+      <h1>🔧 FacultyHub Admin Panel</h1>
+    </div>
+    <div style="display: flex; gap: 16px; align-items: center;">
+      <span class="user-info" id="userInfo">Loading...</span>
+      <a href="/" class="back-button">← Back to App</a>
+    </div>
+  </header>
+
+  <!-- Admin Navigation -->
+  <nav class="admin-nav">
+    <button class="nav-tab active" onclick="showModule('data-management')" data-module="data-management">
+      📊 Data Management
+    </button>
+    <button class="nav-tab" onclick="showModule('service-overrides')" data-module="service-overrides">
+      🛠️ Service Week Overrides
+    </button>
+    <button class="nav-tab" onclick="showModule('testing')" data-module="testing">
+      🧪 Testing Tools
+    </button>
+  </nav>
+
+  <!-- Admin Content -->
+  <main class="admin-content">
+    <!-- Data Management Module -->
+    <div id="module-data-management" class="module-view active"></div>
+
+    <!-- Service Week Overrides Module -->
+    <div id="module-service-overrides" class="module-view"></div>
+
+    <!-- Testing Tools Module -->
+    <div id="module-testing" class="module-view"></div>
+  </main>
+
+  <!-- Admin Footer -->
+  <footer class="admin-footer">
+    FacultyHub Admin Panel v1.0 | Modular Architecture |
+    <a href="/admin/MODULAR_ADMIN_IMPLEMENTATION.md" target="_blank" style="color: #3b82f6;">View Documentation</a>
+  </footer>
+
+  <!-- Load Common Utilities -->
+  <script src="/admin/modules/common/common.js"></script>
+  <script src="/admin/modules/common/api.js"></script>
+
+  <!-- Module Loader Script -->
+  <script>
+    // Module configuration
+    const modules = {
+      'data-management': {
+        name: 'Data Management',
+        htmlPath: '/admin/modules/data-management/data-management.html',
+        jsPath: '/admin/modules/data-management/data-management.js'
+      },
+      'service-overrides': {
+        name: 'Service Week Overrides',
+        htmlPath: '/admin/modules/service-weeks/overrides/overrides.html',
+        jsPath: '/admin/modules/service-weeks/overrides/overrides.js'
+      },
+      'testing': {
+        name: 'Testing Tools',
+        htmlPath: '/admin/modules/testing/testing.html',
+        jsPath: '/admin/modules/testing/testing.js'
+      }
+    };
+
+    // Track loaded modules
+    const loadedModules = new Set();
+    let currentModule = 'data-management';
+
+    // Show module function
+    async function showModule(moduleId) {
+      if (!modules[moduleId]) {
+        console.error('Unknown module:', moduleId);
+        return;
+      }
+
+      // Update navigation
+      document.querySelectorAll('.nav-tab').forEach(function(tab) {
+        tab.classList.remove('active');
+      });
+      document.querySelector('[data-module="' + moduleId + '"]').classList.add('active');
+
+      // Hide all module views
+      document.querySelectorAll('.module-view').forEach(function(view) {
+        view.classList.remove('active');
+      });
+
+      // Show loading overlay
+      document.getElementById('loadingOverlay').style.display = 'flex';
+
+      try {
+        // Load module if not already loaded
+        if (!loadedModules.has(moduleId)) {
+          await loadModule(moduleId);
+          loadedModules.add(moduleId);
+        }
+
+        // Show module view
+        document.getElementById('module-' + moduleId).classList.add('active');
+        currentModule = moduleId;
+
+      } catch (error) {
+        console.error('Failed to load module:', error);
+        alert('Failed to load module: ' + error.message);
+      } finally {
+        // Hide loading overlay
+        document.getElementById('loadingOverlay').style.display = 'none';
+      }
+    }
+
+    // Load module HTML and JS
+    async function loadModule(moduleId) {
+      const module = modules[moduleId];
+
+      // Load HTML
+      const htmlResponse = await fetch(module.htmlPath);
+      if (!htmlResponse.ok) {
+        throw new Error('Failed to load ' + module.name + ' HTML');
+      }
+      const html = await htmlResponse.text();
+      document.getElementById('module-' + moduleId).innerHTML = html;
+
+      // Load JS
+      await loadScript(module.jsPath);
+    }
+
+    // Load JavaScript file dynamically
+    function loadScript(src) {
+      return new Promise(function(resolve, reject) {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = function() {
+          reject(new Error('Failed to load script: ' + src));
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    // Load user info
+    async function loadUserInfo() {
+      try {
+        const response = await fetch('/api/user', {
+          credentials: 'same-origin'
+        });
+
+        if (response.ok) {
+          const user = await response.json();
+          document.getElementById('userInfo').textContent = 'Logged in as: ' + user.name + ' (Admin)';
+        } else {
+          document.getElementById('userInfo').textContent = 'Not logged in';
+        }
+      } catch (error) {
+        console.error('Failed to load user info:', error);
+        document.getElementById('userInfo').textContent = 'User info unavailable';
+      }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Load user info
+      await loadUserInfo();
+
+      // Load initial module (data-management)
+      await showModule('data-management');
+    });
+  </script>
+</body>
+</html>
