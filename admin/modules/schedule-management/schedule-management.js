@@ -45,10 +45,18 @@ async function loadOverview() {
   try {
     showAlert('scheduleAlert', '', 'clear');
 
-    const response = await fetch('/api/admin/service-weeks/overview?year=' + year);
+    const response = await fetch('/api/admin/service-weeks?year=' + year);
     if (!response.ok) throw new Error('Failed to load overview');
 
-    const data = await response.json();
+    const rawData = await response.json();
+
+    // Transform to overview format
+    const data = {
+      weeks: rawData.weeks || [],
+      total_weeks: (rawData.weeks || []).length,
+      avg_unavailable: 0, // Calculate from weeks if needed
+      max_unavailable: 0  // Calculate from weeks if needed
+    };
 
     if (!data.weeks || data.weeks.length === 0) {
       document.getElementById('overviewContent').innerHTML = '<p class="empty-state">' +
@@ -142,7 +150,8 @@ async function generateSchedule(event) {
   }
 
   try {
-    const response = await fetch('/api/admin/service-weeks/generate', {
+    const response = await fetch('/api/admin/generate-service-weeks', {
+      credentials: 'same-origin',
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(config)
@@ -182,7 +191,7 @@ async function clearAllWeeks() {
   }
 
   try {
-    const response = await fetch('/api/admin/service-weeks/clear?year=' + year, {
+    const response = await fetch('/api/admin/service-weeks?year=' + year, {
       method: 'DELETE'
     });
 
@@ -296,7 +305,7 @@ async function submitEditWeek(event) {
 
   try {
     const response = await fetch('/api/admin/service-weeks/' + currentEditingWeekId, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload)
     });

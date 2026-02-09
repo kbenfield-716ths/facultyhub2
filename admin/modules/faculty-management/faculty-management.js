@@ -18,7 +18,7 @@ async function loadFaculty() {
   try {
     showAlert('facultyAlert', '', 'clear');
 
-    const response = await fetch('/api/admin/faculty');
+    const response = await fetch('/api/admin/faculty', { credentials: 'same-origin' });
     if (!response.ok) throw new Error('Failed to load faculty');
 
     const data = await response.json();
@@ -105,6 +105,7 @@ async function addFaculty() {
 
   try {
     const response = await fetch('/api/admin/faculty', {
+      credentials: 'same-origin',
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -176,7 +177,7 @@ async function submitEditFaculty(event) {
 
   try {
     const response = await fetch('/api/admin/faculty/' + currentEditingId, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload)
     });

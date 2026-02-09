@@ -43,7 +43,7 @@ function showMoonlightingTab(tabId) {
 // Load providers for filters
 async function loadProviders() {
   try {
-    const response = await fetch('/api/providers');
+    const response = await fetch('/api/providers', { credentials: 'same-origin' });
     if (!response.ok) return;
 
     const data = await response.json();
@@ -83,7 +83,7 @@ async function loadSignups() {
     if (month !== 'all') params.append('month', month);
     if (provider !== 'all') params.append('provider_id', provider);
 
-    const response = await fetch('/api/moonlighting/signups?' + params.toString());
+    const response = await fetch('/api/admin/signups?' + params.toString(), { credentials: 'same-origin' });
     if (!response.ok) throw new Error('Failed to load signups');
 
     const data = await response.json();
@@ -212,7 +212,7 @@ async function loadAssignments() {
     if (month !== 'all') params.append('month', month);
     if (provider !== 'all') params.append('provider_id', provider);
 
-    const response = await fetch('/api/moonlighting/assignments?' + params.toString());
+    const response = await fetch('/api/admin/assignments?' + params.toString(), { credentials: 'same-origin' });
     if (!response.ok) throw new Error('Failed to load assignments');
 
     const data = await response.json();
@@ -315,10 +315,9 @@ async function generateMoonlightingSchedule() {
   try {
     showAlert('moonlightingAlert', 'Running optimizer... This may take a moment.', 'info');
 
-    const response = await fetch('/api/moonlighting/generate', {
+    const response = await fetch('/api/admin/run_optimizer?month=' + month, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ month: month })
+      headers: {'Content-Type': 'application/json'}
     });
 
     if (!response.ok) {

@@ -300,6 +300,67 @@
 
       // Load JS
       await loadScript(module.jsPath);
+
+      // Trigger module initialization after DOM is updated
+      // Use requestAnimationFrame to ensure DOM is painted
+      requestAnimationFrame(function() {
+        setTimeout(function() {
+          triggerModuleInit(moduleId);
+        }, 200);
+      });
+    }
+
+    // Trigger module-specific initialization
+    function triggerModuleInit(moduleId) {
+      console.log('Initializing module:', moduleId);
+
+      // Call module-specific init functions if they exist
+      try {
+        if (moduleId === 'faculty-management') {
+          console.log('Faculty management - loadFaculty exists?', typeof loadFaculty);
+          if (typeof loadFaculty === 'function') {
+            console.log('Calling loadFaculty()');
+            loadFaculty();
+          }
+        } else if (moduleId === 'schedule-management') {
+          console.log('Schedule management - loadOverview exists?', typeof loadOverview);
+          if (typeof loadOverview === 'function') {
+            console.log('Calling loadOverview()');
+            loadOverview();
+          }
+        } else if (moduleId === 'draft-system') {
+          console.log('Draft system - loadActiveDraft exists?', typeof loadActiveDraft);
+          if (typeof loadActiveDraft === 'function') {
+            console.log('Calling loadActiveDraft()');
+            loadActiveDraft();
+          }
+        } else if (moduleId === 'moonlighting') {
+          console.log('Moonlighting - loadProviders exists?', typeof loadProviders);
+          console.log('Moonlighting - loadSignups exists?', typeof loadSignups);
+          if (typeof loadProviders === 'function') {
+            console.log('Calling loadProviders()');
+            loadProviders();
+          }
+          if (typeof loadSignups === 'function') {
+            console.log('Calling loadSignups()');
+            loadSignups();
+          }
+        } else if (moduleId === 'data-management') {
+          // Data management is tab-based, no auto-load needed
+          console.log('Data management module loaded - use tabs to load data');
+        } else if (moduleId === 'service-overrides') {
+          console.log('Service overrides - loadBlocks exists?', typeof loadBlocks);
+          if (typeof loadBlocks === 'function') {
+            console.log('Calling loadBlocks()');
+            loadBlocks();
+          }
+        } else if (moduleId === 'testing') {
+          // Testing module is tab-based, no auto-load needed
+          console.log('Testing module loaded - use tabs to interact');
+        }
+      } catch (error) {
+        console.error('Error initializing module ' + moduleId + ':', error);
+      }
     }
 
     // Load JavaScript file dynamically
@@ -318,13 +379,17 @@
     // Load user info
     async function loadUserInfo() {
       try {
-        const response = await fetch('/api/user', {
+        const response = await fetch('/api/auth/me', {
           credentials: 'same-origin'
         });
 
         if (response.ok) {
-          const user = await response.json();
-          document.getElementById('userInfo').textContent = 'Logged in as: ' + user.name + ' (Admin)';
+          const data = await response.json();
+          const faculty = data.faculty;
+          document.getElementById('userInfo').textContent = 'Logged in as: ' + faculty.faculty_name + (faculty.is_admin ? ' (Admin)' : '');
+        } else if (response.status === 401) {
+          // Not logged in - redirect to main app login
+          document.getElementById('userInfo').innerHTML = '<a href="/" style="color: #dc2626; text-decoration: none;">⚠️ Please log in first</a>';
         } else {
           document.getElementById('userInfo').textContent = 'Not logged in';
         }

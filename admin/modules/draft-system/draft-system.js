@@ -18,9 +18,17 @@ async function loadActiveDraft() {
   try {
     showAlert('draftAlert', '', 'clear');
 
-    const response = await fetch('/api/admin/draft/active');
+    // Get all rounds and find active one
+    const response = await fetch('/api/draft/admin/rounds', { credentials: 'same-origin' });
+    if (!response.ok) throw new Error('Failed to load drafts');
 
-    if (response.status === 404) {
+    const data = await response.json();
+    const rounds = data.rounds || [];
+
+    // Find active round (not completed)
+    activeDraft = rounds.find(function(r) { return r.status !== 'completed'; });
+
+    if (!activeDraft) {
       // No active draft
       document.getElementById('activeDraftSection').style.display = 'none';
       document.getElementById('noActiveDraft').style.display = 'block';
@@ -28,11 +36,14 @@ async function loadActiveDraft() {
       return;
     }
 
-    if (!response.ok) throw new Error('Failed to load draft');
-
-    const data = await response.json();
-    activeDraft = data.draft;
-    draftSlots = data.slots || [];
+    // Load slots for this round
+    const slotsResponse = await fetch('/api/draft/admin/rounds/' + activeDraft.id + '/slots');
+    if (slotsResponse.ok) {
+      const slotsData = await slotsResponse.json();
+      draftSlots = slotsData.slots || [];
+    } else {
+      draftSlots = [];
+    }
 
     renderActiveDraft();
     renderDraftSlots();
@@ -169,7 +180,8 @@ async function submitCreateDraft(event) {
   }
 
   try {
-    const response = await fetch('/api/admin/draft/create', {
+    const response = await fetch('/api/draft/admin/rounds', {
+      credentials: 'same-origin',
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload)
@@ -196,8 +208,13 @@ async function startDraft() {
     return;
   }
 
+  if (!activeDraft || !activeDraft.id) {
+    showAlert('draftAlert', 'No active draft found', 'error');
+    return;
+  }
+
   try {
-    const response = await fetch('/api/admin/draft/start', {
+    const response = await fetch('/api/draft/admin/rounds/' + activeDraft.id + '/start', {
       method: 'POST'
     });
 
@@ -221,8 +238,13 @@ async function pauseDraft() {
     return;
   }
 
+  if (!activeDraft || !activeDraft.id) {
+    showAlert('draftAlert', 'No active draft found', 'error');
+    return;
+  }
+
   try {
-    const response = await fetch('/api/admin/draft/pause', {
+    const response = await fetch('/api/draft/admin/rounds/' + activeDraft.id + '/pause', {
       method: 'POST'
     });
 
@@ -246,8 +268,13 @@ async function resumeDraft() {
     return;
   }
 
+  if (!activeDraft || !activeDraft.id) {
+    showAlert('draftAlert', 'No active draft found', 'error');
+    return;
+  }
+
   try {
-    const response = await fetch('/api/admin/draft/resume', {
+    const response = await fetch('/api/draft/admin/rounds/' + activeDraft.id + '/resume', {
       method: 'POST'
     });
 
@@ -278,8 +305,13 @@ async function completeDraft() {
     return;
   }
 
+  if (!activeDraft || !activeDraft.id) {
+    showAlert('draftAlert', 'No active draft found', 'error');
+    return;
+  }
+
   try {
-    const response = await fetch('/api/admin/draft/complete', {
+    const response = await fetch('/api/draft/admin/rounds/' + activeDraft.id + '/complete', {
       method: 'POST'
     });
 
@@ -299,8 +331,13 @@ async function completeDraft() {
 
 // Check expired slots
 async function checkExpiredSlots() {
+  if (!activeDraft || !activeDraft.id) {
+    showAlert('draftAlert', 'No active draft found', 'error');
+    return;
+  }
+
   try {
-    const response = await fetch('/api/admin/draft/check-expired', {
+    const response = await fetch('/api/draft/admin/rounds/' + activeDraft.id + '/check-expired', {
       method: 'POST'
     });
 
@@ -327,11 +364,12 @@ async function checkExpiredSlots() {
 // Load past drafts
 async function loadPastDrafts() {
   try {
-    const response = await fetch('/api/admin/draft/history');
+    const response = await fetch('/api/draft/admin/rounds', { credentials: 'same-origin' });
     if (!response.ok) return;
 
     const data = await response.json();
-    const pastDrafts = data.drafts || [];
+    const allRounds = data.rounds || [];
+    const pastDrafts = allRounds.filter(function(r) { return r.status === 'completed'; });
 
     if (pastDrafts.length === 0) {
       document.getElementById('pastDraftsSection').style.display = 'none';
