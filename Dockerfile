@@ -21,6 +21,7 @@ COPY backend/seed_data/faculty.csv /app/faculty.csv
 COPY . /tmp/build/
 RUN find /tmp/build -maxdepth 1 -type f \( -iname "*.html" -o -iname "*.css" -o -iname "*.js" -o -iname "*.json" -o -iname "*.svg" -o -iname "*.ico" \) -exec cp {} /app/ \; && \
     if [ -d /tmp/build/icons ]; then cp -r /tmp/build/icons /app/; fi && \
+    if [ -d /tmp/build/admin ]; then cp -r /tmp/build/admin /app/; fi && \
     rm -rf /tmp/build
 
 # Create /data directory for volume mount
