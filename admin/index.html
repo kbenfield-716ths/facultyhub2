@@ -131,31 +131,57 @@
   <!-- Admin Header -->
   <header class="admin-header">
     <div>
-      <h1>🔧 FacultyHub Admin Panel</h1>
+      <h1>🔧 FacultyHub Admin Panel <span style="font-size: 14px; background: #10b981; color: white; padding: 4px 12px; border-radius: 6px; margin-left: 12px;">NEW</span></h1>
+      <p style="margin-top: 4px; font-size: 13px; color: #6b7280;">Modular architecture with 7 management modules</p>
     </div>
     <div style="display: flex; gap: 16px; align-items: center;">
       <span class="user-info" id="userInfo">Loading...</span>
+      <a href="/admin.html" class="back-button" style="background: #6b7280;">Legacy Admin</a>
       <a href="/" class="back-button">← Back to App</a>
     </div>
   </header>
 
   <!-- Admin Navigation -->
   <nav class="admin-nav">
-    <button class="nav-tab active" onclick="showModule('data-management')" data-module="data-management">
-      📊 Data Management
+    <button class="nav-tab active" onclick="showModule('faculty-management')" data-module="faculty-management">
+      👥 Faculty
+    </button>
+    <button class="nav-tab" onclick="showModule('schedule-management')" data-module="schedule-management">
+      📅 Schedule
+    </button>
+    <button class="nav-tab" onclick="showModule('draft-system')" data-module="draft-system">
+      📋 Draft
+    </button>
+    <button class="nav-tab" onclick="showModule('moonlighting')" data-module="moonlighting">
+      🌙 Moonlighting
+    </button>
+    <button class="nav-tab" onclick="showModule('data-management')" data-module="data-management">
+      📊 Data
     </button>
     <button class="nav-tab" onclick="showModule('service-overrides')" data-module="service-overrides">
-      🛠️ Service Week Overrides
+      🛠️ Overrides
     </button>
     <button class="nav-tab" onclick="showModule('testing')" data-module="testing">
-      🧪 Testing Tools
+      🧪 Testing
     </button>
   </nav>
 
   <!-- Admin Content -->
   <main class="admin-content">
+    <!-- Faculty Management Module -->
+    <div id="module-faculty-management" class="module-view active"></div>
+
+    <!-- Schedule Management Module -->
+    <div id="module-schedule-management" class="module-view"></div>
+
+    <!-- Draft System Module -->
+    <div id="module-draft-system" class="module-view"></div>
+
+    <!-- Moonlighting Module -->
+    <div id="module-moonlighting" class="module-view"></div>
+
     <!-- Data Management Module -->
-    <div id="module-data-management" class="module-view active"></div>
+    <div id="module-data-management" class="module-view"></div>
 
     <!-- Service Week Overrides Module -->
     <div id="module-service-overrides" class="module-view"></div>
@@ -178,6 +204,26 @@
   <script>
     // Module configuration
     const modules = {
+      'faculty-management': {
+        name: 'Faculty Management',
+        htmlPath: '/admin/modules/faculty-management/faculty-management.html',
+        jsPath: '/admin/modules/faculty-management/faculty-management.js'
+      },
+      'schedule-management': {
+        name: 'Schedule Management',
+        htmlPath: '/admin/modules/schedule-management/schedule-management.html',
+        jsPath: '/admin/modules/schedule-management/schedule-management.js'
+      },
+      'draft-system': {
+        name: 'Draft System',
+        htmlPath: '/admin/modules/draft-system/draft-system.html',
+        jsPath: '/admin/modules/draft-system/draft-system.js'
+      },
+      'moonlighting': {
+        name: 'Moonlighting Management',
+        htmlPath: '/admin/modules/moonlighting/moonlighting.html',
+        jsPath: '/admin/modules/moonlighting/moonlighting.js'
+      },
       'data-management': {
         name: 'Data Management',
         htmlPath: '/admin/modules/data-management/data-management.html',
@@ -197,7 +243,7 @@
 
     // Track loaded modules
     const loadedModules = new Set();
-    let currentModule = 'data-management';
+    let currentModule = 'faculty-management';
 
     // Show module function
     async function showModule(moduleId) {
@@ -293,8 +339,8 @@
       // Load user info
       await loadUserInfo();
 
-      // Load initial module (data-management)
-      await showModule('data-management');
+      // Load initial module (faculty-management)
+      await showModule('faculty-management');
     });
   </script>
 </body>

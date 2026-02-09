@@ -1,0 +1,226 @@
+<div class="module-container">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">🌙 Moonlighting Management</h2>
+        <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
+          Manage night shift signups, generate schedules, and export assignments
+        </p>
+      </div>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="sub-tabs">
+      <button class="sub-tab-btn active" onclick="showMoonlightingTab('signups')">
+        📝 Signups
+      </button>
+      <button class="sub-tab-btn" onclick="showMoonlightingTab('assignments')">
+        📋 Assignments
+      </button>
+    </div>
+
+    <!-- Alert -->
+    <div id="moonlightingAlert" class="alert"></div>
+
+    <!-- Signups Tab -->
+    <div id="moonlighting-signups" class="sub-tab-content active">
+      <div class="info-box info-box-info">
+        <strong>📝 Moonlighting Signups</strong>
+        <p>View all provider signups for moonlighting night shifts. Providers select which nights they're available, and the optimizer assigns them to maximize coverage.</p>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>Month</label>
+          <select id="signupsMonth" onchange="loadSignups()">
+            <option value="all">All Months</option>
+            <option value="2026-01">January 2026</option>
+            <option value="2026-02">February 2026</option>
+            <option value="2026-03">March 2026</option>
+            <option value="2026-04">April 2026</option>
+            <option value="2026-05">May 2026</option>
+            <option value="2026-06">June 2026</option>
+            <option value="2026-07">July 2026</option>
+            <option value="2026-08">August 2026</option>
+            <option value="2026-09">September 2026</option>
+            <option value="2026-10">October 2026</option>
+            <option value="2026-11">November 2026</option>
+            <option value="2026-12">December 2026</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Provider</label>
+          <select id="signupsProvider" onchange="loadSignups()">
+            <option value="all">All Providers</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Status</label>
+          <select id="signupsStatus" onchange="loadSignups()">
+            <option value="all">All</option>
+            <option value="locked">Locked Only</option>
+            <option value="flexible">Flexible Only</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row" style="margin-bottom: 24px;">
+        <div class="stat-card">
+          <div class="stat-label">Total Signups</div>
+          <div class="stat-value" id="totalSignups">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Providers</div>
+          <div class="stat-value" id="uniqueProviders">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Locked Dates</div>
+          <div class="stat-value" id="lockedCount">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Flexible Dates</div>
+          <div class="stat-value" id="flexibleCount">0</div>
+        </div>
+      </div>
+
+      <!-- Action Panel -->
+      <div class="action-panel" style="margin-bottom: 16px;">
+        <button class="btn-secondary" onclick="loadSignups()">🔄 Refresh</button>
+        <div class="action-panel-right">
+          <button class="btn-success" onclick="exportSignupsCSV()">📊 Export to CSV</button>
+        </div>
+      </div>
+
+      <!-- Signups Table -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Provider ID</th>
+              <th>Provider Name</th>
+              <th>Month</th>
+              <th>Date</th>
+              <th>Day of Week</th>
+              <th>Desired Nights</th>
+              <th>Locked</th>
+            </tr>
+          </thead>
+          <tbody id="signupsTableBody">
+            <tr><td colspan="7" class="loading">Loading signups...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Assignments Tab -->
+    <div id="moonlighting-assignments" class="sub-tab-content">
+      <div class="info-box info-box-info">
+        <strong>📋 Moonlighting Assignments</strong>
+        <p>View generated moonlighting assignments and run the optimizer to create new schedules. The optimizer assigns providers to shifts based on their availability and preferences.</p>
+      </div>
+
+      <!-- Generate Section -->
+      <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 16px; font-weight: 600;">🚀 Generate Schedule</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Month to Generate</label>
+            <select id="generateMonth">
+              <option value="2026-01">January 2026</option>
+              <option value="2026-02">February 2026</option>
+              <option value="2026-03">March 2026</option>
+              <option value="2026-04">April 2026</option>
+              <option value="2026-05">May 2026</option>
+              <option value="2026-06">June 2026</option>
+              <option value="2026-07">July 2026</option>
+              <option value="2026-08">August 2026</option>
+              <option value="2026-09">September 2026</option>
+              <option value="2026-10">October 2026</option>
+              <option value="2026-11">November 2026</option>
+              <option value="2026-12">December 2026</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="generateMoonlightingSchedule()">
+          ⚡ Run Optimizer
+        </button>
+        <p style="margin-top: 12px; font-size: 13px; color: #6b7280;">
+          This will run the PuLP optimizer to assign providers to shifts based on their signups
+        </p>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>Month</label>
+          <select id="assignmentsMonth" onchange="loadAssignments()">
+            <option value="all">All Months</option>
+            <option value="2026-01">January 2026</option>
+            <option value="2026-02">February 2026</option>
+            <option value="2026-03">March 2026</option>
+            <option value="2026-04">April 2026</option>
+            <option value="2026-05">May 2026</option>
+            <option value="2026-06">June 2026</option>
+            <option value="2026-07">July 2026</option>
+            <option value="2026-08">August 2026</option>
+            <option value="2026-09">September 2026</option>
+            <option value="2026-10">October 2026</option>
+            <option value="2026-11">November 2026</option>
+            <option value="2026-12">December 2026</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Provider</label>
+          <select id="assignmentsProvider" onchange="loadAssignments()">
+            <option value="all">All Providers</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row" style="margin-bottom: 24px;">
+        <div class="stat-card">
+          <div class="stat-label">Total Assignments</div>
+          <div class="stat-value" id="totalAssignments">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Assigned Providers</div>
+          <div class="stat-value" id="assignedProviders">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Coverage %</div>
+          <div class="stat-value" id="coveragePercent">0%</div>
+        </div>
+      </div>
+
+      <!-- Action Panel -->
+      <div class="action-panel" style="margin-bottom: 16px;">
+        <button class="btn-secondary" onclick="loadAssignments()">🔄 Refresh</button>
+        <div class="action-panel-right">
+          <button class="btn-success" onclick="exportAssignmentsCSV()">📊 Export to CSV</button>
+        </div>
+      </div>
+
+      <!-- Assignments Table -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Provider ID</th>
+              <th>Provider Name</th>
+              <th>Shift Name</th>
+              <th>Date</th>
+              <th>Day of Week</th>
+              <th>Month</th>
+            </tr>
+          </thead>
+          <tbody id="assignmentsTableBody">
+            <tr><td colspan="6" class="loading">Loading assignments...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

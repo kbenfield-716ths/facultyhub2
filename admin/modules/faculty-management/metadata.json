@@ -1,0 +1,58 @@
+{
+  "name": "Faculty Management",
+  "version": "1.0.0",
+  "description": "Complete faculty (provider) CRUD operations with points, effort, and service tracking",
+  "module_id": "faculty-management",
+  "category": "core",
+  "features": [
+    "Add new faculty members with ID, name, email",
+    "Edit faculty details, rank, effort percentage",
+    "Manage bonus points for availability system",
+    "View service week counts by type (MICU, APP-ICU, Procedures, Consults)",
+    "Activate/deactivate faculty members",
+    "Delete faculty (with confirmation)"
+  ],
+  "use_cases": [
+    "Onboarding new faculty to the system",
+    "Adjusting points for fairness in scheduling",
+    "Tracking faculty effort allocation",
+    "Managing faculty status (active/inactive/sabbatical)",
+    "Viewing historical service distribution"
+  ],
+  "api_endpoints": [
+    "GET /api/admin/faculty - List all faculty with counts",
+    "POST /api/admin/faculty - Create new faculty",
+    "PUT /api/admin/faculty/{id} - Update faculty details",
+    "DELETE /api/admin/faculty/{id} - Delete faculty",
+    "PUT /api/admin/faculty/{id}/points - Update bonus points",
+    "PUT /api/admin/faculty/{id}/status - Change active status"
+  ],
+  "data_fields": {
+    "faculty_id": "Computing ID (e.g., jsmith)",
+    "name": "Full name (Dr. Jane Smith)",
+    "email": "Email address",
+    "rank": "Academic rank (Assistant, Associate, Professor, etc.)",
+    "effort_percent": "FTE percentage allocated to service",
+    "bonus_points": "Accumulated points in availability system",
+    "is_admin": "Admin privileges flag",
+    "is_active": "Active status flag",
+    "service_counts": {
+      "micu": "Number of MICU weeks assigned",
+      "app_icu": "Number of APP-ICU weeks assigned",
+      "procedures": "Number of Procedures weeks assigned",
+      "consults": "Number of Consults weeks assigned",
+      "total": "Total service weeks assigned"
+    }
+  },
+  "notes": [
+    "Faculty table serves both Service Weeks and Moonlighting systems",
+    "Points system is specific to Service Weeks availability requests",
+    "Service counts show current year assignments",
+    "Deleting faculty with existing assignments may require reassignment"
+  ],
+  "related_modules": [
+    "service-weeks/overrides",
+    "data-management",
+    "draft-system"
+  ]
+}

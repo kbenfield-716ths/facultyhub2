@@ -1,0 +1,70 @@
+{
+  "name": "Moonlighting Management",
+  "version": "1.0.0",
+  "description": "Manage moonlighting night shift signups, generate schedules, and export assignments",
+  "module_id": "moonlighting",
+  "category": "scheduling",
+  "features": [
+    "View all moonlighting signups by month and provider",
+    "Filter signups by date range, provider, shift",
+    "Generate optimized moonlighting schedules",
+    "View current moonlighting assignments",
+    "Export signups to CSV",
+    "Export assignments to CSV",
+    "View signup statistics and coverage metrics"
+  ],
+  "sub_modules": [
+    {
+      "id": "signups",
+      "name": "Signups",
+      "description": "View and export all moonlighting signups"
+    },
+    {
+      "id": "assignments",
+      "name": "Assignments",
+      "description": "Generate schedules and view assignments"
+    }
+  ],
+  "use_cases": [
+    "Reviewing provider availability for night shifts",
+    "Running optimizer to generate monthly schedules",
+    "Exporting signup data for analysis",
+    "Checking assignment coverage",
+    "Monitoring moonlighting participation"
+  ],
+  "api_endpoints": [
+    "GET /api/moonlighting/signups - Get all signups with filters",
+    "GET /api/moonlighting/assignments - Get current assignments",
+    "POST /api/moonlighting/generate - Run optimizer for month",
+    "GET /api/moonlighting/stats - Get signup statistics"
+  ],
+  "moonlighting_system": {
+    "description": "Night shift coverage system separate from Service Weeks",
+    "providers": "Faculty who volunteer for night shifts",
+    "shifts": "63 shifts defined (evening and overnight)",
+    "signup_process": "Providers select nights they're available",
+    "optimizer": "PuLP-based optimizer assigns providers to maximize coverage",
+    "constraints": "Desired nights, locked dates, provider preferences"
+  },
+  "csv_exports": {
+    "signups": {
+      "columns": ["provider_id", "provider_name", "month", "date", "desired_nights", "locked"],
+      "filename": "moonlighting_signups_{month}_{year}.csv"
+    },
+    "assignments": {
+      "columns": ["provider_id", "provider_name", "shift_name", "date", "month"],
+      "filename": "moonlighting_assignments_{month}_{year}.csv"
+    }
+  },
+  "notes": [
+    "Moonlighting is completely separate from Service Weeks system",
+    "Currently 98 signups from 9 providers (Jan-Apr 2026)",
+    "21 assignments already generated",
+    "Optimizer respects locked dates and desired night counts",
+    "Exports use CSV format for Excel compatibility"
+  ],
+  "related_modules": [
+    "data-management",
+    "testing"
+  ]
+}

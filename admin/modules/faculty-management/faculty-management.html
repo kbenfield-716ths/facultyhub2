@@ -1,0 +1,179 @@
+<div class="module-container">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">👥 Faculty Management</h2>
+        <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
+          Manage faculty members, points, effort allocation, and service tracking
+        </p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span id="facultyCount" style="color: #6b7280; font-weight: 500;">Loading...</span>
+        <button class="btn-secondary btn-sm" onclick="loadFaculty()">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- Alert -->
+    <div id="facultyAlert" class="alert"></div>
+
+    <!-- Add Faculty Form -->
+    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+      <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 16px; font-weight: 600;">➕ Add New Faculty Member</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Computing ID *</label>
+          <input type="text" id="newFacultyId" placeholder="jsmith" required>
+          <small>Lowercase, used for login</small>
+        </div>
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="newFacultyName" placeholder="Dr. Jane Smith" required>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="newFacultyEmail" placeholder="jsmith@virginia.edu">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="addFaculty()">Add Faculty Member</button>
+    </div>
+
+    <!-- Faculty Table -->
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 100px;">ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th style="width: 120px;">Rank</th>
+            <th style="width: 90px;">Effort %</th>
+            <th style="width: 80px;">Points</th>
+            <th style="width: 70px;">MICU</th>
+            <th style="width: 85px;">APP-ICU</th>
+            <th style="width: 85px;">Procedures</th>
+            <th style="width: 80px;">Consults</th>
+            <th style="width: 70px;">Total</th>
+            <th style="width: 80px;">Status</th>
+            <th style="width: 200px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="facultyTableBody">
+          <tr>
+            <td colspan="13" class="loading">Loading faculty...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Faculty Modal -->
+<div id="editFacultyModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Faculty Member</h3>
+      <span class="close-btn" onclick="closeEditFacultyModal()">&times;</span>
+    </div>
+    <form id="editFacultyForm" onsubmit="submitEditFaculty(event)">
+      <input type="hidden" id="editFacultyId">
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" id="editFacultyName" required>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="editFacultyEmail">
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Rank</label>
+          <select id="editFacultyRank">
+            <option value="">Not Set</option>
+            <option value="Assistant Professor">Assistant Professor</option>
+            <option value="Associate Professor">Associate Professor</option>
+            <option value="Professor">Professor</option>
+            <option value="Clinical Assistant">Clinical Assistant</option>
+            <option value="Clinical Associate">Clinical Associate</option>
+            <option value="Clinical Professor">Clinical Professor</option>
+            <option value="Instructor">Instructor</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Effort % (FTE)</label>
+          <input type="number" id="editFacultyEffort" min="0" max="100" step="5">
+          <small>Percentage of time allocated to service</small>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Bonus Points</label>
+        <input type="number" id="editFacultyPoints" step="0.5">
+        <small>Points for availability system - use carefully</small>
+      </div>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="editFacultyAdmin" style="width: auto;">
+          Grant Admin Privileges
+        </label>
+      </div>
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn-primary">Save Changes</button>
+        <button type="button" class="btn-secondary" onclick="closeEditFacultyModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.close-btn {
+  cursor: pointer;
+  font-size: 28px;
+  color: #6b7280;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #1f2937;
+}
+</style>

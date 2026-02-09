@@ -1,0 +1,81 @@
+{
+  "name": "Schedule Management",
+  "version": "1.0.0",
+  "description": "Generate and configure 52-week service schedule with special periods and week properties",
+  "module_id": "schedule-management",
+  "category": "scheduling",
+  "features": [
+    "Generate 52-week academic year schedule",
+    "Configure special periods (summer, holidays, conferences)",
+    "View service availability system status by year",
+    "Edit individual week properties (cost, reward, type)",
+    "Clear and regenerate schedules"
+  ],
+  "sub_modules": [
+    {
+      "id": "overview",
+      "name": "Schedule Overview",
+      "description": "View generated schedule and availability status for the year"
+    },
+    {
+      "id": "configure",
+      "name": "Generate Schedule",
+      "description": "Create 52-week schedule with special periods configuration"
+    },
+    {
+      "id": "weeks",
+      "name": "Manage Weeks",
+      "description": "Edit individual week properties and settings"
+    }
+  ],
+  "use_cases": [
+    "Setting up new academic year schedule",
+    "Defining summer, holiday, and conference periods",
+    "Adjusting point costs/rewards for specific weeks",
+    "Viewing schedule coverage and gaps",
+    "Regenerating schedule after configuration changes"
+  ],
+  "api_endpoints": [
+    "GET /api/admin/service-weeks?year={year} - Get all weeks for year",
+    "POST /api/admin/service-weeks/generate - Generate 52 weeks",
+    "GET /api/admin/service-weeks/overview?year={year} - Get schedule status",
+    "PUT /api/admin/service-weeks/{id} - Update week properties",
+    "DELETE /api/admin/service-weeks/clear?year={year} - Clear all weeks for year"
+  ],
+  "special_periods": {
+    "summer": {
+      "description": "Summer period (typically June-August)",
+      "impact": "Higher point cost for requesting time off"
+    },
+    "holidays": {
+      "thanksgiving": "Thanksgiving week",
+      "christmas": "Christmas/New Year (2 weeks)",
+      "spring_break": "Spring break week"
+    },
+    "conferences": {
+      "ats": "American Thoracic Society",
+      "chest": "CHEST Annual Meeting",
+      "sccm": "Society of Critical Care Medicine"
+    }
+  },
+  "week_properties": {
+    "label": "Week identifier (e.g., Week 1, Summer Week 3)",
+    "start_date": "Monday start date",
+    "end_date": "Sunday end date",
+    "week_type": "regular, summer, holiday, conference",
+    "cost_off": "Points cost to request time off this week",
+    "reward_work": "Points reward for working this week"
+  },
+  "notes": [
+    "Academic year starts first Tuesday of July",
+    "52 weeks total per year",
+    "Special periods affect point costs/rewards",
+    "Weeks must be continuous with no gaps",
+    "Clearing weeks will affect availability requests and draft system"
+  ],
+  "related_modules": [
+    "faculty-management",
+    "service-weeks/overrides",
+    "draft-system"
+  ]
+}

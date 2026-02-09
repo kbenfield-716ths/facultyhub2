@@ -1,0 +1,75 @@
+{
+  "name": "Draft System",
+  "version": "1.0.0",
+  "description": "Manage availability request draft rounds with priority-based time slots",
+  "module_id": "draft-system",
+  "category": "scheduling",
+  "features": [
+    "Create new draft rounds for academic years",
+    "Configure window size and slot duration",
+    "Manage draft lifecycle (not_started, active, paused, completed)",
+    "Track faculty priority order and slot assignments",
+    "Monitor submission status (submitted, active, waiting, expired)",
+    "Send notifications to faculty when slots open",
+    "Automatically advance to next slot when current expires",
+    "View past draft rounds history"
+  ],
+  "use_cases": [
+    "Running annual availability selection process",
+    "Ensuring fair priority order for unavailability requests",
+    "Managing time-limited selection windows",
+    "Tracking who has submitted availability requests",
+    "Handling expired slots and deadline enforcement"
+  ],
+  "api_endpoints": [
+    "GET /api/admin/draft/active - Get active draft configuration",
+    "POST /api/admin/draft/create - Create new draft round",
+    "POST /api/admin/draft/start - Start the draft process",
+    "POST /api/admin/draft/pause - Pause active draft",
+    "POST /api/admin/draft/resume - Resume paused draft",
+    "POST /api/admin/draft/complete - Mark draft as completed",
+    "GET /api/admin/draft/slots - Get all draft slots with status",
+    "POST /api/admin/draft/check-expired - Check and advance expired slots",
+    "GET /api/admin/draft/history - Get past draft rounds"
+  ],
+  "draft_states": {
+    "not_started": "Draft created but not yet started",
+    "active": "Draft in progress, slots advancing",
+    "paused": "Draft temporarily paused (deadlines frozen)",
+    "completed": "Draft finished, all submissions collected"
+  },
+  "slot_states": {
+    "waiting": "Faculty waiting for their turn",
+    "active": "Current slot open, faculty can submit",
+    "submitted": "Faculty has submitted availability",
+    "expired": "Slot deadline passed without submission"
+  },
+  "configuration": {
+    "year": "Academic year for availability requests",
+    "window_size": "Number of hours faculty have to submit (e.g., 48)",
+    "hours_per_slot": "Stagger time between slots (e.g., 2)",
+    "priority_order": "Faculty list in draft order"
+  },
+  "workflow": [
+    "1. Create draft: Set year, window size, hours per slot",
+    "2. System assigns priority order to all faculty",
+    "3. Admin starts draft",
+    "4. First faculty notified, slot opens",
+    "5. Faculty submits availability or slot expires",
+    "6. Next faculty slot opens automatically",
+    "7. Repeat until all faculty processed",
+    "8. Admin marks draft complete"
+  ],
+  "notes": [
+    "Priority order randomized or based on previous year equity",
+    "Pausing draft freezes all deadlines",
+    "Expired slots can be manually checked and advanced",
+    "Faculty cannot submit after their slot expires",
+    "Draft must be active for faculty to see submission form"
+  ],
+  "related_modules": [
+    "faculty-management",
+    "schedule-management",
+    "data-management"
+  ]
+}

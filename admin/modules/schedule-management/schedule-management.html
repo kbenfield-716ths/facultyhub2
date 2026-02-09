@@ -1,0 +1,224 @@
+<div class="module-container">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">📅 Schedule Management</h2>
+        <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
+          Generate and configure 52-week service schedule with special periods
+        </p>
+      </div>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="sub-tabs">
+      <button class="sub-tab-btn active" onclick="showScheduleTab('overview')">
+        📊 Overview
+      </button>
+      <button class="sub-tab-btn" onclick="showScheduleTab('configure')">
+        ⚙️ Generate Schedule
+      </button>
+      <button class="sub-tab-btn" onclick="showScheduleTab('weeks')">
+        📝 Manage Weeks
+      </button>
+    </div>
+
+    <!-- Alert -->
+    <div id="scheduleAlert" class="alert"></div>
+
+    <!-- Overview Tab -->
+    <div id="schedule-overview" class="sub-tab-content active">
+      <div class="info-box info-box-info">
+        <strong>📊 Schedule Overview</strong>
+        <p>View the service availability system status for the selected year. Shows week-by-week unavailability counts and identifies potential coverage issues.</p>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <label style="font-weight: 600; margin-right: 12px;">Academic Year:</label>
+          <select id="overviewYearSelect" onchange="loadOverview()" style="padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-weight: 600;">
+            <option value="2025">2025-2026</option>
+            <option value="2026" selected>2026-2027</option>
+            <option value="2027">2027-2028</option>
+          </select>
+        </div>
+        <button class="btn-secondary" onclick="loadOverview()">🔄 Refresh</button>
+      </div>
+
+      <div id="overviewContent">
+        <p class="empty-state">
+          <div class="empty-state-icon">📅</div>
+          <div class="empty-state-title">No Schedule Generated</div>
+          <div class="empty-state-description">Use "Generate Schedule" tab to create a 52-week schedule</div>
+        </p>
+      </div>
+    </div>
+
+    <!-- Configure Tab -->
+    <div id="schedule-configure" class="sub-tab-content">
+      <div class="info-box info-box-warning">
+        <strong>⚠️ Important</strong>
+        <p>Generating a new schedule will create 52 weeks for the academic year. If weeks already exist for this year, you must clear them first.</p>
+      </div>
+
+      <form id="configureForm" onsubmit="generateSchedule(event)">
+        <div class="form-group">
+          <label>Academic Year</label>
+          <select id="configYear">
+            <option value="2025">2025-2026</option>
+            <option value="2026" selected>2026-2027</option>
+            <option value="2027">2027-2028</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Start Date (First Tuesday of July) *</label>
+          <input type="date" id="configStartDate" value="2026-07-07" required>
+          <small>Academic year begins first Tuesday of July</small>
+        </div>
+
+        <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px; font-weight: 600;">🏖️ Special Periods</h3>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Summer Start Date</label>
+            <input type="date" id="summerStart" value="2026-06-01">
+            <small>Typically June-August</small>
+          </div>
+          <div class="form-group">
+            <label>Summer End Date</label>
+            <input type="date" id="summerEnd" value="2026-08-31">
+          </div>
+        </div>
+
+        <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px; font-weight: 600;">🎉 Holidays</h3>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>🌸 Spring Break Start</label>
+            <input type="date" id="springBreak">
+            <small>Spring break week</small>
+          </div>
+          <div class="form-group">
+            <label>🦃 Thanksgiving Week</label>
+            <input type="date" id="thanksgiving">
+            <small>Thanksgiving week start</small>
+          </div>
+          <div class="form-group">
+            <label>🎄 Christmas Week Start</label>
+            <input type="date" id="christmas">
+            <small>Will cover 2 weeks</small>
+          </div>
+        </div>
+
+        <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px; font-weight: 600;">🫁 Conferences</h3>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>ATS Conference</label>
+            <input type="date" id="atsConference">
+            <small>American Thoracic Society</small>
+          </div>
+          <div class="form-group">
+            <label>CHEST Conference</label>
+            <input type="date" id="chestConference">
+            <small>CHEST Annual Meeting</small>
+          </div>
+          <div class="form-group">
+            <label>SCCM Conference</label>
+            <input type="date" id="sccmConference">
+            <small>Society of Critical Care Medicine</small>
+          </div>
+        </div>
+
+        <div style="margin-top: 30px; display: flex; gap: 12px;">
+          <button type="submit" class="btn-primary">Generate 52 Weeks</button>
+          <button type="button" class="btn-danger" onclick="clearAllWeeks()">Clear All Weeks</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Weeks Tab -->
+    <div id="schedule-weeks" class="sub-tab-content">
+      <div class="info-box info-box-info">
+        <strong>📝 Manage Individual Weeks</strong>
+        <p>Edit individual week properties including labels, types, and point costs/rewards. Changes take effect immediately.</p>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <label style="font-weight: 600; margin-right: 12px;">Year:</label>
+          <select id="weeksYearSelect" onchange="loadWeeks()" style="padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-weight: 600;">
+            <option value="2025">2025-2026</option>
+            <option value="2026" selected>2026-2027</option>
+            <option value="2027">2027-2028</option>
+          </select>
+        </div>
+        <button class="btn-secondary" onclick="loadWeeks()">🔄 Refresh</button>
+      </div>
+
+      <div id="weeksLoading" class="loading">Loading weeks...</div>
+
+      <div id="weeksContent" style="display: none;">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Label</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Type</th>
+                <th style="width: 120px;">Cost (Off)</th>
+                <th style="width: 120px;">Reward (Work)</th>
+                <th style="width: 100px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="weeksTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Week Modal -->
+<div id="editWeekModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Week Properties</h3>
+      <span class="close-btn" onclick="closeEditWeekModal()">&times;</span>
+    </div>
+    <form id="editWeekForm" onsubmit="submitEditWeek(event)">
+      <input type="hidden" id="editWeekId">
+      <div class="form-group">
+        <label>Week Label</label>
+        <input type="text" id="editWeekLabel" placeholder="Week 1" required>
+      </div>
+      <div class="form-group">
+        <label>Week Type</label>
+        <select id="editWeekType">
+          <option value="regular">Regular</option>
+          <option value="summer">Summer</option>
+          <option value="holiday">Holiday</option>
+          <option value="conference">Conference</option>
+        </select>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Cost to Request Off (Points)</label>
+          <input type="number" id="editWeekCost" step="0.5" min="0">
+          <small>Points deducted for unavailability request</small>
+        </div>
+        <div class="form-group">
+          <label>Reward for Working (Points)</label>
+          <input type="number" id="editWeekReward" step="0.5" min="0">
+          <small>Points earned for working this week</small>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn-primary">Save Changes</button>
+        <button type="button" class="btn-secondary" onclick="closeEditWeekModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
