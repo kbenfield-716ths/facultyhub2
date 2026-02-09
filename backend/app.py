@@ -37,6 +37,7 @@ from .config import settings
 from .security import SecurityMiddleware, standard_limiter, log_audit, generate_secure_password
 from .auth import optional_require_admin, require_admin
 from .routes.admin_auth import router as admin_auth_router
+from backend.routes.admin_data_management import router as data_management_router
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ app.include_router(schedule_router)
 app.include_router(messages_router)
 app.include_router(knowledge_base.router)
 app.include_router(draft.router)
+app.include_router(data_management_router)
 
 # ---------- Static File Setup -----------
 STATIC_DIR = Path(__file__).resolve().parent.parent
@@ -81,6 +83,9 @@ BACKEND_STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 if (STATIC_DIR / "icons").exists():
     app.mount("/icons", StaticFiles(directory=str(STATIC_DIR / "icons")), name="icons")
+
+# Serve admin modules
+app.mount("/admin/modules", StaticFiles(directory="admin/modules"), name="admin-modules")
 
 # ---------- Pydantic Schemas ----------
 class SignupPayload(BaseModel):
