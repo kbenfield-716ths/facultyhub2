@@ -84,8 +84,9 @@ BACKEND_STATIC_DIR = Path(__file__).resolve().parent / "static"
 if (STATIC_DIR / "icons").exists():
     app.mount("/icons", StaticFiles(directory=str(STATIC_DIR / "icons")), name="icons")
 
-# Serve admin modules
-app.mount("/admin/modules", StaticFiles(directory="admin/modules"), name="admin-modules")
+# Serve entire admin directory (includes modules and index.html)
+if (STATIC_DIR / "admin").exists():
+    app.mount("/admin", StaticFiles(directory=str(STATIC_DIR / "admin"), html=True), name="admin")
 
 # ---------- Pydantic Schemas ----------
 class SignupPayload(BaseModel):
