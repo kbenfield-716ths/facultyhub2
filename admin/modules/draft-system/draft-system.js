@@ -23,7 +23,7 @@ async function loadActiveDraft() {
     if (!response.ok) throw new Error('Failed to load drafts');
 
     const data = await response.json();
-    const rounds = data.rounds || [];
+    const rounds = Array.isArray(data) ? data : (data.rounds || []);  // ✅ FIXED
 
     // Find active round (not completed)
     activeDraft = rounds.find(function(r) { return r.status !== 'completed'; });
@@ -40,7 +40,7 @@ async function loadActiveDraft() {
     const slotsResponse = await fetch('/api/draft/admin/rounds/' + activeDraft.id + '/slots');
     if (slotsResponse.ok) {
       const slotsData = await slotsResponse.json();
-      draftSlots = slotsData.slots || [];
+      draftSlots = Array.isArray(slotsData) ? slotsData : (slotsData.slots || []);
     } else {
       draftSlots = [];
     }
@@ -368,7 +368,7 @@ async function loadPastDrafts() {
     if (!response.ok) return;
 
     const data = await response.json();
-    const allRounds = data.rounds || [];
+    const allRounds = Array.isArray(data) ? data : (data.rounds || []);  // ✅ FIXED
     const pastDrafts = allRounds.filter(function(r) { return r.status === 'completed'; });
 
     if (pastDrafts.length === 0) {
