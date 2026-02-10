@@ -766,13 +766,12 @@
     let allFaculty = [];
     let currentYear = 2026;
     
-    window.addEventListener('DOMContentLoaded', async () => {
-      await checkAuth();
-      await loadProviders();
-      await loadFaculty();
-      await loadOverview();
-      await loadWeeks();
-    });
+window.addEventListener('DOMContentLoaded', async () => {
+  await checkAuth();
+  await loadFaculty();
+  await loadOverview();
+  await loadWeeks();
+});
     
     // ==================== UTILITY FUNCTIONS ====================
     
@@ -812,28 +811,6 @@
     }
     
     // ==================== PROVIDER/FACULTY FUNCTIONS ====================
-    
-    async function loadProviders() {
-      const errorDiv = document.getElementById('providerError');
-      const countSpan = document.getElementById('providerCount');
-      
-      try {
-        const response = await fetch('/api/providers', { credentials: 'same-origin' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        if (!Array.isArray(data)) throw new Error('Invalid response from server');
-        
-        allProviders = data;
-        countSpan.textContent = `${allProviders.length} faculty`;
-        errorDiv.style.display = 'none';
-        await loadFaculty();
-      } catch (error) {
-        console.error('Error loading providers:', error);
-        errorDiv.textContent = `Error loading providers: ${error.message}`;
-        errorDiv.style.display = 'block';
-        countSpan.textContent = 'Error';
-      }
-    }
     
     async function loadFaculty() {
       const tbody = document.getElementById('providersTableBody');
