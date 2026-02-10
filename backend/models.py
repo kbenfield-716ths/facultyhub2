@@ -170,7 +170,7 @@ class Signup(Base):
     __tablename__ = "signups"
     
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    provider_id = Column(String, ForeignKey("providers.id"), nullable=False, index=True)
+    provider_id = Column(String, ForeignKey("faculty.id"), nullable=False, index=True)
     shift_id = Column(Integer, ForeignKey("shifts.id"), nullable=False, index=True)
     desired_nights = Column(Integer, nullable=False)
     locked = Column(Boolean, default=False)
@@ -185,7 +185,7 @@ class Assignment(Base):
     __tablename__ = "assignments"
     
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    provider_id = Column(String, ForeignKey("providers.id"), nullable=False)
+    provider_id = Column(String, ForeignKey("faculty.id"), nullable=False)
     shift_id = Column(Integer, ForeignKey("shifts.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
