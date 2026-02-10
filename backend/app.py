@@ -29,7 +29,6 @@ from .routes.service_weeks import router as service_weeks_router
 from .routes.schedule_routes import router as schedule_router
 from .routes.messages import router as messages_router
 from backend.email_service import send_irpa_confirmation
-from backend.sync_utils import sync_provider_from_faculty, sync_all_providers_from_faculty
 from .routes import knowledge_base
 from .routes import draft
 from .models import Base, engine
@@ -436,16 +435,38 @@ async def list_assignments(
 
 
 # ---------- Providers List ----------
-@app.get("/api/providers", response_model=List[ProviderOut])
-async def list_providers(
+@app.post("/api/admin/providers")
+async def create_provider(
     request: Request,
+    provider: ProviderCreate,
+    current_user: Faculty = Depends(optional_require_admin),
     db: Session = Depends(get_db)
 ):
-    """Get all providers for moonlighting system."""
+    """Add a new faculty member as a moonlighter."""
     await standard_limiter(request)
-    
-    providers = db.query(Provider).order_by(Provider.name).all()
-    return providers
+
+    existing = db.query(Faculty).filter(Faculty.id == provider.id).first()
+    if existing:
+        existing.moonlighter = True
+        if provider.email:
+            existing.email = provider.email
+        db.commit()
+        return {"status": "updated", "id": existing.id}
+
+    new_faculty = Faculty(
+        id=provider.id,
+        name=provider.name,
+        email=provider.email or "",
+        rank="assistant",
+        clinical_effort_pct=100,
+        base_points=0,
+        moonlighter=True,
+        active=True
+    )
+    db.add(new_faculty)
+    db.commit()
+
+    return {"status": "created", "id": new_faculty.id, "name": new_faculty.name}
 
 
 # ---------- Admin: Provider Management ----------
