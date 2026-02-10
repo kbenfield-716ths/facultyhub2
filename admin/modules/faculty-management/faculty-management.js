@@ -22,7 +22,7 @@ async function loadFaculty() {
     if (!response.ok) throw new Error('Failed to load faculty');
 
     const data = await response.json();
-    allFaculty = data.faculty || [];
+    allFaculty = Array.isArray(data) ? data : (data.faculty || []); 
 
     renderFacultyTable();
     updateFacultyCount();
