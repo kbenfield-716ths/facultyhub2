@@ -17,7 +17,7 @@ from .auth import get_current_user, hash_password
 
 from .models import (
     SessionLocal, init_db, get_db,
-    Provider, Month, Shift, Signup, Assignment, Faculty, AuditLog
+    Month, Shift, Signup, Assignment, Faculty, AuditLog
 )
 from .optimizer_bridge import run_optimizer_for_month
 from fastapi.middleware.gzip import GZipMiddleware
@@ -230,17 +230,15 @@ async def save_signup(
 ):
     """Save moonlighting signup for a provider."""
     await standard_limiter(request)
-    
-    # SYNC: Pull email from Faculty table to Provider table
-    sync_provider_from_faculty(db, payload.provider_id)
-    
-    # Ensure provider exists (or update name/email if needed)
-    provider = db.query(Provider).get(payload.provider_id)
-    if not provider:
-        provider = Provider(id=payload.provider_id, name=payload.provider_name)
-        db.add(provider)
-    else:
-        provider.name = payload.provider_name
+
+    # Get faculty member (provider)
+    faculty = db.query(Faculty).filter(Faculty.id == payload.provider_id).first()
+    if not faculty:
+        raise HTTPException(404, f"Faculty member '{payload.provider_id}' not found")
+
+    # Update name if provided
+    if payload.provider_name and faculty.name != payload.provider_name:
+        faculty.name = payload.provider_name
 
     # Ensure Month row exists
     year, month_num = map(int, payload.month.split("-"))
@@ -287,51 +285,33 @@ async def save_signup(
         db.add(su)
 
     db.commit()
-    
-    # Refresh provider to get synced email
-    db.refresh(provider)
-    
+
+    # Refresh faculty to get updated data
+    db.refresh(faculty)
+
     # Send confirmation email (non-blocking)
     try:
         date_strings = [d.isoformat() for d in sorted(payload.dates)]
-        
+
         if month_num >= 7:
             academic_year = f"{year}-{year+1}"
         else:
             academic_year = f"{year-1}-{year}"
-        
-        if provider.email:
+
+        if faculty.email:
             send_irpa_confirmation(
-                faculty_name=provider.name,
-                faculty_email=provider.email,
+                faculty_name=faculty.name,
+                faculty_email=faculty.email,
                 selected_dates=date_strings,
                 academic_year=academic_year
             )
-            logger.info(f"IRPA confirmation email sent to {provider.email}")
+            logger.info(f"IRPA confirmation email sent to {faculty.email}")
         else:
-            logger.warning(f"No email on file for provider {provider.name} ({payload.provider_id})")
+            logger.warning(f"No email on file for faculty {faculty.name} ({payload.provider_id})")
     except Exception as e:
         logger.error(f"Failed to send IRPA confirmation email: {e}")
     
     return {"status": "ok"}
-
-
-# ---------- Admin: Sync Provider/Faculty Emails ----------
-@app.post("/api/admin/sync_provider_emails")
-async def sync_provider_emails_endpoint(
-    request: Request,
-    current_user: Faculty = Depends(optional_require_admin),
-    db: Session = Depends(get_db)
-):
-    """One-time sync of all Provider emails from Faculty table."""
-    await standard_limiter(request)
-    
-    result = sync_all_providers_from_faculty(db)
-    
-    if settings.AUDIT_LOG_ENABLED and current_user:
-        log_audit(db, current_user, "SYNC_PROVIDER_EMAILS", request=request)
-    
-    return result
 
 
 # ---------- Admin: List Signups ----------
@@ -344,18 +324,18 @@ async def list_signups(
 ):
     """Return one row per provider-date signup."""
     await standard_limiter(request)
-    
+
     q = (
         db.query(
             Signup.provider_id,
-            Provider.name.label("provider_name"),
+            Faculty.name.label("provider_name"),
             Shift.date.label("date"),
             Month.year.label("year"),
             Month.month.label("month_num"),
             Signup.desired_nights,
             Signup.locked,
         )
-        .join(Provider, Signup.provider_id == Provider.id)
+        .join(Faculty, Signup.provider_id == Faculty.id)
         .join(Shift, Signup.shift_id == Shift.id)
         .join(Month, Shift.month_id == Month.id)
     )
@@ -364,7 +344,7 @@ async def list_signups(
         year, mnum = map(int, month.split("-"))
         q = q.filter(Month.year == year, Month.month == mnum)
 
-    rows = q.order_by(Provider.name, Shift.date).all()
+    rows = q.order_by(Faculty.name, Shift.date).all()
 
     result: List[SignupOut] = []
     for r in rows:
@@ -396,16 +376,16 @@ async def list_assignments(
 ):
     """Return the generated schedule (assignments) for a month."""
     await standard_limiter(request)
-    
+
     q = (
         db.query(
             Assignment.provider_id,
-            Provider.name.label("provider_name"),
+            Faculty.name.label("provider_name"),
             Shift.date.label("date"),
             Month.year.label("year"),
             Month.month.label("month_num"),
         )
-        .join(Provider, Assignment.provider_id == Provider.id)
+        .join(Faculty, Assignment.provider_id == Faculty.id)
         .join(Shift, Assignment.shift_id == Shift.id)
         .join(Month, Shift.month_id == Month.id)
     )
@@ -414,7 +394,7 @@ async def list_assignments(
         year, mnum = map(int, month.split("-"))
         q = q.filter(Month.year == year, Month.month == mnum)
 
-    rows = q.order_by(Shift.date, Provider.name).all()
+    rows = q.order_by(Shift.date, Faculty.name).all()
 
     result: List[AssignmentOut] = []
     for r in rows:
@@ -435,6 +415,22 @@ async def list_assignments(
 
 
 # ---------- Providers List ----------
+@app.get("/api/providers", response_model=List[ProviderOut])
+async def list_providers(request: Request, db: Session = Depends(get_db)):
+    """Get all active faculty who are moonlighters."""
+    await standard_limiter(request)
+
+    faculty = db.query(Faculty).filter(
+        Faculty.active == True,
+        Faculty.moonlighter == True
+    ).order_by(Faculty.name).all()
+
+    return [
+        ProviderOut(id=f.id, name=f.name, email=f.email)
+        for f in faculty
+    ]
+
+
 @app.post("/api/admin/providers")
 async def create_provider(
     request: Request,
@@ -467,127 +463,6 @@ async def create_provider(
     db.commit()
 
     return {"status": "created", "id": new_faculty.id, "name": new_faculty.name}
-
-
-# ---------- Admin: Provider Management ----------
-@app.post("/api/admin/providers")
-async def create_provider(
-    request: Request,
-    provider: ProviderCreate,
-    current_user: Faculty = Depends(optional_require_admin),
-    db: Session = Depends(get_db)
-):
-    """Add a new provider."""
-    await standard_limiter(request)
-    
-    existing = db.query(Provider).filter(Provider.id == provider.id).first()
-    if existing:
-        raise HTTPException(400, f"Provider with id '{provider.id}' already exists")
-    
-    new_provider = Provider(
-        id=provider.id,
-        name=provider.name,
-        email=provider.email
-    )
-    db.add(new_provider)
-    db.commit()
-    db.refresh(new_provider)
-    
-    if settings.AUDIT_LOG_ENABLED and current_user:
-        log_audit(
-            db, current_user, "CREATE_PROVIDER",
-            resource_type="Provider", resource_id=provider.id,
-            details={"name": provider.name, "email": provider.email},
-            request=request
-        )
-    
-    return {"status": "ok", "provider": {
-        "id": new_provider.id,
-        "name": new_provider.name,
-        "email": new_provider.email
-    }}
-
-
-@app.put("/api/admin/providers/{provider_id}")
-async def update_provider(
-    request: Request,
-    provider_id: str,
-    provider: ProviderUpdate,
-    current_user: Faculty = Depends(optional_require_admin),
-    db: Session = Depends(get_db)
-):
-    """Update an existing provider's name and/or email."""
-    await standard_limiter(request)
-    
-    existing = db.query(Provider).filter(Provider.id == provider_id).first()
-    if not existing:
-        raise HTTPException(404, f"Provider '{provider_id}' not found")
-    
-    # Store old values for audit
-    old_data = {"name": existing.name, "email": existing.email}
-    
-    # Update fields
-    existing.name = provider.name
-    existing.email = provider.email
-    
-    db.commit()
-    db.refresh(existing)
-    
-    if settings.AUDIT_LOG_ENABLED and current_user:
-        log_audit(
-            db, current_user, "UPDATE_PROVIDER",
-            resource_type="Provider", resource_id=provider_id,
-            details={"old": old_data, "new": {"name": provider.name, "email": provider.email}},
-            request=request
-        )
-    
-    return {"status": "ok", "provider": {
-        "id": existing.id,
-        "name": existing.name,
-        "email": existing.email
-    }}
-
-
-@app.delete("/api/admin/providers/{provider_id}")
-async def delete_provider(
-    request: Request,
-    provider_id: str,
-    current_user: Faculty = Depends(optional_require_admin),
-    db: Session = Depends(get_db)
-):
-    """Delete a provider and all their signups/assignments."""
-    await standard_limiter(request)
-    
-    provider = db.query(Provider).filter(Provider.id == provider_id).first()
-    if not provider:
-        raise HTTPException(404, f"Provider '{provider_id}' not found")
-    
-    # Store data for audit before deletion
-    provider_data = {"id": provider.id, "name": provider.name, "email": provider.email}
-    
-    # Count related data
-    signup_count = db.query(Signup).filter(Signup.provider_id == provider_id).count()
-    assignment_count = db.query(Assignment).filter(Assignment.provider_id == provider_id).count()
-    
-    # Delete related data
-    db.query(Signup).filter(Signup.provider_id == provider_id).delete()
-    db.query(Assignment).filter(Assignment.provider_id == provider_id).delete()
-    db.delete(provider)
-    db.commit()
-    
-    if settings.AUDIT_LOG_ENABLED and current_user:
-        log_audit(
-            db, current_user, "DELETE_PROVIDER",
-            resource_type="Provider", resource_id=provider_id,
-            details={
-                "provider": provider_data,
-                "deleted_signups": signup_count,
-                "deleted_assignments": assignment_count
-            },
-            request=request
-        )
-    
-    return {"status": "ok", "message": f"Provider '{provider_data['name']}' deleted"}
 
 
 # ---------- Admin: Clear Data ----------
@@ -776,21 +651,21 @@ async def signups_csv(
 ):
     """Export all signups for a given month as CSV."""
     await standard_limiter(request)
-    
+
     year, mnum = map(int, month.split("-"))
 
     q = (
         db.query(
             Signup.provider_id,
-            Provider.name,
+            Faculty.name,
             Shift.date,
             Signup.desired_nights,
         )
-        .join(Provider, Signup.provider_id == Provider.id)
+        .join(Faculty, Signup.provider_id == Faculty.id)
         .join(Shift, Signup.shift_id == Shift.id)
         .join(Month, Shift.month_id == Month.id)
         .filter(Month.year == year, Month.month == mnum)
-        .order_by(Provider.name, Shift.date)
+        .order_by(Faculty.name, Shift.date)
     )
 
     rows = q.all()
