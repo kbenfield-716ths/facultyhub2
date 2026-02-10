@@ -140,17 +140,6 @@ class DraftSlot(Base):
 # MOONLIGHTING MODELS
 # ==========================================
 
-class Provider(Base):
-    """Faculty member for moonlighting shifts"""
-    __tablename__ = "providers"
-    
-    id = Column(String, primary_key=True, index=True)
-    name = Column(String, nullable=False, index=True)
-    email = Column(String, nullable=True)
-    
-    signups = relationship("Signup", back_populates="provider")
-    assignments = relationship("Assignment", back_populates="provider")
-
 
 class Month(Base):
     __tablename__ = "months"
@@ -187,7 +176,7 @@ class Signup(Base):
     locked = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    provider = relationship("Provider", back_populates="signups")
+    provider = relationship("Faculty", foreign_keys=[provider_id])
     shift = relationship("Shift", back_populates="signups")
 
 
@@ -200,7 +189,7 @@ class Assignment(Base):
     shift_id = Column(Integer, ForeignKey("shifts.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    provider = relationship("Provider", back_populates="assignments")
+    provider = relationship("Faculty", foreign_keys=[provider_id])
     shift = relationship("Shift", back_populates="assignments")
 
 
@@ -250,6 +239,8 @@ class Faculty(Base):
     # Relationships
     unavailability_requests = relationship("UnavailabilityRequest", back_populates="faculty")
     service_assignments = relationship("ServiceWeekAssignment", back_populates="faculty")
+    moonlighting_signups = relationship("Signup", foreign_keys="Signup.provider_id")
+    moonlighting_assignments = relationship("Assignment", foreign_keys="Assignment.provider_id")
     
     @property
     def does_moonlighting(self):
