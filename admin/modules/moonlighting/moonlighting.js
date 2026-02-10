@@ -47,7 +47,7 @@ async function loadProviders() {
     if (!response.ok) return;
 
     const data = await response.json();
-    allProviders = data.providers || [];
+    allProviders = Array.isArray(data) ? data : (data.providers || []);
 
     // Populate provider dropdowns
     const signupsSelect = document.getElementById('signupsProvider');
