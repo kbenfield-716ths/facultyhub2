@@ -223,7 +223,11 @@ async function loadWeeks() {
     if (!response.ok) throw new Error('Failed to load weeks');
 
     const data = await response.json();
-    allWeeks = data.weeks || [];
+    if (Array.isArray(data)) {
+      allWeeks = data;
+    } else {
+      allWeeks = data.weeks || [];
+    }
 
     renderWeeksTable();
 
