@@ -87,7 +87,7 @@ async function loadSignups() {
     if (!response.ok) throw new Error('Failed to load signups');
 
     const data = await response.json();
-    allSignups = data.signups || [];
+    allSignups = Array.isArray(data) ? data : (data.signups || []);  // ✓ FIXED
 
     // Apply status filter
     let filtered = allSignups;
@@ -216,7 +216,7 @@ async function loadAssignments() {
     if (!response.ok) throw new Error('Failed to load assignments');
 
     const data = await response.json();
-    allAssignments = data.assignments || [];
+    allAssignments = Array.isArray(data) ? data : (data.assignments || []);  // ✓ FIXED
 
     renderAssignments(allAssignments);
     updateAssignmentsStats(allAssignments);
