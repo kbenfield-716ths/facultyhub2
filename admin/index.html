@@ -323,10 +323,10 @@
             loadFaculty();
           }
         } else if (moduleId === 'schedule-management') {
-          console.log('Schedule management - loadOverview exists?', typeof loadOverview);
-          if (typeof loadOverview === 'function') {
-            console.log('Calling loadOverview()');
-            loadOverview();
+          console.log('Schedule management - loadHeatmap exists?', typeof loadHeatmap);
+          if (typeof loadHeatmap === 'function') {
+            console.log('Calling loadHeatmap(2026)');
+            loadHeatmap(2026);
           }
         } else if (moduleId === 'draft-system') {
           console.log('Draft system - loadActiveDraft exists?', typeof loadActiveDraft);

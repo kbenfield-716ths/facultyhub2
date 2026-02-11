@@ -255,4 +255,41 @@ function showOverrideAlert(message, type) {
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
   loadBlocks();
+
+  // ==================== MODAL CLOSE FUNCTIONALITY ====================
+
+  // Close block modal when clicking outside (on backdrop)
+  const blockModal = document.getElementById('createBlockModal');
+  if (blockModal) {
+    blockModal.addEventListener('click', function(event) {
+      if (event.target === blockModal) {
+        closeCreateBlockModal();
+      }
+    });
+  }
+
+  // Close assignment modal when clicking outside (on backdrop)
+  const assignModal = document.getElementById('createAssignmentModal');
+  if (assignModal) {
+    assignModal.addEventListener('click', function(event) {
+      if (event.target === assignModal) {
+        closeCreateAssignmentModal();
+      }
+    });
+  }
+});
+
+// Close modals when pressing ESC key
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    const blockModal = document.getElementById('createBlockModal');
+    const assignModal = document.getElementById('createAssignmentModal');
+
+    if (blockModal && blockModal.style.display === 'flex') {
+      closeCreateBlockModal();
+    }
+    if (assignModal && assignModal.style.display === 'flex') {
+      closeCreateAssignmentModal();
+    }
+  }
 });

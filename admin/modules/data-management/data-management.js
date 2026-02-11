@@ -37,10 +37,10 @@ async function loadUnavailabilityData() {
   try {
     showDataAlert('Loading unavailability requests...', 'info');
 
-    const yearFilter = document.getElementById('unavailYearFilter').value;
-    const facultyFilter = document.getElementById('unavailFacultyFilter').value;
-    const statusFilter = document.getElementById('unavailStatusFilter').value;
-    const dateFilter = document.getElementById('unavailDateFilter').value;
+    const yearFilter = document.getElementById('unavailFilter')?.value || 'all';
+    const facultyFilter = document.getElementById('unavailFacultyFilter')?.value || 'all';
+    const statusFilter = document.getElementById('unavailStatusFilter')?.value || 'all';
+    const dateFilter = document.getElementById('unavailDateFilter')?.value || 'all';
 
     const response = await fetch(`/api/admin/data-management/unavailability-requests?` + new URLSearchParams({
       year: yearFilter,
@@ -216,8 +216,8 @@ async function loadMoonlightingData() {
   try {
     showDataAlert('Loading moonlighting signups...', 'info');
 
-    const monthFilter = document.getElementById('moonlightMonthFilter').value;
-    const providerFilter = document.getElementById('moonlightProviderFilter').value;
+    const monthFilter = document.getElementById('moonlightMonthFilter')?.value || 'all';
+    const providerFilter = document.getElementById('moonlightProviderFilter')?.value || 'all';
 
     const response = await fetch(`/api/admin/data-management/moonlighting-signups?` + new URLSearchParams({
       month: monthFilter,
@@ -401,10 +401,20 @@ async function loadProviderFilters() {
 
 async function loadMonthFilters() {
   const select = document.getElementById('moonlightMonthFilter');
-  const months = [...new Set(moonlightingData.map(s => s.month_label))].sort();
+
+  // Create unique month entries with both id and label
+  const monthMap = new Map();
+  moonlightingData.forEach(s => {
+    if (!monthMap.has(s.month_id)) {
+      monthMap.set(s.month_id, s.month_label);
+    }
+  });
+
+  // Sort by label
+  const months = Array.from(monthMap.entries()).sort((a, b) => a[1].localeCompare(b[1]));
 
   select.innerHTML = '<option value="all">All Months</option>' +
-    months.map(label => `<option value="${label}">${label}</option>`).join('');
+    months.map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
 }
 
 function convertToCSV(data, columns) {

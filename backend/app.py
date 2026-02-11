@@ -37,6 +37,7 @@ from .security import SecurityMiddleware, standard_limiter, log_audit, generate_
 from .auth import optional_require_admin, require_admin
 from .routes.admin_auth import router as admin_auth_router
 from backend.routes.admin_data_management import router as data_management_router
+from backend.routes.service_week_overrides import router as service_week_overrides_router
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,7 @@ app.include_router(messages_router)
 app.include_router(knowledge_base.router)
 app.include_router(draft.router)
 app.include_router(data_management_router)
+app.include_router(service_week_overrides_router)
 
 # ---------- Static File Setup -----------
 STATIC_DIR = Path(__file__).resolve().parent.parent

@@ -52,7 +52,7 @@ function renderFacultyTable() {
                   (faculty.procedures_count || 0) + (faculty.consults_count || 0);
 
     // Status badge
-    const statusBadge = faculty.is_active
+    const statusBadge = faculty.active
       ? '<span class="badge badge-success">Active</span>'
       : '<span class="badge badge-danger">Inactive</span>';
 
@@ -61,11 +61,16 @@ function renderFacultyTable() {
       ? ' <span class="badge badge-info">Admin</span>'
       : '';
 
+    // Moonlighter badge
+    const moonlighterBadge = faculty.moonlighter
+      ? ' <span class="badge badge-warning">🌙 Moonlighter</span>'
+      : '';
+
     row.innerHTML = '<td style="font-weight: 600;">' + (faculty.id || '') + '</td>' +
-                    '<td>' + (faculty.name || '') + adminBadge + '</td>' +
+                    '<td>' + (faculty.name || '') + adminBadge + moonlighterBadge + '</td>' +
                     '<td style="font-size: 13px;">' + (faculty.email || '-') + '</td>' +
                     '<td>' + (faculty.rank || '-') + '</td>' +
-                    '<td style="text-align: center;">' + (faculty.effort_percent || 0) + '%</td>' +
+                    '<td style="text-align: center;">' + (faculty.clinical_effort_pct || 0) + '%</td>' +
                     '<td style="text-align: center; font-weight: 600;">' + (faculty.bonus_points || 0) + '</td>' +
                     '<td style="text-align: center;">' + (faculty.micu_count || 0) + '</td>' +
                     '<td style="text-align: center;">' + (faculty.app_icu_count || 0) + '</td>' +
@@ -75,7 +80,7 @@ function renderFacultyTable() {
                     '<td>' + statusBadge + '</td>' +
                     '<td><div class="action-buttons">' +
                       '<button class="btn-primary btn-sm" onclick="openEditFaculty(\'' + faculty.id + '\')">Edit</button>' +
-                      (faculty.is_active
+                      (faculty.active
                         ? '<button class="btn-secondary btn-sm" onclick="toggleFacultyStatus(\'' + faculty.id + '\', false)">Deactivate</button>'
                         : '<button class="btn-success btn-sm" onclick="toggleFacultyStatus(\'' + faculty.id + '\', true)">Activate</button>') +
                       '<button class="btn-danger btn-sm" onclick="deleteFaculty(\'' + faculty.id + '\')">Delete</button>' +
@@ -87,7 +92,7 @@ function renderFacultyTable() {
 
 // Update faculty count
 function updateFacultyCount() {
-  const activeCount = allFaculty.filter(function(f) { return f.is_active; }).length;
+  const activeCount = allFaculty.filter(function(f) { return f.active; }).length;
   const totalCount = allFaculty.length;
   document.getElementById('facultyCount').textContent = activeCount + ' active / ' + totalCount + ' total';
 }
@@ -260,3 +265,28 @@ async function deleteFaculty(facultyId) {
     showAlert('facultyAlert', 'Failed to delete faculty: ' + error.message, 'error');
   }
 }
+
+// ==================== MODAL CLOSE FUNCTIONALITY ====================
+
+// Close modal when clicking outside (on backdrop)
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('editFacultyModal');
+  if (modal) {
+    modal.addEventListener('click', function(event) {
+      // Only close if clicking directly on the modal backdrop, not the content
+      if (event.target === modal) {
+        closeEditFacultyModal();
+      }
+    });
+  }
+});
+
+// Close modal when pressing ESC key
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    const modal = document.getElementById('editFacultyModal');
+    if (modal && modal.classList.contains('show')) {
+      closeEditFacultyModal();
+    }
+  }
+});

@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 # Copy backend code and optimizer
 COPY backend /app/backend
 COPY moonlighter_optimizer.py /app/moonlighter_optimizer.py
+COPY migrations /app/migrations
 
 # Copy faculty.csv so the app can seed providers
 COPY backend/seed_data/faculty.csv /app/faculty.csv

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from pydantic import BaseModel
 
-from backend.models import get_db, Faculty, UnavailabilityRequest, ServiceWeek, Signup, Month, Provider
+from backend.models import get_db, Faculty, UnavailabilityRequest, ServiceWeek, Signup, Shift, Month
 from backend.auth import require_admin
 
 router = APIRouter(prefix="/api/admin/data-management", tags=["data-management"])
@@ -84,14 +84,15 @@ async def get_moonlighting_signups(
     query = db.query(
         Signup.id,
         Signup.provider_id,
-        Provider.name.label('provider_name'),
-        Signup.month_id,
+        Faculty.name.label('provider_name'),
+        Shift.month_id,
         Month.year,
         Month.month,
         Signup.desired_nights,
         Signup.created_at
-    ).join(Provider, Signup.provider_id == Provider.id, isouter=True
-    ).join(Month, Signup.month_id == Month.id)
+    ).join(Faculty, Signup.provider_id == Faculty.id, isouter=True
+    ).join(Shift, Signup.shift_id == Shift.id
+    ).join(Month, Shift.month_id == Month.id)
 
     # Apply filters
     if month != "all":

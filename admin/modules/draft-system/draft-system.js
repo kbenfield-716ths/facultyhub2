@@ -398,3 +398,59 @@ async function loadPastDrafts() {
     console.error('Error loading past drafts:', error);
   }
 }
+
+// ==================== GLOBAL FUNCTION EXPORTS ====================
+// Make functions globally accessible for inline onclick handlers
+
+window.showCreateDraftModal = showCreateDraftModal;
+window.closeCreateDraftModal = closeCreateDraftModal;
+window.startDraft = startDraft;
+window.pauseDraft = pauseDraft;
+window.resumeDraft = resumeDraft;
+window.completeDraft = completeDraft;
+window.checkExpiredSlots = checkExpiredSlots;
+
+// ==================== MODAL CLOSE FUNCTIONALITY ====================
+
+// Close modal when clicking outside (on backdrop)
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('createDraftModal');
+  if (modal) {
+    modal.addEventListener('click', function(event) {
+      // Only close if clicking directly on the modal backdrop, not the content
+      if (event.target === modal) {
+        closeCreateDraftModal();
+      }
+    });
+
+    // Also attach listeners to close button and cancel button
+    const closeBtn = modal.querySelector('.close-btn');
+    const cancelBtn = modal.querySelector('button[type="button"].btn-secondary');
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeCreateDraftModal();
+      });
+    }
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeCreateDraftModal();
+      });
+    }
+  }
+});
+
+// Close modal when pressing ESC key
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    const modal = document.getElementById('createDraftModal');
+    if (modal && modal.classList.contains('show')) {
+      closeCreateDraftModal();
+    }
+  }
+});

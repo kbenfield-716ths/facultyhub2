@@ -6,11 +6,12 @@
 let allWeeks = [];
 let currentEditingWeekId = null;
 let currentScheduleTab = 'overview';
+let currentYear = 2026;
 
-// Load overview on init
+// Load heatmap on init
 document.addEventListener('DOMContentLoaded', function() {
-  if (document.getElementById('overviewContent')) {
-    loadOverview();
+  if (document.getElementById('heatmapGrid')) {
+    loadHeatmap(2026);
   }
 });
 
@@ -32,92 +33,70 @@ function showScheduleTab(tabId) {
 
   // Load data for tab
   if (tabId === 'overview') {
-    loadOverview();
+    loadHeatmap(currentYear);
   } else if (tabId === 'weeks') {
     loadWeeks();
   }
 }
 
-// Load schedule overview
-async function loadOverview() {
-  const year = document.getElementById('overviewYearSelect').value;
+// Load heatmap
+async function loadHeatmap(year) {
+  currentYear = year;
+
+  // Update button states
+  document.getElementById('year2025Btn').classList.toggle('active', year === 2025);
+  document.getElementById('year2026Btn').classList.toggle('active', year === 2026);
+  document.getElementById('year2025Btn').style.background = year === 2025 ? '#667eea' : 'white';
+  document.getElementById('year2025Btn').style.color = year === 2025 ? 'white' : '#6b7280';
+  document.getElementById('year2025Btn').style.borderColor = year === 2025 ? '#667eea' : '#e5e7eb';
+  document.getElementById('year2026Btn').style.background = year === 2026 ? '#667eea' : 'white';
+  document.getElementById('year2026Btn').style.color = year === 2026 ? 'white' : '#6b7280';
+  document.getElementById('year2026Btn').style.borderColor = year === 2026 ? '#667eea' : '#e5e7eb';
+
+  const loading = document.getElementById('heatmapLoading');
+  const grid = document.getElementById('heatmapGrid');
+
+  loading.style.display = 'block';
+  grid.style.display = 'none';
 
   try {
     showAlert('scheduleAlert', '', 'clear');
 
-    const response = await fetch('/api/admin/service-weeks?year=' + year);
-    if (!response.ok) throw new Error('Failed to load overview');
+    const response = await fetch('/api/admin/service-weeks/heatmap?year=' + year, { credentials: 'same-origin' });
+    if (!response.ok) throw new Error('Failed to load heatmap data');
+    const weeks = await response.json();
 
-    const rawData = await response.json();
+    if (weeks.length === 0) {
+      grid.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 40px;">No weeks found for this year. Generate weeks in "Generate Schedule" tab.</p>';
+    } else {
+      grid.innerHTML = weeks.map(function(week) {
+        const count = week.unavailable_count || 0;
+        let statusClass = 'status-good';
+        let statusText = 'Good';
+        if (week.staffing_status === 'critical' || count >= 12) {
+          statusClass = 'status-critical';
+          statusText = 'Critical';
+        } else if (week.staffing_status === 'tight' || count >= 8) {
+          statusClass = 'status-tight';
+          statusText = 'Tight';
+        }
 
-    // Transform to overview format
-    const data = {
-      weeks: rawData.weeks || [],
-      total_weeks: (rawData.weeks || []).length,
-      avg_unavailable: 0, // Calculate from weeks if needed
-      max_unavailable: 0  // Calculate from weeks if needed
-    };
-
-    if (!data.weeks || data.weeks.length === 0) {
-      document.getElementById('overviewContent').innerHTML = '<p class="empty-state">' +
-        '<div class="empty-state-icon">📅</div>' +
-        '<div class="empty-state-title">No Schedule Generated</div>' +
-        '<div class="empty-state-description">Use "Generate Schedule" tab to create a 52-week schedule for ' + year + '-' + (parseInt(year) + 1) + '</div>' +
-        '</p>';
-      return;
+        return '<div class="week-cell ' + statusClass + '">' +
+          '<div class="week-num">Week ' + week.week_number + '</div>' +
+          '<div class="week-label">' + week.label + '</div>' +
+          '<div class="week-count">' + count + '</div>' +
+          '<div class="week-status">' + statusText + '</div>' +
+        '</div>';
+      }).join('');
     }
 
-    renderOverview(data);
-
+    loading.style.display = 'none';
+    grid.style.display = 'grid';
   } catch (error) {
-    console.error('Error loading overview:', error);
-    showAlert('scheduleAlert', 'Failed to load overview: ' + error.message, 'error');
+    console.error('Error loading heatmap:', error);
+    showAlert('scheduleAlert', 'Failed to load heatmap: ' + error.message, 'error');
+    loading.textContent = 'Error: ' + error.message;
   }
-}
-
-// Render overview
-function renderOverview(data) {
-  const html = '<div style="margin-bottom: 20px;">' +
-    '<div class="stats-row">' +
-      '<div class="stat-card">' +
-        '<div class="stat-label">Total Weeks</div>' +
-        '<div class="stat-value">' + (data.total_weeks || 0) + '</div>' +
-      '</div>' +
-      '<div class="stat-card">' +
-        '<div class="stat-label">Avg Unavailable</div>' +
-        '<div class="stat-value">' + (data.avg_unavailable || 0) + '</div>' +
-      '</div>' +
-      '<div class="stat-card">' +
-        '<div class="stat-label">Max Unavailable</div>' +
-        '<div class="stat-value">' + (data.max_unavailable || 0) + '</div>' +
-      '</div>' +
-    '</div>' +
-  '</div>' +
-  '<h3 style="margin-bottom: 16px; color: #1f2937;">Week-by-Week Status</h3>' +
-  '<div class="heatmap-grid">' +
-    data.weeks.map(function(week) {
-      const unavailCount = week.unavailable_count || 0;
-      let statusClass = 'status-good';
-      let statusText = 'Good';
-
-      if (unavailCount >= 8) {
-        statusClass = 'status-critical';
-        statusText = 'Critical';
-      } else if (unavailCount >= 5) {
-        statusClass = 'status-tight';
-        statusText = 'Tight';
-      }
-
-      return '<div class="week-cell ' + statusClass + '">' +
-        '<div class="week-num">Week ' + week.week_number + '</div>' +
-        '<div class="week-label">' + week.label + '</div>' +
-        '<div class="week-count">' + unavailCount + '</div>' +
-        '<div class="week-status">' + statusText + '</div>' +
-      '</div>';
-    }).join('') +
-  '</div>';
-
-  document.getElementById('overviewContent').innerHTML = html;
 }
 
 // Generate schedule
@@ -264,9 +243,9 @@ function renderWeeksTable() {
                     '<td>' + formatDate(week.start_date) + '</td>' +
                     '<td>' + formatDate(week.end_date) + '</td>' +
                     '<td><span class="badge">' + (week.week_type || 'regular') + '</span></td>' +
-                    '<td style="text-align: center; font-weight: 600;">' + (week.cost_off || 1) + '</td>' +
-                    '<td style="text-align: center; font-weight: 600;">' + (week.reward_work || 0) + '</td>' +
-                    '<td><button class="btn-primary btn-sm" onclick="openEditWeek(' + week.id + ')">Edit</button></td>';
+                    '<td style="text-align: center; font-weight: 600;">' + (week.point_cost_off || 1) + '</td>' +
+                    '<td style="text-align: center; font-weight: 600;">' + (week.point_reward_work || 0) + '</td>' +
+                    '<td><button class="btn-primary btn-sm" onclick="openEditWeek(\'' + week.id + '\')">Edit</button></td>';
 
     tbody.appendChild(row);
   });
@@ -282,8 +261,8 @@ function openEditWeek(weekId) {
   document.getElementById('editWeekId').value = week.id;
   document.getElementById('editWeekLabel').value = week.label || '';
   document.getElementById('editWeekType').value = week.week_type || 'regular';
-  document.getElementById('editWeekCost').value = week.cost_off || 1;
-  document.getElementById('editWeekReward').value = week.reward_work || 0;
+  document.getElementById('editWeekCost').value = week.point_cost_off || 1;
+  document.getElementById('editWeekReward').value = week.point_reward_work || 0;
 
   document.getElementById('editWeekModal').classList.add('show');
 }
@@ -303,8 +282,8 @@ async function submitEditWeek(event) {
   const payload = {
     label: document.getElementById('editWeekLabel').value.trim(),
     week_type: document.getElementById('editWeekType').value,
-    cost_off: parseFloat(document.getElementById('editWeekCost').value) || 1,
-    reward_work: parseFloat(document.getElementById('editWeekReward').value) || 0
+    point_cost_off: parseFloat(document.getElementById('editWeekCost').value) || 1,
+    point_reward_work: parseFloat(document.getElementById('editWeekReward').value) || 0
   };
 
   try {
@@ -328,3 +307,58 @@ async function submitEditWeek(event) {
     alert('Failed to update week: ' + error.message);
   }
 }
+
+// ==================== GLOBAL FUNCTION EXPORTS ====================
+// Make functions globally accessible for inline onclick handlers
+
+window.showScheduleTab = showScheduleTab;
+window.loadHeatmap = loadHeatmap;
+window.clearAllWeeks = clearAllWeeks;
+window.loadWeeks = loadWeeks;
+window.openEditWeek = openEditWeek;
+window.closeEditWeekModal = closeEditWeekModal;
+
+// ==================== MODAL CLOSE FUNCTIONALITY ====================
+
+// Close modal when clicking outside (on backdrop)
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('editWeekModal');
+  if (modal) {
+    modal.addEventListener('click', function(event) {
+      // Only close if clicking directly on the modal backdrop, not the content
+      if (event.target === modal) {
+        closeEditWeekModal();
+      }
+    });
+  }
+
+  // Also attach listeners to close button and cancel button
+  const closeBtn = modal?.querySelector('.close-btn');
+  const cancelBtn = modal?.querySelector('button[type="button"].btn-secondary');
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeEditWeekModal();
+    });
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeEditWeekModal();
+    });
+  }
+});
+
+// Close modal when pressing ESC key
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    const modal = document.getElementById('editWeekModal');
+    if (modal && modal.classList.contains('show')) {
+      closeEditWeekModal();
+    }
+  }
+});

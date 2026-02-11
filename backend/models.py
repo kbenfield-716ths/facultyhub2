@@ -238,7 +238,7 @@ class Faculty(Base):
     
     # Relationships
     unavailability_requests = relationship("UnavailabilityRequest", back_populates="faculty")
-    service_assignments = relationship("ServiceWeekAssignment", back_populates="faculty")
+    service_assignments = relationship("ServiceWeekAssignment", back_populates="faculty", foreign_keys="ServiceWeekAssignment.faculty_id")
     moonlighting_signups = relationship("Signup", foreign_keys="Signup.provider_id")
     moonlighting_assignments = relationship("Assignment", foreign_keys="Assignment.provider_id")
     
@@ -304,20 +304,46 @@ class UnavailabilityRequest(Base):
 class ServiceWeekAssignment(Base):
     """Actual service week assignments (MICU, APP-ICU, Procedures, Consults)"""
     __tablename__ = "service_week_assignments"
-    
+
     id = Column(String, primary_key=True, index=True)
     faculty_id = Column(String, ForeignKey('faculty.id'), nullable=False, index=True)
     week_id = Column(String, ForeignKey('service_weeks.id'), nullable=False, index=True)
-    
+
     service_type = Column(String, nullable=False, index=True)
-    
+
     imported = Column(Boolean, default=False)
-    
+    is_manual = Column(Boolean, default=False)  # True if manually assigned by admin
+    reason = Column(Text)  # Reason for manual assignment
+    created_by = Column(String, ForeignKey('faculty.id'))  # Admin who created manual assignment
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    faculty = relationship("Faculty", back_populates="service_assignments")
+
+    faculty = relationship("Faculty", back_populates="service_assignments", foreign_keys=[faculty_id])
     week = relationship("ServiceWeek", back_populates="service_assignments")
+    created_by_faculty = relationship("Faculty", foreign_keys=[created_by])
+
+
+class FacultyBlock(Base):
+    """
+    Blocks faculty from being assigned to specific weeks.
+    Used for remote faculty, sabbaticals, or other situations where faculty cannot do in-person service.
+    """
+    __tablename__ = "faculty_blocks"
+
+    id = Column(String, primary_key=True, index=True)
+    faculty_id = Column(String, ForeignKey('faculty.id'), nullable=False, index=True)
+    week_id = Column(String, ForeignKey('service_weeks.id'), nullable=False, index=True)
+
+    reason = Column(Text)  # e.g., "Remote faculty - cannot do in-person services"
+    created_by = Column(String, ForeignKey('faculty.id'))  # Admin who created the block
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    faculty = relationship("Faculty", foreign_keys=[faculty_id])
+    week = relationship("ServiceWeek")
+    created_by_faculty = relationship("Faculty", foreign_keys=[created_by])
 
 
 # ==========================================

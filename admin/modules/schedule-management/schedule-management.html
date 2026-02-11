@@ -25,32 +25,36 @@
     <!-- Alert -->
     <div id="scheduleAlert" class="alert"></div>
 
-    <!-- Overview Tab -->
+    <!-- Overview Tab (Heatmap) -->
     <div id="schedule-overview" class="sub-tab-content active">
       <div class="info-box info-box-info">
-        <strong>📊 Schedule Overview</strong>
-        <p>View the service availability system status for the selected year. Shows week-by-week unavailability counts and identifies potential coverage issues.</p>
+        <strong>📊 Schedule Heatmap</strong>
+        <p>View week-by-week staffing status. Higher unavailability counts (red) indicate popular weeks where many faculty request time off.</p>
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <div>
-          <label style="font-weight: 600; margin-right: 12px;">Academic Year:</label>
-          <select id="overviewYearSelect" onchange="loadOverview()" style="padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-weight: 600;">
-            <option value="2025">2025-2026</option>
-            <option value="2026" selected>2026-2027</option>
-            <option value="2027">2027-2028</option>
-          </select>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div style="display: flex; gap: 12px;">
+          <button id="year2025Btn" class="btn-secondary" onclick="loadHeatmap(2025)" style="min-width: 120px;">2025-2026</button>
+          <button id="year2026Btn" class="btn-secondary active" onclick="loadHeatmap(2026)" style="min-width: 120px; background: #667eea; color: white; border-color: #667eea;">2026-2027</button>
         </div>
-        <button class="btn-secondary" onclick="loadOverview()">🔄 Refresh</button>
+        <div style="display: flex; gap: 16px; align-items: center; font-size: 13px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 12px; height: 12px; background: #10b981; border-radius: 2px;"></div>
+            <span>Good (≤7)</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 12px; height: 12px; background: #f59e0b; border-radius: 2px;"></div>
+            <span>Tight (8-11)</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 12px; height: 12px; background: #ef4444; border-radius: 2px;"></div>
+            <span>Critical (≥12)</span>
+          </div>
+        </div>
       </div>
 
-      <div id="overviewContent">
-        <p class="empty-state">
-          <div class="empty-state-icon">📅</div>
-          <div class="empty-state-title">No Schedule Generated</div>
-          <div class="empty-state-description">Use "Generate Schedule" tab to create a 52-week schedule</div>
-        </p>
-      </div>
+      <div id="heatmapLoading" class="loading">Loading heatmap...</div>
+      <div id="heatmapGrid" class="heatmap-grid" style="display: none;"></div>
     </div>
 
     <!-- Configure Tab -->
@@ -222,3 +226,102 @@
     </form>
   </div>
 </div>
+
+<style>
+/* Heatmap Grid Styles */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.week-cell {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.week-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.week-num {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.week-label {
+  font-size: 12px;
+  color: #1f2937;
+  margin-bottom: 8px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.week-count {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.week-status {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Status Colors */
+.status-good {
+  border-color: #10b981;
+}
+
+.status-good .week-count {
+  color: #10b981;
+}
+
+.status-good .week-status {
+  color: #10b981;
+}
+
+.status-tight {
+  border-color: #f59e0b;
+}
+
+.status-tight .week-count {
+  color: #f59e0b;
+}
+
+.status-tight .week-status {
+  color: #f59e0b;
+}
+
+.status-critical {
+  border-color: #ef4444;
+}
+
+.status-critical .week-count {
+  color: #ef4444;
+}
+
+.status-critical .week-status {
+  color: #ef4444;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+  font-size: 14px;
+}
+</style>
