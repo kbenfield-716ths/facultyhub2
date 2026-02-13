@@ -5,9 +5,17 @@
 
 // ==================== DATE FORMATTING ====================
 
+// Helper to parse ISO date strings as local dates (prevents timezone shift bugs)
+function parseLocalDate(dateString) {
+  if (!dateString) return null;
+  const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 function formatDate(dateString) {
   if (!dateString) return 'N/A';
-  const date = new Date(dateString);
+  const date = parseLocalDate(dateString);
+  if (!date) return 'N/A';
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -17,6 +25,7 @@ function formatDate(dateString) {
 
 function formatDateTime(dateString) {
   if (!dateString) return 'N/A';
+  // For datetime strings, keep the existing behavior since they include time
   const date = new Date(dateString);
   return date.toLocaleString('en-US', {
     year: 'numeric',
