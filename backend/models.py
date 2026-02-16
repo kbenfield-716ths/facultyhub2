@@ -283,21 +283,23 @@ class ServiceWeek(Base):
 class UnavailabilityRequest(Base):
     """Faculty unavailability requests for specific weeks"""
     __tablename__ = "unavailability_requests"
-    
+
     id = Column(String, primary_key=True, index=True)
     faculty_id = Column(String, ForeignKey('faculty.id'), nullable=False, index=True)
     week_id = Column(String, ForeignKey('service_weeks.id'), nullable=False, index=True)
-    
+
     status = Column(String, nullable=False, default="unavailable")
-    
+
     points_spent = Column(Integer, default=0)
     points_earned = Column(Integer, default=0)
-    
+
     gives_priority = Column(Boolean, default=False)
-    
+
+    service_preference = Column(Text, nullable=True)  # Optional preference for service type
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     faculty = relationship("Faculty", back_populates="unavailability_requests")
     week = relationship("ServiceWeek", back_populates="unavailability_requests")
 

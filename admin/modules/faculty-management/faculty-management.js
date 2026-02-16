@@ -152,9 +152,18 @@ function openEditFaculty(facultyId) {
   document.getElementById('editFacultyName').value = faculty.name || '';
   document.getElementById('editFacultyEmail').value = faculty.email || '';
   document.getElementById('editFacultyRank').value = faculty.rank || '';
-  document.getElementById('editFacultyEffort').value = faculty.effort_percent || 0;
-  document.getElementById('editFacultyPoints').value = faculty.bonus_points || 0;
+  document.getElementById('editFacultyEffort').value = faculty.clinical_effort_pct || 0;
+  document.getElementById('editFacultyBasePoints').value = faculty.base_points || 0;
+  document.getElementById('editFacultyBonusPoints').value = faculty.bonus_points || 0;
   document.getElementById('editFacultyAdmin').checked = faculty.is_admin || false;
+  document.getElementById('editFacultyMoonlighter').checked = faculty.moonlighter || false;
+  document.getElementById('editFacultyDraftExempt').checked = faculty.draft_exempt || false;
+
+  // Expected clinical weeks
+  document.getElementById('editFacultyMicuWeeks').value = faculty.micu_weeks || 0;
+  document.getElementById('editFacultyAppIcuWeeks').value = faculty.app_icu_weeks || 0;
+  document.getElementById('editFacultyProcedureWeeks').value = faculty.procedure_weeks || 0;
+  document.getElementById('editFacultyConsultWeeks').value = faculty.consult_weeks || 0;
 
   document.getElementById('editFacultyModal').classList.add('show');
 }
@@ -175,9 +184,16 @@ async function submitEditFaculty(event) {
     name: document.getElementById('editFacultyName').value.trim(),
     email: document.getElementById('editFacultyEmail').value.trim() || null,
     rank: document.getElementById('editFacultyRank').value || null,
-    effort_percent: parseFloat(document.getElementById('editFacultyEffort').value) || 0,
-    bonus_points: parseFloat(document.getElementById('editFacultyPoints').value) || 0,
-    is_admin: document.getElementById('editFacultyAdmin').checked
+    clinical_effort_pct: parseInt(document.getElementById('editFacultyEffort').value) || 0,
+    base_points: parseInt(document.getElementById('editFacultyBasePoints').value) || 0,
+    bonus_points: parseFloat(document.getElementById('editFacultyBonusPoints').value) || 0,
+    is_admin: document.getElementById('editFacultyAdmin').checked,
+    moonlighter: document.getElementById('editFacultyMoonlighter').checked,
+    draft_exempt: document.getElementById('editFacultyDraftExempt').checked,
+    micu_weeks: parseInt(document.getElementById('editFacultyMicuWeeks').value) || 0,
+    app_icu_weeks: parseInt(document.getElementById('editFacultyAppIcuWeeks').value) || 0,
+    procedure_weeks: parseInt(document.getElementById('editFacultyProcedureWeeks').value) || 0,
+    consult_weeks: parseInt(document.getElementById('editFacultyConsultWeeks').value) || 0
   };
 
   try {

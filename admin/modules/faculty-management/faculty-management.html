@@ -105,15 +105,61 @@
         </div>
       </div>
       <div class="form-group">
+        <label>Base Points</label>
+        <input type="number" id="editFacultyBasePoints" min="0">
+        <small>Starting point allocation for service availability requests</small>
+      </div>
+      <div class="form-group">
         <label>Bonus Points</label>
-        <input type="number" id="editFacultyPoints" step="0.5">
-        <small>Points for availability system - use carefully</small>
+        <input type="number" id="editFacultyBonusPoints" step="0.5">
+        <small>Additional points for availability system - use carefully</small>
       </div>
       <div class="form-group">
         <label style="display: flex; align-items: center; gap: 8px;">
           <input type="checkbox" id="editFacultyAdmin" style="width: auto;">
           Grant Admin Privileges
         </label>
+      </div>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="editFacultyMoonlighter" style="width: auto;">
+          Moonlighter (provides moonlighting coverage)
+        </label>
+      </div>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="editFacultyDraftExempt" style="width: auto;">
+          Draft Exempt (exclude from draft priority system)
+        </label>
+        <small style="margin-left: 30px; display: block; margin-top: 4px;">
+          Check this if faculty does moonlighting and doesn't need draft priority
+        </small>
+      </div>
+
+      <h4 style="margin: 24px 0 16px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
+        Expected Clinical Weeks per Year
+      </h4>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>MICU Weeks</label>
+          <input type="number" id="editFacultyMicuWeeks" min="0" max="52">
+          <small>Expected MICU weeks per academic year</small>
+        </div>
+        <div class="form-group">
+          <label>APP-ICU Weeks</label>
+          <input type="number" id="editFacultyAppIcuWeeks" min="0" max="52">
+          <small>Expected APP-ICU weeks per academic year</small>
+        </div>
+        <div class="form-group">
+          <label>Procedure Weeks</label>
+          <input type="number" id="editFacultyProcedureWeeks" min="0" max="52">
+          <small>Expected procedure weeks per academic year</small>
+        </div>
+        <div class="form-group">
+          <label>Consult Weeks</label>
+          <input type="number" id="editFacultyConsultWeeks" min="0" max="52">
+          <small>Expected consult weeks per academic year</small>
+        </div>
       </div>
       <div style="display: flex; gap: 12px; margin-top: 24px;">
         <button type="submit" class="btn-primary">Save Changes</button>

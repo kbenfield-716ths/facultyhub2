@@ -1311,16 +1311,13 @@
         const isRequestedOff = selectedWeeks.has(week.id);
         const isVolunteer = availableWeeks.has(week.id);
         const isSelected = isRequestedOff || isVolunteer;
-        
+
         // Calculate demand bar width
         const demandPercent = (week.request_count / week.max_capacity) * 100;
-        
-        // Check if cost increased from base
-        const costIncreased = week.point_cost_off > week.base_cost;
-        const costDiff = week.point_cost_off - week.base_cost;
-        
-        // Determine if can request off
+
+        // Determine if can request off or volunteer
         const canRequestOff = !week.is_full || isRequestedOff;
+        const canVolunteer = !week.is_volunteer_full || isVolunteer;
         
         const existingPreference = getPreference(week.id);
         const hasPreference = existingPreference.length > 0;
@@ -1353,21 +1350,19 @@
             </div>
             
             <div class="week-actions">
-              <button class="action-btn request-off ${isRequestedOff ? 'active' : ''}" 
+              <button class="action-btn request-off ${isRequestedOff ? 'active' : ''}"
                       onclick="toggleRequestOff('${week.id}')"
                       ${!canRequestOff ? 'disabled' : ''}>
                 ${week.is_full && !isRequestedOff ? '<span class="full-badge">FULL</span>' : '<span class="checkmark">✓</span>'}
                 <div>
                   <div class="btn-label">Unavailable</div>
-                  <div class="btn-points">
-                    -${week.point_cost_off} pts
-                    ${costIncreased ? `<span class="cost-change">(+${costDiff})</span>` : ''}
-                  </div>
+                  <div class="btn-points">-${week.point_cost_off} pts</div>
                 </div>
               </button>
-              <button class="action-btn volunteer ${isVolunteer ? 'active' : ''}" 
-                      onclick="toggleVolunteer('${week.id}')">
-                <span class="checkmark">✓</span>
+              <button class="action-btn volunteer ${isVolunteer ? 'active' : ''}"
+                      onclick="toggleVolunteer('${week.id}')"
+                      ${!canVolunteer ? 'disabled' : ''}>
+                ${week.is_volunteer_full && !isVolunteer ? '<span class="full-badge">FULL</span>' : '<span class="checkmark">✓</span>'}
                 <div>
                   <div class="btn-label">Volunteer</div>
                   <div class="btn-points">+${week.point_reward_work} pts</div>
@@ -1427,16 +1422,24 @@
     }
 
     function toggleVolunteer(weekId) {
+      const week = allWeeks.find(w => w.id === weekId);
+
+      // If week is volunteer full and not already selected by this user, show alert
+      if (week && week.is_volunteer_full && !availableWeeks.has(weekId)) {
+        alert(`Week ${week.week_number} (${week.label}) already has the maximum number of volunteers. Maximum ${week.max_volunteers} faculty can volunteer for a week.`);
+        return;
+      }
+
       // Remove from request off if present
       selectedWeeks.delete(weekId);
-      
+
       // Toggle volunteer
       if (availableWeeks.has(weekId)) {
         availableWeeks.delete(weekId);
       } else {
         availableWeeks.add(weekId);
       }
-      
+
       renderCurrentView();
     }
 
