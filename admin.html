@@ -759,6 +759,68 @@
     </div>
   </div>
 
+  <!-- Edit Week Modal -->
+  <div id="editWeekModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Service Week</h3>
+        <span class="close-btn" onclick="closeEditWeekModal()">&times;</span>
+      </div>
+      <form id="editWeekForm" onsubmit="saveWeekChanges(event)">
+        <input type="hidden" id="editWeekId">
+
+        <div class="form-group">
+          <label>Week Number</label>
+          <input type="text" id="editWeekNumber" disabled style="background: #f3f4f6; cursor: not-allowed;">
+          <small>Week number cannot be changed</small>
+        </div>
+
+        <div class="form-group">
+          <label>Label / Name</label>
+          <input type="text" id="editWeekLabel" required>
+          <small>Display name for this week (e.g., "Week 1 - Christmas", "Week 25 - Summer")</small>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Point Cost (Taking Week Off)</label>
+            <input type="number" id="editPointCostOff" min="0" max="100" required>
+            <small>Points required to take this week off</small>
+          </div>
+
+          <div class="form-group">
+            <label>Point Reward (Working Week)</label>
+            <input type="number" id="editPointRewardWork" min="0" max="100" required>
+            <small>Bonus points earned for working this week</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Week Type</label>
+          <select id="editWeekType" required>
+            <option value="regular">Regular</option>
+            <option value="summer">Summer</option>
+            <option value="premium">Premium</option>
+            <option value="thanksgiving">Thanksgiving</option>
+            <option value="christmas">Christmas</option>
+            <option value="spring_break">Spring Break</option>
+            <option value="ats_conference">ATS Conference</option>
+            <option value="chest_conference">CHEST Conference</option>
+            <option value="sccm_conference">SCCM Conference</option>
+          </select>
+          <small>Week classification affects display and priority</small>
+        </div>
+
+        <div class="alert" id="editWeekAlert" style="display: none;"></div>
+
+        <div style="display: flex; gap: 12px; margin-top: 20px;">
+          <button type="submit" class="btn-primary">💾 Save Changes</button>
+          <button type="button" class="btn-secondary" onclick="closeEditWeekModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const API_BASE = "";
     let allWeeks = [];
@@ -772,7 +834,15 @@ window.addEventListener('DOMContentLoaded', async () => {
   await loadOverview();
   await loadWeeks();
 });
-    
+
+// Close modals when clicking outside
+window.addEventListener('click', (event) => {
+  const editWeekModal = document.getElementById('editWeekModal');
+  if (event.target === editWeekModal) {
+    closeEditWeekModal();
+  }
+});
+
     // ==================== UTILITY FUNCTIONS ====================
     
     function formatDate(dateStr) {
@@ -1144,9 +1214,76 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     
     async function editWeek(weekId) {
-      alert('Week editing coming soon!');
+      // Find the week in allWeeks
+      const week = allWeeks.find(w => w.id === weekId);
+      if (!week) {
+        alert('Week not found!');
+        return;
+      }
+
+      // Populate the modal
+      document.getElementById('editWeekId').value = week.id;
+      document.getElementById('editWeekNumber').value = `Week ${week.week_number}`;
+      document.getElementById('editWeekLabel').value = week.label;
+      document.getElementById('editPointCostOff').value = week.point_cost_off;
+      document.getElementById('editPointRewardWork').value = week.point_reward_work;
+      document.getElementById('editWeekType').value = week.week_type;
+
+      // Hide alert
+      const alert = document.getElementById('editWeekAlert');
+      alert.style.display = 'none';
+
+      // Show modal
+      document.getElementById('editWeekModal').classList.add('show');
     }
-    
+
+    function closeEditWeekModal() {
+      document.getElementById('editWeekModal').classList.remove('show');
+    }
+
+    async function saveWeekChanges(event) {
+      event.preventDefault();
+
+      const weekId = document.getElementById('editWeekId').value;
+      const alert = document.getElementById('editWeekAlert');
+
+      const updateData = {
+        label: document.getElementById('editWeekLabel').value,
+        point_cost_off: parseInt(document.getElementById('editPointCostOff').value),
+        point_reward_work: parseInt(document.getElementById('editPointRewardWork').value),
+        week_type: document.getElementById('editWeekType').value
+      };
+
+      try {
+        const response = await fetch(`/api/admin/service-weeks/${weekId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(updateData)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Failed to update week');
+        }
+
+        // Show success message
+        alert.className = 'alert alert-success show';
+        alert.textContent = '✅ Week updated successfully!';
+
+        // Wait a moment, then close modal and reload
+        setTimeout(async () => {
+          closeEditWeekModal();
+          await loadWeeks();
+          await loadHeatmap(currentYear);
+        }, 1500);
+
+      } catch (error) {
+        alert.className = 'alert alert-error show';
+        alert.textContent = `❌ Error: ${error.message}`;
+      }
+    }
+
     async function clearAllWeeks() {
       if (!confirm('Clear ALL weeks? This cannot be undone!')) return;
       try {
