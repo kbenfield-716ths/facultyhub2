@@ -728,6 +728,15 @@
             Moonlighter (participates in moonlighting/IRPA shifts)
           </label>
         </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="editDraftExempt" style="width: auto; margin-right: 8px;">
+            Draft Exempt (exclude from draft priority system)
+          </label>
+          <small style="margin-left: 30px; display: block; margin-top: 4px;">
+            Check this if faculty does moonlighting and doesn't need draft priority
+          </small>
+        </div>
         <h4 style="margin: 24px 0 16px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Expected Clinical Weeks per Year</h4>
         <div class="form-grid">
           <div class="form-group">
@@ -901,6 +910,7 @@ window.addEventListener('click', (event) => {
             let badges = '';
             if (f.is_admin) badges += '<span class="badge badge-admin">ADMIN</span> ';
             if (f.moonlighter) badges += '<span class="badge badge-moonlighter">🌙 MOONLIGHTER</span> ';
+            if (f.draft_exempt) badges += '<span class="badge badge-admin">🚫 DRAFT EXEMPT</span> ';
             if (!f.active) badges += '<span class="badge badge-inactive">INACTIVE</span>';
             
             const formatWeeksCell = (expected, actual) => {
@@ -952,6 +962,7 @@ window.addEventListener('click', (event) => {
       document.getElementById('editEffort').value = faculty.clinical_effort_pct || 0;
       document.getElementById('editPoints').value = faculty.base_points || 0;
       document.getElementById('editMoonlighter').checked = faculty.moonlighter || false;
+      document.getElementById('editDraftExempt').checked = faculty.draft_exempt || false;
       document.getElementById('editMicuWeeks').value = faculty.micu_weeks || 0;
       document.getElementById('editAppIcuWeeks').value = faculty.app_icu_weeks || 0;
       document.getElementById('editProcedureWeeks').value = faculty.procedure_weeks || 0;
@@ -974,6 +985,7 @@ window.addEventListener('click', (event) => {
         clinical_effort_pct: parseInt(document.getElementById('editEffort').value),
         base_points: parseInt(document.getElementById('editPoints').value),
         moonlighter: document.getElementById('editMoonlighter').checked,
+        draft_exempt: document.getElementById('editDraftExempt').checked,
         micu_weeks: parseInt(document.getElementById('editMicuWeeks').value) || 0,
         app_icu_weeks: parseInt(document.getElementById('editAppIcuWeeks').value) || 0,
         procedure_weeks: parseInt(document.getElementById('editProcedureWeeks').value) || 0,

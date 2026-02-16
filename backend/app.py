@@ -23,6 +23,7 @@ from .optimizer_bridge import run_optimizer_for_month
 from fastapi.middleware.gzip import GZipMiddleware
 from .routes.admin_faculty import router as admin_faculty_router
 from .routes.admin_service import router as admin_service_router
+from .routes.admin_users import router as admin_users_router
 from .routes.auth import router as auth_router
 from .routes.service_requests import router as service_requests_router
 from .routes.service_weeks import router as service_weeks_router
@@ -69,6 +70,7 @@ app.include_router(auth_router)
 app.include_router(admin_auth_router)  # New admin auth routes
 app.include_router(admin_faculty_router)
 app.include_router(admin_service_router)
+app.include_router(admin_users_router)  # User management routes
 app.include_router(service_requests_router)
 app.include_router(service_weeks_router)
 app.include_router(schedule_router)

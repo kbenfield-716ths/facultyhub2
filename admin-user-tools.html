@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Management Tools - PCCM Faculty Hub</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f7f8fc; padding: 20px; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 30px; }
+    .header h1 { font-size: 32px; font-weight: 700; color: #1f2937; }
+    .header p { color: #6b7280; margin-top: 4px; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #e5e7eb; }
+    .tab-btn { padding: 12px 20px; background: transparent; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-weight: 600; color: #6b7280; transition: all 0.2s; }
+    .tab-btn:hover { color: #1f2937; }
+    .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e5e7eb; }
+    .card-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e5e7eb; }
+    .card-title { font-size: 20px; font-weight: 700; color: #1f2937; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
+    .btn-primary { padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+    .btn-secondary { padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 13px; }
+    .btn-danger { padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 13px; }
+    .btn-success { padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 13px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; display: none; }
+    .alert.show { display: block; }
+    .alert-success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+    .alert-error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+    .alert-info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { background: #f9fafb; padding: 12px 8px; text-align: left; font-weight: 600; color: #6b7280; font-size: 13px; border-bottom: 2px solid #e5e7eb; }
+    td { padding: 12px 8px; border-bottom: 1px solid #f3f4f6; }
+    tr:hover { background: #f9fafb; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .badge-active { background: #d1fae5; color: #065f46; }
+    .badge-inactive { background: #fee2e2; color: #991b1b; }
+    .badge-admin { background: #dbeafe; color: #1e40af; }
+    .badge-locked { background: #fef3c7; color: #92400e; }
+    .loading { text-align: center; padding: 40px; color: #6b7280; }
+    .search-box { display: flex; gap: 12px; margin-bottom: 20px; }
+    .search-box input { flex: 1; }
+    .user-details { background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    .user-details h3 { margin-bottom: 16px; color: #1f2937; }
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+    .detail-item { }
+    .detail-label { font-size: 12px; color: #6b7280; font-weight: 600; margin-bottom: 4px; }
+    .detail-value { font-size: 14px; color: #1f2937; font-weight: 600; }
+    .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>👥 User Management Tools</h1>
+        <p>Search users, reset passwords, manage accounts, and troubleshoot login issues</p>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('search')">🔍 Search Users</button>
+      <button class="tab-btn" onclick="showTab('reset')">🔐 Reset Password</button>
+      <button class="tab-btn" onclick="showTab('unlock')">🔓 Unlock Account</button>
+      <button class="tab-btn" onclick="showTab('username')">✏️ Change Username</button>
+      <button class="tab-btn" onclick="showTab('query')">💾 Database Query</button>
+    </div>
+
+    <!-- Search Tab -->
+    <div id="tab-search" class="tab-content active">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Search Users</h2>
+        </div>
+
+        <div class="alert" id="searchAlert"></div>
+
+        <div class="search-box">
+          <input type="text" id="searchQuery" placeholder="Enter faculty ID, name, or email (leave blank for all users)">
+          <button onclick="searchUsers()" class="btn-primary">Search</button>
+        </div>
+
+        <div id="searchResults"></div>
+      </div>
+    </div>
+
+    <!-- Reset Password Tab -->
+    <div id="tab-reset" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Reset Password to Default</h2>
+        </div>
+
+        <div class="alert" id="resetAlert"></div>
+
+        <div class="form-group">
+          <label>Faculty ID</label>
+          <input type="text" id="resetFacultyId" placeholder="e.g., IN2C, AJB5D">
+        </div>
+
+        <button onclick="resetPassword()" class="btn-primary">Reset Password to PCCM2025!</button>
+
+        <div style="margin-top: 20px; padding: 16px; background: #fef3c7; border-radius: 8px;">
+          <strong>⚠️ Note:</strong> This will reset the password to <code style="background: white; padding: 2px 6px; border-radius: 4px; font-weight: 700;">PCCM2025!</code> and unlock the account.
+        </div>
+      </div>
+    </div>
+
+    <!-- Unlock Account Tab -->
+    <div id="tab-unlock" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Unlock Locked Account</h2>
+        </div>
+
+        <div class="alert" id="unlockAlert"></div>
+
+        <div class="form-group">
+          <label>Faculty ID</label>
+          <input type="text" id="unlockFacultyId" placeholder="e.g., JK6JB">
+        </div>
+
+        <button onclick="unlockAccount()" class="btn-primary">Unlock Account</button>
+
+        <div style="margin-top: 20px; padding: 16px; background: #dbeafe; border-radius: 8px;">
+          <strong>ℹ️ Info:</strong> This will unlock the account and reset failed login attempts to 0. The user can log in immediately.
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Username Tab -->
+    <div id="tab-username" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Change Faculty ID (Username)</h2>
+        </div>
+
+        <div class="alert" id="usernameAlert"></div>
+
+        <div class="form-group">
+          <label>Current Faculty ID</label>
+          <input type="text" id="oldFacultyId" placeholder="e.g., OLD123">
+        </div>
+
+        <div class="form-group">
+          <label>New Faculty ID</label>
+          <input type="text" id="newFacultyId" placeholder="e.g., NEW456">
+        </div>
+
+        <button onclick="changeUsername()" class="btn-danger">Change Username</button>
+
+        <div style="margin-top: 20px; padding: 16px; background: #fee2e2; border-radius: 8px;">
+          <strong>⚠️ Warning:</strong> This changes the primary key across ALL related tables (signups, assignments, messages, etc.). This operation is complex and should be used carefully. A backup is recommended.
+        </div>
+      </div>
+    </div>
+
+    <!-- Database Query Tab -->
+    <div id="tab-query" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Database Query (Read-Only)</h2>
+        </div>
+
+        <div class="alert" id="queryAlert"></div>
+
+        <div class="form-group">
+          <label>SQL Query (SELECT only)</label>
+          <textarea id="sqlQuery" rows="6" placeholder="SELECT id, name, email FROM faculty WHERE active = 1 LIMIT 10"></textarea>
+        </div>
+
+        <button onclick="executeQuery()" class="btn-primary">Execute Query</button>
+
+        <div id="queryResults" style="margin-top: 20px;"></div>
+
+        <div style="margin-top: 20px; padding: 16px; background: #dbeafe; border-radius: 8px;">
+          <strong>ℹ️ Common Queries:</strong>
+          <ul style="margin-top: 8px; margin-left: 20px; line-height: 1.8;">
+            <li><a href="#" onclick="setQuery('SELECT * FROM faculty WHERE active = 1 ORDER BY name'); return false;">All active users</a></li>
+            <li><a href="#" onclick="setQuery('SELECT * FROM faculty WHERE is_admin = 1'); return false;">All admins</a></li>
+            <li><a href="#" onclick="setQuery('SELECT * FROM faculty WHERE account_locked_until IS NOT NULL'); return false;">Locked accounts</a></li>
+            <li><a href="#" onclick="setQuery('SELECT * FROM faculty WHERE password_changed = 0'); return false;">Users with default password</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== UTILITY FUNCTIONS ====================
+
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function showAlert(elementId, message, type) {
+      const alert = document.getElementById(elementId);
+      alert.className = `alert alert-${type} show`;
+      alert.textContent = message;
+      setTimeout(() => alert.classList.remove('show'), 5000);
+    }
+
+    function formatDateTime(dt) {
+      if (!dt) return 'Never';
+      return new Date(dt).toLocaleString();
+    }
+
+    // ==================== SEARCH USERS ====================
+
+    async function searchUsers() {
+      const query = document.getElementById('searchQuery').value.trim();
+      const resultsDiv = document.getElementById('searchResults');
+      resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+
+      try {
+        const url = query
+          ? `/api/admin/users/search?query=${encodeURIComponent(query)}`
+          : `/api/admin/users/search`;
+
+        const response = await fetch(url, { credentials: 'same-origin' });
+        if (!response.ok) throw new Error('Search failed');
+
+        const users = await response.json();
+
+        if (users.length === 0) {
+          resultsDiv.innerHTML = '<p style="text-align: center; padding: 40px; color: #6b7280;">No users found.</p>';
+          return;
+        }
+
+        resultsDiv.innerHTML = `
+          <div style="margin-bottom: 12px; color: #6b7280; font-size: 14px;">
+            Found ${users.length} user(s)
+          </div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Login</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${users.map(user => `
+                  <tr>
+                    <td><strong>${user.id}</strong></td>
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td>
+                      ${user.active ? '<span class="badge badge-active">Active</span>' : '<span class="badge badge-inactive">Inactive</span>'}
+                      ${user.is_admin ? '<span class="badge badge-admin">Admin</span>' : ''}
+                      ${user.account_locked_until ? '<span class="badge badge-locked">Locked</span>' : ''}
+                    </td>
+                    <td style="font-size: 12px;">
+                      ${user.last_login_at ? formatDateTime(user.last_login_at) : 'Never'}
+                      ${user.failed_login_attempts > 0 ? `<br><span style="color: #dc2626;">Failed: ${user.failed_login_attempts}</span>` : ''}
+                    </td>
+                    <td>
+                      <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                        <button onclick="viewUserDetails('${user.id}')" class="btn-secondary btn-sm">View</button>
+                        <button onclick="quickReset('${user.id}')" class="btn-success btn-sm">Reset PW</button>
+                        ${user.account_locked_until ? `<button onclick="quickUnlock('${user.id}')" class="btn-danger btn-sm">Unlock</button>` : ''}
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        showAlert('searchAlert', `Found ${users.length} user(s)`, 'success');
+
+      } catch (error) {
+        resultsDiv.innerHTML = '';
+        showAlert('searchAlert', 'Error: ' + error.message, 'error');
+      }
+    }
+
+    async function viewUserDetails(facultyId) {
+      try {
+        const response = await fetch(`/api/admin/users/${facultyId}`, { credentials: 'same-origin' });
+        if (!response.ok) throw new Error('Failed to load user details');
+
+        const user = await response.json();
+
+        const detailsHtml = `
+          <div class="user-details">
+            <h3>User Details: ${user.name}</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <div class="detail-label">Faculty ID</div>
+                <div class="detail-value">${user.id}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Email</div>
+                <div class="detail-value">${user.email}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Rank</div>
+                <div class="detail-value">${user.rank}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Active</div>
+                <div class="detail-value">${user.active ? '✅ Yes' : '❌ No'}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Admin</div>
+                <div class="detail-value">${user.is_admin ? '✅ Yes' : '❌ No'}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Password Changed</div>
+                <div class="detail-value">${user.password_changed ? '✅ Yes' : '❌ No (default)'}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Failed Login Attempts</div>
+                <div class="detail-value" style="color: ${user.failed_login_attempts > 0 ? '#dc2626' : '#10b981'}">${user.failed_login_attempts}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Account Status</div>
+                <div class="detail-value">${user.account_locked_until ? '🔒 Locked until ' + formatDateTime(user.account_locked_until) : '✅ Unlocked'}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Last Login</div>
+                <div class="detail-value">${formatDateTime(user.last_login_at)}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Last Login IP</div>
+                <div class="detail-value">${user.last_login_ip || 'N/A'}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Clinical Effort</div>
+                <div class="detail-value">${user.clinical_effort_pct}%</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Points</div>
+                <div class="detail-value">Base: ${user.base_points}, Bonus: ${user.bonus_points}</div>
+              </div>
+            </div>
+
+            <div class="action-buttons">
+              <button onclick="quickReset('${user.id}')" class="btn-primary">Reset Password</button>
+              <button onclick="quickUnlock('${user.id}')" class="btn-secondary">Unlock Account</button>
+              <button onclick="toggleAdmin('${user.id}', ${user.is_admin})" class="btn-secondary">${user.is_admin ? 'Revoke' : 'Grant'} Admin</button>
+              <button onclick="toggleActive('${user.id}', ${user.active})" class="btn-secondary">${user.active ? 'Deactivate' : 'Activate'} Account</button>
+            </div>
+          </div>
+        `;
+
+        const resultsDiv = document.getElementById('searchResults');
+        resultsDiv.innerHTML = detailsHtml + resultsDiv.innerHTML;
+
+      } catch (error) {
+        showAlert('searchAlert', 'Error: ' + error.message, 'error');
+      }
+    }
+
+    async function quickReset(facultyId) {
+      if (!confirm(`Reset password for ${facultyId} to PCCM2025!?`)) return;
+
+      try {
+        const response = await fetch('/api/admin/users/reset-password', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify({faculty_id: facultyId})
+        });
+
+        if (!response.ok) throw new Error('Reset failed');
+        const result = await response.json();
+
+        showAlert('searchAlert', result.message, 'success');
+        searchUsers();
+
+      } catch (error) {
+        showAlert('searchAlert', 'Error: ' + error.message, 'error');
+      }
+    }
+
+    async function quickUnlock(facultyId) {
+      if (!confirm(`Unlock account for ${facultyId}?`)) return;
+
+      try {
+        const response = await fetch('/api/admin/users/unlock-account', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify({faculty_id: facultyId})
+        });
+
+        if (!response.ok) throw new Error('Unlock failed');
+        const result = await response.json();
+
+        showAlert('searchAlert', result.message, 'success');
+        searchUsers();
+
+      } catch (error) {
+        showAlert('searchAlert', 'Error: ' + error.message, 'error');
+      }
+    }
+
+    async function toggleAdmin(facultyId, currentStatus) {
+      const action = currentStatus ? 'revoke' : 'grant';
+      if (!confirm(`${action.toUpperCase()} admin privileges for ${facultyId}?`)) return;
+
+      try {
+        const response = await fetch('/api/admin/users/toggle-admin', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify({faculty_id: facultyId})
+        });
+
+        if (!response.ok) throw new Error('Toggle failed');
+        const result = await response.json();
+
+        showAlert('searchAlert', result.message, 'success');
+        searchUsers();
+
+      } catch (error) {
+        showAlert('searchAlert', 'Error: ' + error.message, 'error');
+      }
+    }
+
+    async function toggleActive(facultyId, currentStatus) {
+      const action = currentStatus ? 'deactivate' : 'activate';
+      if (!confirm(`${action.toUpperCase()} account for ${facultyId}?`)) return;
+
+      try {
+        const response = await fetch('/api/admin/users/toggle-active', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify({faculty_id: facultyId})
+        });
+
+        if (!response.ok) throw new Error('Toggle failed');
+        const result = await response.json();
+
+        showAlert('searchAlert', result.message, 'success');
+        searchUsers();
+
+      } catch (error) {
+        showAlert('searchAlert', 'Error: ' + error.message, 'error');
+      }
+    }
+
+    // ==================== RESET PASSWORD ====================
+
+    async function resetPassword() {
+      const facultyId = document.getElementById('resetFacultyId').value.trim().toUpperCase();
+      if (!facultyId) {
+        showAlert('resetAlert', 'Please enter a Faculty ID', 'error');
+        return;
+      }
+
+      if (!confirm(`Reset password for ${facultyId} to PCCM2025!?`)) return;
+
+      try {
+        const response = await fetch('/api/admin/users/reset-password', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify({faculty_id: facultyId})
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Reset failed');
+        }
+
+        const result = await response.json();
+        showAlert('resetAlert', `✅ ${result.message}. Password: ${result.default_password}`, 'success');
+        document.getElementById('resetFacultyId').value = '';
+
+      } catch (error) {
+        showAlert('resetAlert', 'Error: ' + error.message, 'error');
+      }
+    }
+
+    // ==================== UNLOCK ACCOUNT ====================
+
+    async function unlockAccount() {
+      const facultyId = document.getElementById('unlockFacultyId').value.trim().toUpperCase();
+      if (!facultyId) {
+        showAlert('unlockAlert', 'Please enter a Faculty ID', 'error');
+        return;
+      }
+
+      if (!confirm(`Unlock account for ${facultyId}?`)) return;
+
+      try {
+        const response = await fetch('/api/admin/users/unlock-account', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify({faculty_id: facultyId})
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Unlock failed');
+        }
+
+        const result = await response.json();
+        showAlert('unlockAlert', `✅ ${result.message}`, 'success');
+        document.getElementById('unlockFacultyId').value = '';
+
+      } catch (error) {
+        showAlert('unlockAlert', 'Error: ' + error.message, 'error');
+      }
+    }
+
+    // ==================== CHANGE USERNAME ====================
+
+    async function changeUsername() {
+      const oldId = document.getElementById('oldFacultyId').value.trim().toUpperCase();
+      const newId = document.getElementById('newFacultyId').value.trim().toUpperCase();
+
+      if (!oldId || !newId) {
+        showAlert('usernameAlert', 'Please enter both Faculty IDs', 'error');
+        return;
+      }
+
+      if (!confirm(`⚠️ WARNING: Change username from ${oldId} to ${newId}?\n\nThis will update the ID across ALL related tables (signups, assignments, messages, etc.).\n\nThis cannot be undone easily!`)) return;
+
+      try {
+        const response = await fetch('/api/admin/users/change-username', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify({old_id: oldId, new_id: newId})
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Change failed');
+        }
+
+        const result = await response.json();
+        showAlert('usernameAlert', `✅ ${result.message}\n\nUpdated: ${result.updates.join(', ')}`, 'success');
+        document.getElementById('oldFacultyId').value = '';
+        document.getElementById('newFacultyId').value = '';
+
+      } catch (error) {
+        showAlert('usernameAlert', 'Error: ' + error.message, 'error');
+      }
+    }
+
+    // ==================== DATABASE QUERY ====================
+
+    function setQuery(query) {
+      document.getElementById('sqlQuery').value = query;
+    }
+
+    async function executeQuery() {
+      const query = document.getElementById('sqlQuery').value.trim();
+      if (!query) {
+        showAlert('queryAlert', 'Please enter a SQL query', 'error');
+        return;
+      }
+
+      const resultsDiv = document.getElementById('queryResults');
+      resultsDiv.innerHTML = '<div class="loading">Executing query...</div>';
+
+      try {
+        const response = await fetch('/api/admin/users/database-query', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify({query: query})
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Query failed');
+        }
+
+        const result = await response.json();
+
+        if (result.row_count === 0) {
+          resultsDiv.innerHTML = '<p style="text-align: center; padding: 40px; color: #6b7280;">Query returned no results.</p>';
+          showAlert('queryAlert', 'Query executed successfully (0 rows)', 'info');
+          return;
+        }
+
+        resultsDiv.innerHTML = `
+          <div style="margin-bottom: 12px; color: #6b7280; font-size: 14px;">
+            ${result.row_count} row(s) returned
+          </div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  ${result.columns.map(col => `<th>${col}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${result.rows.map(row => `
+                  <tr>
+                    ${result.columns.map(col => `<td>${row[col] || ''}</td>`).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        showAlert('queryAlert', `✅ Query executed successfully. ${result.row_count} row(s) returned.`, 'success');
+
+      } catch (error) {
+        resultsDiv.innerHTML = '';
+        showAlert('queryAlert', 'Error: ' + error.message, 'error');
+      }
+    }
+
+    // Auto-search on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      // Optional: auto-load all users on page load
+      // searchUsers();
+    });
+  </script>
+</body>
+</html>

@@ -229,7 +229,8 @@ class Faculty(Base):
     
     # Moonlighting participation
     moonlighter = Column(Boolean, default=False, nullable=False)
-    
+    draft_exempt = Column(Boolean, default=False, nullable=False)  # Exclude from draft priority system
+
     # Service week commitments
     micu_weeks = Column(Integer, default=0)
     app_icu_weeks = Column(Integer, default=0)

@@ -153,15 +153,31 @@ def create_draft_round(
     if existing:
         raise HTTPException(400, f"Draft round already exists for {request.year}")
     
-    # Validate faculty IDs
+    # Validate faculty IDs and exclude draft_exempt faculty
     faculty_ids = set(request.faculty_priority)
+
+    # Check for draft_exempt faculty in the list
+    draft_exempt_faculty = db.query(Faculty.id, Faculty.name).filter(
+        Faculty.id.in_(faculty_ids),
+        Faculty.draft_exempt == True
+    ).all()
+
+    if draft_exempt_faculty:
+        exempt_names = ", ".join([f"{name} ({id})" for id, name in draft_exempt_faculty])
+        raise HTTPException(
+            400,
+            f"The following faculty are draft exempt and should not be included: {exempt_names}"
+        )
+
+    # Validate that all faculty are active and exist
     existing_faculty = db.query(Faculty.id).filter(
         Faculty.id.in_(faculty_ids),
-        Faculty.active == True
+        Faculty.active == True,
+        Faculty.draft_exempt == False
     ).all()
-    
+
     if len(existing_faculty) != len(faculty_ids):
-        raise HTTPException(400, "Some faculty IDs are invalid or inactive")
+        raise HTTPException(400, "Some faculty IDs are invalid, inactive, or draft exempt")
     
     # Create draft round
     draft_round = DraftRound(

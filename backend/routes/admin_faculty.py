@@ -79,6 +79,7 @@ class FacultyResponse(BaseModel):
     registered: bool
     # Service week commitments (expected weeks per year)
     moonlighter: bool
+    draft_exempt: bool  # Exclude from draft priority system
     micu_weeks: int
     app_icu_weeks: int
     procedure_weeks: int
@@ -156,6 +157,7 @@ def get_all_faculty(
             password_changed=faculty.password_changed,
             registered=faculty.registered,
             moonlighter=faculty.moonlighter,
+            draft_exempt=faculty.draft_exempt or False,
             micu_weeks=faculty.micu_weeks,
             app_icu_weeks=faculty.app_icu_weeks,
             procedure_weeks=faculty.procedure_weeks,
@@ -520,6 +522,74 @@ def toggle_admin_status(
         password_changed=faculty.password_changed,
         registered=faculty.registered,
         moonlighter=faculty.moonlighter,
+        micu_weeks=faculty.micu_weeks,
+        app_icu_weeks=faculty.app_icu_weeks,
+        procedure_weeks=faculty.procedure_weeks,
+        consult_weeks=faculty.consult_weeks,
+        service_weeks=service_weeks
+    )
+
+
+@router.post("/faculty/{faculty_id}/toggle-draft-exempt", response_model=FacultyResponse)
+def toggle_draft_exempt_status(
+    faculty_id: str,
+    admin_user: Faculty = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Toggle draft_exempt status for a faculty member.
+    Faculty marked as draft_exempt will be excluded from draft priority lists.
+    Requires admin authentication.
+    """
+    faculty = db.query(Faculty).filter_by(id=faculty_id).first()
+    if not faculty:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Faculty not found"
+        )
+
+    # Toggle draft_exempt status
+    faculty.draft_exempt = not faculty.draft_exempt
+    db.commit()
+    db.refresh(faculty)
+
+    # Get service assignments
+    assignments = db.query(
+        ServiceWeekAssignment.service_type,
+        func.count(ServiceWeekAssignment.id).label('count')
+    ).filter(
+        ServiceWeekAssignment.faculty_id == faculty.id
+    ).group_by(ServiceWeekAssignment.service_type).all()
+
+    service_weeks = ServiceAssignmentSummary()
+    total = 0
+    for service_type, count in assignments:
+        total += count
+        if service_type == "MICU":
+            service_weeks.MICU = count
+        elif service_type == "APP-ICU":
+            service_weeks.APP_ICU = count
+        elif service_type == "Procedures":
+            service_weeks.Procedures = count
+        elif service_type == "Consults":
+            service_weeks.Consults = count
+    service_weeks.total = total
+
+    return FacultyResponse(
+        id=faculty.id,
+        name=faculty.name,
+        email=faculty.email,
+        rank=faculty.rank,
+        clinical_effort_pct=faculty.clinical_effort_pct,
+        base_points=faculty.base_points,
+        bonus_points=faculty.bonus_points,
+        total_points=faculty.base_points + faculty.bonus_points,
+        active=faculty.active,
+        is_admin=faculty.is_admin,
+        password_changed=faculty.password_changed,
+        registered=faculty.registered,
+        moonlighter=faculty.moonlighter,
+        draft_exempt=faculty.draft_exempt or False,
         micu_weeks=faculty.micu_weeks,
         app_icu_weeks=faculty.app_icu_weeks,
         procedure_weeks=faculty.procedure_weeks,
