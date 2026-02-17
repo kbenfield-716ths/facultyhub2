@@ -155,7 +155,7 @@ async function searchUsers() {
         <div class="user-card-name">${user.name || 'No name set'}</div>
         <div class="user-card-details">
           <span>📧 ${user.email || 'No email'}</span>
-          <span>🏥 MICU: ${user.micu_count || 0} | APP-ICU: ${user.app_icu_count || 0}</span>
+          <span>🏥 MICU: ${user.micu_weeks || 0} | APP-ICU: ${user.app_icu_weeks || 0}</span>
           <span>📊 Points: ${user.bonus_points || 0}</span>
         </div>
       `;
@@ -258,19 +258,19 @@ async function viewUserDetails(facultyId) {
 
       <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0;">
         <div style="background: #fee2e2; padding: 12px; border-radius: 8px; text-align: center;">
-          <div style="font-size: 24px; font-weight: 700; color: #991b1b;">${user.micu_count || 0}</div>
+          <div style="font-size: 24px; font-weight: 700; color: #991b1b;">${user.micu_weeks || 0}</div>
           <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">MICU Weeks</div>
         </div>
         <div style="background: #fed7aa; padding: 12px; border-radius: 8px; text-align: center;">
-          <div style="font-size: 24px; font-weight: 700; color: #92400e;">${user.app_icu_count || 0}</div>
+          <div style="font-size: 24px; font-weight: 700; color: #92400e;">${user.app_icu_weeks || 0}</div>
           <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">APP-ICU Weeks</div>
         </div>
         <div style="background: #d1fae5; padding: 12px; border-radius: 8px; text-align: center;">
-          <div style="font-size: 24px; font-weight: 700; color: #065f46;">${user.procedures_count || 0}</div>
+          <div style="font-size: 24px; font-weight: 700; color: #065f46;">${user.procedure_weeks || 0}</div>
           <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Procedures</div>
         </div>
         <div style="background: #dbeafe; padding: 12px; border-radius: 8px; text-align: center;">
-          <div style="font-size: 24px; font-weight: 700; color: #1e40af;">${user.consults_count || 0}</div>
+          <div style="font-size: 24px; font-weight: 700; color: #1e40af;">${user.consult_weeks || 0}</div>
           <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Consults</div>
         </div>
       </div>
