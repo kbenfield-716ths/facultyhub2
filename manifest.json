@@ -19,21 +19,43 @@
       "type": "image/png"
     },
     {
-      "src": "/icons/apple-touch-icon.png",
+      "src": "/icons/icon-180.png",
       "sizes": "180x180",
       "type": "image/png"
     },
     {
-      "src": "/icons/android-chrome-192x192.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icons/android-chrome-512x512.png",
+      "src": "/icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["medical", "productivity", "education"],
@@ -43,14 +65,14 @@
       "short_name": "Schedule",
       "description": "Submit your moonlighting availability",
       "url": "/Scheduling.html",
-      "icons": [{ "src": "/icons/android-chrome-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Knowledge Base",
       "short_name": "Resources",
       "description": "View faculty resources and FAQs",
       "url": "/resources.html",
-      "icons": [{ "src": "/icons/android-chrome-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
