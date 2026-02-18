@@ -3,6 +3,17 @@
  * Centralized API communication for admin modules
  */
 
+// ==================== AUTH CHECK ====================
+
+function handleAuthFailure(status) {
+  if (status === 401 || status === 403) {
+    // Session expired or invalid (e.g. after redeploy) — force re-login
+    window.location.href = '/?session_expired=1';
+    return true;
+  }
+  return false;
+}
+
 // ==================== BASE API FUNCTIONS ====================
 
 async function apiGet(endpoint) {
@@ -16,6 +27,7 @@ async function apiGet(endpoint) {
     });
 
     if (!response.ok) {
+      if (handleAuthFailure(response.status)) return;
       const errorText = await response.text();
       throw new Error('API Error: ' + response.status + ' - ' + errorText);
     }
@@ -40,6 +52,7 @@ async function apiPost(endpoint, data) {
     });
 
     if (!response.ok) {
+      if (handleAuthFailure(response.status)) return;
       const errorText = await response.text();
       throw new Error('API Error: ' + response.status + ' - ' + errorText);
     }
@@ -64,6 +77,7 @@ async function apiPut(endpoint, data) {
     });
 
     if (!response.ok) {
+      if (handleAuthFailure(response.status)) return;
       const errorText = await response.text();
       throw new Error('API Error: ' + response.status + ' - ' + errorText);
     }
@@ -86,6 +100,7 @@ async function apiDelete(endpoint) {
     });
 
     if (!response.ok) {
+      if (handleAuthFailure(response.status)) return;
       const errorText = await response.text();
       throw new Error('API Error: ' + response.status + ' - ' + errorText);
     }

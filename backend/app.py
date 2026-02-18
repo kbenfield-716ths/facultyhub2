@@ -72,6 +72,13 @@ try:
             _conn.commit()
             logger.info("Migration: added reminder_sent_at column to wave_faculty_assignments table")
 
+        # Migration: impersonated_by column on session_tokens (needed for DB-backed sessions)
+        _st_cols = [row[1] for row in _conn.execute(text("PRAGMA table_info(session_tokens)")).fetchall()]
+        if "impersonated_by" not in _st_cols:
+            _conn.execute(text("ALTER TABLE session_tokens ADD COLUMN impersonated_by TEXT"))
+            _conn.commit()
+            logger.info("Migration: added impersonated_by column to session_tokens table")
+
 except Exception as _e:
     logger.warning(f"Migration check skipped or failed: {_e}")
 

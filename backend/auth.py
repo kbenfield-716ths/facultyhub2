@@ -10,7 +10,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
-from .models import Faculty, get_db
+from .models import Faculty, SessionToken, SessionLocal, get_db
 from .config import settings
 import logging
 import secrets
@@ -21,8 +21,9 @@ logger = logging.getLogger(__name__)
 # HTTP Basic Auth (for initial testing, we'll use sessions in production)
 security = HTTPBasic()
 
-# Session storage (in-memory for now, move to Redis for production)
-active_sessions = {}
+# Session lifetime: 14 days. Sessions are stored in the DB so they survive
+# server restarts and Fly.io deploys.
+SESSION_LIFETIME_DAYS = 14
 
 
 # ==========================================
@@ -49,7 +50,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 # ==========================================
-# SESSION MANAGEMENT
+# SESSION MANAGEMENT  (database-backed)
+# Sessions are persisted to the DB so they survive server restarts / Fly.io deploys.
 # ==========================================
 
 def create_session_token() -> str:
@@ -57,46 +59,95 @@ def create_session_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-def create_session(faculty_id: str, faculty_name: str, is_admin: bool, impersonated_by: Optional[str] = None) -> str:
-    """Create a new session and return the session token.
-    
-    Args:
-        faculty_id: ID of the faculty member
-        faculty_name: Name of the faculty member
-        is_admin: Whether the faculty member is an admin
-        impersonated_by: Optional faculty ID of the admin who is impersonating this user
-    """
+def create_session(
+    faculty_id: str,
+    faculty_name: str,  # kept for call-site compatibility, not stored
+    is_admin: bool,     # kept for call-site compatibility, not stored
+    impersonated_by: Optional[str] = None,
+    db: Optional[Session] = None
+) -> str:
+    """Create a DB-backed session and return the session token."""
     token = create_session_token()
-    active_sessions[token] = {
-        "faculty_id": faculty_id,
-        "faculty_name": faculty_name,
-        "is_admin": is_admin,
-        "created_at": datetime.utcnow(),
-        "last_activity": datetime.utcnow(),
-        "impersonated_by": impersonated_by
-    }
+    now = datetime.utcnow()
+    expires_at = now + timedelta(days=SESSION_LIFETIME_DAYS)
+
+    record = SessionToken(
+        session_id=token,
+        faculty_id=faculty_id,
+        created_at=now,
+        last_activity=now,
+        expires_at=expires_at,
+        impersonated_by=impersonated_by,
+        invalidated=False,
+    )
+
+    close_db = db is None
+    if close_db:
+        db = SessionLocal()
+    try:
+        db.add(record)
+        db.commit()
+    finally:
+        if close_db:
+            db.close()
+
     return token
 
 
-def get_session(token: str) -> Optional[dict]:
-    """Get session data from token."""
-    session = active_sessions.get(token)
-    if session:
-        # Update last activity
-        session["last_activity"] = datetime.utcnow()
-        
-        # Check if session is expired (24 hours)
-        if datetime.utcnow() - session["created_at"] > timedelta(hours=24):
-            delete_session(token)
+def get_session(token: str, db: Optional[Session] = None) -> Optional[dict]:
+    """Look up a session from the DB. Returns a dict or None if missing/expired."""
+    close_db = db is None
+    if close_db:
+        db = SessionLocal()
+    try:
+        record = db.query(SessionToken).filter_by(
+            session_id=token, invalidated=False
+        ).first()
+
+        if not record:
             return None
-    
-    return session
+
+        now = datetime.utcnow()
+
+        # Check absolute expiry
+        if now > record.expires_at:
+            record.invalidated = True
+            record.invalidated_at = now
+            db.commit()
+            return None
+
+        # Slide the expiry window on each request (keeps active users logged in)
+        record.last_activity = now
+        record.expires_at = now + timedelta(days=SESSION_LIFETIME_DAYS)
+        db.commit()
+
+        return {
+            "faculty_id": record.faculty_id,
+            "faculty_name": None,       # not cached; callers use the Faculty DB row
+            "is_admin": None,           # not cached; callers use the Faculty DB row
+            "created_at": record.created_at,
+            "last_activity": now,
+            "impersonated_by": record.impersonated_by,
+        }
+    finally:
+        if close_db:
+            db.close()
 
 
-def delete_session(token: str):
-    """Delete a session."""
-    if token in active_sessions:
-        del active_sessions[token]
+def delete_session(token: str, db: Optional[Session] = None):
+    """Invalidate a session in the DB."""
+    close_db = db is None
+    if close_db:
+        db = SessionLocal()
+    try:
+        record = db.query(SessionToken).filter_by(session_id=token).first()
+        if record:
+            record.invalidated = True
+            record.invalidated_at = datetime.utcnow()
+            db.commit()
+    finally:
+        if close_db:
+            db.close()
 
 
 def authenticate_faculty(faculty_id: str, password: str, db: Session) -> Optional[Faculty]:
@@ -131,18 +182,18 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)) -> F
         )
     
     # Get session data
-    session = get_session(session_token)
+    session = get_session(session_token, db=db)
     if not session:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired session",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Get faculty from database
     faculty = db.query(Faculty).filter_by(id=session["faculty_id"]).first()
     if not faculty or not faculty.active:
-        delete_session(session_token)
+        delete_session(session_token, db=db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User account not found or inactive"
@@ -154,11 +205,11 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)) -> F
 async def get_optional_user(request: Request, db: Session = Depends(get_db)) -> Optional[Faculty]:
     """Get the current user if authenticated, None otherwise (no exception)."""
     session_token = request.cookies.get("session_token")
-    
+
     if not session_token:
         return None
-    
-    session = get_session(session_token)
+
+    session = get_session(session_token, db=db)
     if not session:
         return None
     

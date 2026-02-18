@@ -453,9 +453,10 @@
           const data = await response.json();
           const faculty = data.faculty;
           document.getElementById('userInfo').textContent = 'Logged in as: ' + faculty.faculty_name + (faculty.is_admin ? ' (Admin)' : '');
-        } else if (response.status === 401) {
-          // Not logged in - redirect to main app login
-          document.getElementById('userInfo').innerHTML = '<a href="/" style="color: #dc2626; text-decoration: none;">⚠️ Please log in first</a>';
+        } else if (response.status === 401 || response.status === 403) {
+          // Not logged in or session expired — redirect to login
+          window.location.href = '/?session_expired=1';
+          return;
         } else {
           document.getElementById('userInfo').textContent = 'Not logged in';
         }

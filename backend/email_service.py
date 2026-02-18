@@ -263,6 +263,173 @@ def create_unavailability_confirmation_email(
     return html_content
 
 
+def create_wave_draft_confirmation_email(
+    faculty_name: str,
+    faculty_email: str,
+    unavailable_weeks: List[Dict],
+    volunteer_weeks: List[Dict],
+    rejected: List[Dict],
+    academic_year: str
+) -> str:
+    """
+    Create HTML email body for wave draft submission confirmation.
+    Covers both unavailable and volunteer selections plus any rejections.
+    """
+    # Format unavailable weeks
+    unavail_items = []
+    for week in sorted(unavailable_weeks, key=lambda x: x['week_number']):
+        start = format_date_with_day(week['start_date'])
+        end = format_date_with_day(week['end_date'])
+        unavail_items.append(f"  • Week {week['week_number']}: {start} → {end}")
+    unavail_list = "\n".join(unavail_items) if unavail_items else "  (none)"
+
+    # Format volunteer weeks
+    vol_items = []
+    for week in sorted(volunteer_weeks, key=lambda x: x['week_number']):
+        start = format_date_with_day(week['start_date'])
+        end = format_date_with_day(week['end_date'])
+        vol_items.append(f"  • Week {week['week_number']}: {start} → {end}")
+    vol_list = "\n".join(vol_items) if vol_items else "  (none)"
+
+    # Format rejected weeks
+    rejected_section = ""
+    if rejected:
+        rej_items = [f"  • {r.get('label', r.get('week_id', 'Unknown'))} — {r.get('reason', 'capacity reached')}" for r in rejected]
+        rej_list = "\n".join(rej_items)
+        rejected_section = f"""
+            <div style="background-color: #FEE2E2; border-left: 4px solid #DC2626; padding: 15px; margin: 15px 0;">
+                <strong>⚠ Rejected ({len(rejected)}):</strong>
+                <div style="font-family: monospace; font-size: 14px; margin-top: 8px; white-space: pre-line;">{rej_list}</div>
+            </div>
+        """
+
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+            }}
+            .header {{
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+                text-align: center;
+                border-radius: 5px 5px 0 0;
+            }}
+            .content {{
+                background-color: #f9f9f9;
+                padding: 20px;
+                border: 1px solid #ddd;
+                border-radius: 0 0 5px 5px;
+            }}
+            .weeks {{
+                background-color: white;
+                padding: 15px;
+                margin: 15px 0;
+                border-left: 4px solid #232D4B;
+                font-family: monospace;
+                font-size: 14px;
+                white-space: pre-line;
+            }}
+            .volunteer-weeks {{
+                background-color: white;
+                padding: 15px;
+                margin: 15px 0;
+                border-left: 4px solid #10b981;
+                font-family: monospace;
+                font-size: 14px;
+                white-space: pre-line;
+            }}
+            .summary {{
+                background-color: #E8F4F8;
+                padding: 15px;
+                margin: 15px 0;
+                border-radius: 5px;
+            }}
+            .footer {{
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 1px solid #ddd;
+                font-size: 12px;
+                color: #666;
+                text-align: center;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h2>Service Availability Selections Confirmed</h2>
+        </div>
+        <div class="content">
+            <p>Dear Dr. {faculty_name},</p>
+
+            <p>This email confirms your service availability selections for Academic Year {academic_year}.</p>
+
+            <div class="summary">
+                <strong>Unavailable: {len(unavailable_weeks)} week(s)</strong> &nbsp;|&nbsp;
+                <strong>Volunteer: {len(volunteer_weeks)} week(s)</strong>
+            </div>
+
+            <p><strong>Weeks Marked Unavailable:</strong></p>
+            <div class="weeks">{unavail_list}</div>
+
+            <p><strong>Weeks Volunteered:</strong></p>
+            <div class="volunteer-weeks">{vol_list}</div>
+
+            {rejected_section}
+
+            <p>You can review or modify your selections by logging into the <a href="https://facultyhub.pccm.uva.edu/service-availability.html">PCCM Faculty Hub</a> until the draft submission window closes.</p>
+
+            <p>Thank you,<br>
+            <strong>PCCM Division Scheduling</strong></p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message from the PCCM Faculty Hub. Please do not reply to this email.</p>
+            <p>University of Virginia Health | Division of Pulmonary and Critical Care Medicine</p>
+        </div>
+    </body>
+    </html>
+    """
+
+    return html_content
+
+
+def send_wave_draft_confirmation(
+    faculty_name: str,
+    faculty_email: str,
+    unavailable_weeks: List[Dict],
+    volunteer_weeks: List[Dict],
+    rejected: List[Dict],
+    academic_year: str
+) -> bool:
+    """
+    Send wave draft submission confirmation email.
+
+    Args:
+        faculty_name: Faculty member's full name
+        faculty_email: Faculty member's email address
+        unavailable_weeks: List of dicts with 'week_number', 'start_date', 'end_date'
+        volunteer_weeks: List of dicts with 'week_number', 'start_date', 'end_date'
+        rejected: List of dicts with 'week_id', 'type', 'reason'
+        academic_year: e.g., "2026-2027"
+
+    Returns:
+        bool: True if email sent successfully
+    """
+    subject = f"Service Availability Selections Confirmed - AY {academic_year}"
+    html_content = create_wave_draft_confirmation_email(
+        faculty_name, faculty_email, unavailable_weeks, volunteer_weeks, rejected, academic_year
+    )
+
+    return send_email(faculty_email, faculty_name, subject, html_content)
+
+
 def send_email(to_email: str, to_name: str, subject: str, html_content: str, reply_to: str = None) -> bool:
     """
     Send email via Gmail SMTP

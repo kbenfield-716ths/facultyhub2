@@ -9,9 +9,10 @@ from sqlalchemy import func
 from typing import List
 from pydantic import BaseModel
 
-from backend.models import ServiceWeek, UnavailabilityRequest, ServiceWeekAssignment, get_db
+from backend.models import ServiceWeek, UnavailabilityRequest, ServiceWeekAssignment, DraftWeekRequest, DraftWaveConfig, FacultyBlock, get_db
 from backend.auth import get_current_user
 from backend.models import Faculty
+from typing import Optional
 
 router = APIRouter(prefix="/api/service-weeks", tags=["service-weeks"])
 
@@ -58,20 +59,52 @@ async def get_service_weeks(
     """
     weeks = db.query(ServiceWeek).filter(ServiceWeek.year == year).order_by(ServiceWeek.week_number).all()
 
+    # Find active/closed draft config to include wave draft submissions
+    draft_config = db.query(DraftWaveConfig).filter(
+        DraftWaveConfig.year == year,
+        DraftWaveConfig.status.in_(['active', 'closed'])
+    ).first()
+    if not draft_config:
+        draft_config = db.query(DraftWaveConfig).filter(
+            DraftWaveConfig.status.in_(['active', 'closed', 'pending'])
+        ).order_by(DraftWaveConfig.year.desc()).first()
+    draft_config_id = draft_config.id if draft_config else None
+
     # Get request counts for each week
     result = []
     for week in weeks:
-        # Count unavailable requests
+        # Count unavailable requests from traditional system
         request_count = db.query(func.count(UnavailabilityRequest.id)).filter(
             UnavailabilityRequest.week_id == week.id,
             UnavailabilityRequest.status == "unavailable"
         ).scalar() or 0
 
-        # Count volunteer requests
+        # Count volunteer requests from traditional system
         volunteer_count = db.query(func.count(UnavailabilityRequest.id)).filter(
             UnavailabilityRequest.week_id == week.id,
             UnavailabilityRequest.status == "available"
         ).scalar() or 0
+
+        # Include wave draft submissions (DraftWeekRequest records)
+        if draft_config_id:
+            draft_unavail = db.query(func.count(DraftWeekRequest.id)).filter(
+                DraftWeekRequest.week_id == week.id,
+                DraftWeekRequest.config_id == draft_config_id,
+                DraftWeekRequest.request_type == 'unavailable'
+            ).scalar() or 0
+            draft_vol = db.query(func.count(DraftWeekRequest.id)).filter(
+                DraftWeekRequest.week_id == week.id,
+                DraftWeekRequest.config_id == draft_config_id,
+                DraftWeekRequest.request_type == 'volunteer'
+            ).scalar() or 0
+            request_count += draft_unavail
+            volunteer_count += draft_vol
+
+        # Include admin override blocks as unavailable
+        block_count = db.query(func.count(FacultyBlock.id)).filter(
+            FacultyBlock.week_id == week.id
+        ).scalar() or 0
+        request_count += block_count
 
         # Determine demand level for unavailable requests
         if request_count >= MAX_CAPACITY:
@@ -115,3 +148,46 @@ async def get_service_weeks(
         ))
 
     return result
+
+
+class MyBlockResponse(BaseModel):
+    """A block that applies to the current faculty member."""
+    week_id: str
+    week_number: int
+    week_label: str
+    reason: Optional[str] = None
+
+
+@router.get("/my-blocks", response_model=List[MyBlockResponse])
+async def get_my_blocks(
+    year: int = 2026,
+    current_user: Faculty = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get admin-created blocks for the current faculty member.
+    Lets the user see which weeks they've been blocked from.
+    """
+    blocks = db.query(
+        FacultyBlock.week_id,
+        ServiceWeek.week_number,
+        ServiceWeek.label.label('week_label'),
+        FacultyBlock.reason
+    ).join(
+        ServiceWeek, FacultyBlock.week_id == ServiceWeek.id
+    ).filter(
+        FacultyBlock.faculty_id == current_user.id,
+        ServiceWeek.year == year
+    ).order_by(
+        ServiceWeek.week_number
+    ).all()
+
+    return [
+        MyBlockResponse(
+            week_id=b.week_id,
+            week_number=b.week_number,
+            week_label=b.week_label,
+            reason=b.reason
+        )
+        for b in blocks
+    ]

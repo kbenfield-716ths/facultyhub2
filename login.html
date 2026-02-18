@@ -275,13 +275,24 @@
     </form>
 
     <div class="help-text">
-      Default password: <strong>PCCM2025!</strong><br>
-      Please change it after first login.
+      If you are unable to log on, please contact your admin.
+    </div>
+
+    <div class="help-text" id="sessionExpiredMsg" style="display:none; color: #dc2626; margin-top: 8px;">
+      Your session has expired. Please sign in again.
     </div>
   </div>
 
   <script>
     const API_URL = window.location.origin;
+
+    // Show session-expired message if redirected from admin
+    if (new URLSearchParams(window.location.search).get('session_expired') === '1') {
+      document.addEventListener('DOMContentLoaded', function() {
+        const msg = document.getElementById('sessionExpiredMsg');
+        if (msg) msg.style.display = 'block';
+      });
+    }
 
     // Hide loader once DOM is ready and initial content loaded
     function hideLoader() {

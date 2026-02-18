@@ -867,6 +867,51 @@
       font-weight: 700;
     }
 
+    /* Admin-blocked week styles */
+    .week-card.admin-blocked {
+      border-left: 4px solid #7c3aed;
+      background: #faf5ff;
+    }
+
+    .admin-block-banner {
+      background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+      border: 1px solid #c4b5fd;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #5b21b6;
+      font-weight: 600;
+    }
+
+    .admin-block-banner .block-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .admin-block-reason {
+      font-weight: 400;
+      color: #6d28d9;
+      font-style: italic;
+    }
+
+    .calendar-day.admin-blocked {
+      background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%) !important;
+      border: 2px solid #7c3aed !important;
+      cursor: not-allowed !important;
+    }
+
+    .calendar-day.admin-blocked:hover {
+      transform: none !important;
+    }
+
+    .calendar-day.admin-blocked .week-badge {
+      color: #7c3aed;
+    }
+
     .action-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
@@ -928,6 +973,10 @@
         <div class="stat-box earned">
           <div class="stat-label">Points Earned</div>
           <div class="stat-value" id="pointsEarned">0</div>
+        </div>
+        <div class="stat-box" id="blockedStatBox" style="display: none; background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); border-left-color: #7c3aed;">
+          <div class="stat-label">Admin Blocked</div>
+          <div class="stat-value" id="weeksBlocked">0</div>
         </div>
       </div>
     </div>
@@ -1032,7 +1081,8 @@
     let weekPreferences = {}; // Object to store preferences by week_id
     let currentFilter = 'all';
     let currentView = 'list'; // 'list' or 'calendar'
-    
+    let adminBlocks = {}; // Map of week_id -> {reason, week_label} for admin-blocked weeks
+
     // Draft status variables
     let draftStatus = null;
     let countdownInterval = null;
@@ -1129,6 +1179,22 @@
         }
       } catch (error) {
         console.error('Error loading existing requests:', error);
+      }
+    }
+
+    // Load admin blocks for the current user
+    async function loadMyBlocks() {
+      try {
+        const response = await fetch(`${API_BASE}/api/service-weeks/my-blocks?year=2026`);
+        if (response.ok) {
+          const blocks = await response.json();
+          adminBlocks = {};
+          blocks.forEach(b => {
+            adminBlocks[b.week_id] = { reason: b.reason, week_label: b.week_label };
+          });
+        }
+      } catch (error) {
+        console.error('Error loading admin blocks:', error);
       }
     }
 
@@ -1263,6 +1329,10 @@
             <div class="legend-color" style="background:#ede9fe; border:1px solid #c4b5fd;"></div>
             <span>Conference</span>
           </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); border:2px solid #7c3aed;"></div>
+            <span>Admin Blocked</span>
+          </div>
         </div>
       `;
 
@@ -1334,13 +1404,17 @@
             }
             if (typeClass) classes += ' ' + typeClass;
 
-            if (selectedWeeks.has(week.id)) {
-              classes += ' requested-off';
-            } else if (availableWeeks.has(week.id)) {
-              classes += ' volunteered';
+            if (adminBlocks.hasOwnProperty(week.id)) {
+              classes += ' admin-blocked';
+              // No click handler for blocked weeks
+            } else {
+              if (selectedWeeks.has(week.id)) {
+                classes += ' requested-off';
+              } else if (availableWeeks.has(week.id)) {
+                classes += ' volunteered';
+              }
+              clickHandler = `onclick="toggleWeekFromCalendar('${week.id}')"`;
             }
-
-            clickHandler = `onclick="toggleWeekFromCalendar('${week.id}')"`;
           }
         }
 
@@ -1357,8 +1431,11 @@
     }
 
     function toggleWeekFromCalendar(weekId) {
+      // Admin-blocked weeks cannot be toggled
+      if (adminBlocks.hasOwnProperty(weekId)) return;
+
       const week = allWeeks.find(w => w.id === weekId);
-      
+
       // Cycle through: none -> requested off -> volunteered -> none
       if (selectedWeeks.has(weekId)) {
         // Currently requested off -> switch to volunteered
@@ -1399,6 +1476,8 @@
       }
 
       container.innerHTML = filteredWeeks.map(week => {
+        const isBlocked = adminBlocks.hasOwnProperty(week.id);
+        const blockInfo = isBlocked ? adminBlocks[week.id] : null;
         const isRequestedOff = selectedWeeks.has(week.id);
         const isVolunteer = availableWeeks.has(week.id);
         const isSelected = isRequestedOff || isVolunteer;
@@ -1406,15 +1485,25 @@
         // Calculate demand bar width
         const demandPercent = (week.request_count / week.max_capacity) * 100;
 
-        // Determine if can request off or volunteer
-        const canRequestOff = !week.is_full || isRequestedOff;
-        const canVolunteer = !week.is_volunteer_full || isVolunteer;
-        
+        // Blocked weeks cannot be toggled by the user
+        const canRequestOff = !isBlocked && (!week.is_full || isRequestedOff);
+        const canVolunteer = !isBlocked && (!week.is_volunteer_full || isVolunteer);
+
         const existingPreference = getPreference(week.id);
         const hasPreference = existingPreference.length > 0;
-        
+
+        // Build the admin block banner if applicable
+        const blockBanner = isBlocked ? `
+          <div class="admin-block-banner">
+            <span class="block-icon">🚫</span>
+            <div>
+              Admin has marked you unavailable for this week${blockInfo.reason ? ': <span class="admin-block-reason">' + blockInfo.reason + '</span>' : ''}
+            </div>
+          </div>
+        ` : '';
+
         return `
-          <div class="week-card">
+          <div class="week-card ${isBlocked ? 'admin-blocked' : ''}">
             <div class="week-info">
               <span class="week-number">Week ${week.week_number}</span>
               <div class="week-details">
@@ -1423,7 +1512,9 @@
               </div>
               <span class="week-type ${week.week_type}">${week.week_type.replace('_', ' ')}</span>
             </div>
-            
+
+            ${blockBanner}
+
             <!-- Demand Indicator -->
             <div class="demand-indicator">
               <div class="demand-bar-container">
@@ -1432,22 +1523,23 @@
               <div class="demand-text">
                 <span>${week.request_count}/${week.max_capacity} requests</span>
                 <span class="demand-badge ${week.demand_level}">
-                  ${week.is_full ? 'FULL' : 
+                  ${week.is_full ? 'FULL' :
                     week.demand_level === 'critical' ? week.spots_remaining + ' left!' :
                     week.demand_level === 'high' ? 'High Demand' :
                     week.demand_level === 'medium' ? 'Medium' : 'Available'}
                 </span>
               </div>
             </div>
-            
+
             <div class="week-actions">
-              <button class="action-btn request-off ${isRequestedOff ? 'active' : ''}"
+              <button class="action-btn request-off ${isRequestedOff ? 'active' : ''} ${isBlocked ? 'active' : ''}"
                       onclick="toggleRequestOff('${week.id}')"
                       ${!canRequestOff ? 'disabled' : ''}>
-                ${week.is_full && !isRequestedOff ? '<span class="full-badge">FULL</span>' : '<span class="checkmark">✓</span>'}
+                ${isBlocked ? '<span class="full-badge" style="background:#7c3aed;">BLOCKED</span>' :
+                  week.is_full && !isRequestedOff ? '<span class="full-badge">FULL</span>' : '<span class="checkmark">✓</span>'}
                 <div>
-                  <div class="btn-label">Unavailable</div>
-                  <div class="btn-points">-${week.point_cost_off} pts</div>
+                  <div class="btn-label">${isBlocked ? 'Blocked' : 'Unavailable'}</div>
+                  <div class="btn-points">${isBlocked ? 'By Admin' : '-' + week.point_cost_off + ' pts'}</div>
                 </div>
               </button>
               <button class="action-btn volunteer ${isVolunteer ? 'active' : ''}"
@@ -1460,14 +1552,14 @@
                 </div>
               </button>
             </div>
-            
-            <div class="service-preference ${isSelected ? 'visible' : ''}">
+
+            <div class="service-preference ${isSelected && !isBlocked ? 'visible' : ''}">
               <div class="preference-label">
                 <span class="icon">💬</span>
                 Service Preference (optional)
               </div>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 class="preference-input ${hasPreference ? 'has-value' : ''}"
                 data-week-id="${week.id}"
                 placeholder="e.g., Prefer Procedures, Would like MICU, Available for Consults..."
@@ -1491,8 +1583,11 @@
     }
 
     function toggleRequestOff(weekId) {
+      // Admin-blocked weeks cannot be toggled
+      if (adminBlocks.hasOwnProperty(weekId)) return;
+
       const week = allWeeks.find(w => w.id === weekId);
-      
+
       // If week is full and not already selected by this user, show alert
       if (week && week.is_full && !selectedWeeks.has(weekId)) {
         alert(`Week ${week.week_number} (${week.label}) is full. Maximum ${week.max_capacity} faculty can request this week.`);
@@ -1513,6 +1608,9 @@
     }
 
     function toggleVolunteer(weekId) {
+      // Admin-blocked weeks cannot be toggled
+      if (adminBlocks.hasOwnProperty(weekId)) return;
+
       const week = allWeeks.find(w => w.id === weekId);
 
       // If week is volunteer full and not already selected by this user, show alert
@@ -1562,6 +1660,16 @@
       // Enable submit button if there are changes
       const hasChanges = selectedWeeks.size > 0 || availableWeeks.size > 0;
       document.getElementById('submitBtn').disabled = !hasChanges;
+
+      // Show blocked weeks count if any exist
+      const blockedCount = Object.keys(adminBlocks).length;
+      const blockedBox = document.getElementById('blockedStatBox');
+      if (blockedCount > 0) {
+        blockedBox.style.display = 'block';
+        document.getElementById('weeksBlocked').textContent = blockedCount;
+      } else {
+        blockedBox.style.display = 'none';
+      }
 
       // Warn if overspending
       if (availablePoints < 0) {
@@ -1861,6 +1969,8 @@
     window.addEventListener('DOMContentLoaded', async () => {
       await loadCurrentUser();
       await loadWeeks();
+      await loadMyBlocks();
+      renderCurrentView(); // Re-render now that blocks are loaded
       await loadDraftStatus();
     });
 

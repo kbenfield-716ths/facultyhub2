@@ -46,7 +46,7 @@ class AuditLog(Base):
 class SessionToken(Base):
     """Enhanced session management with timeout tracking"""
     __tablename__ = "session_tokens"
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     session_id = Column(String, unique=True, nullable=False, index=True)
     faculty_id = Column(String, nullable=False, index=True)
@@ -57,6 +57,7 @@ class SessionToken(Base):
     user_agent = Column(String, nullable=True)
     invalidated = Column(Boolean, default=False)
     invalidated_at = Column(DateTime, nullable=True)
+    impersonated_by = Column(String, nullable=True)  # admin faculty_id if this is an impersonation session
 
 
 class PasswordResetToken(Base):

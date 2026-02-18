@@ -95,19 +95,20 @@ async def login(
             detail="Invalid faculty ID or password"
         )
     
-    # Create session
+    # Create session (DB-backed, survives server restarts)
     session_token = create_session(
         faculty.id,
         faculty.name,
-        faculty.is_admin
+        faculty.is_admin,
+        db=db
     )
-    
-    # Set session cookie (httponly for security)
+
+    # Set session cookie – 14 days, matches SESSION_LIFETIME_DAYS in auth.py
     response.set_cookie(
         key="session_token",
         value=session_token,
         httponly=True,
-        max_age=86400,  # 24 hours
+        max_age=14 * 24 * 3600,  # 14 days
         samesite="lax"
     )
     
@@ -120,18 +121,18 @@ async def login(
 
 
 @router.post("/logout")
-async def logout(request: Request, response: Response):
+async def logout(request: Request, response: Response, db: Session = Depends(get_db)):
     """
     Logout current user and destroy session.
     """
     session_token = request.cookies.get("session_token")
-    
+
     if session_token:
-        delete_session(session_token)
-    
+        delete_session(session_token, db=db)
+
     # Clear session cookie
     response.delete_cookie("session_token")
-    
+
     return {"message": "Logout successful"}
 
 
@@ -161,13 +162,14 @@ async def get_current_user_info(
 @router.get("/check")
 async def check_auth(
     request: Request,
+    db: Session = Depends(get_db),
     current_user: Optional[Faculty] = Depends(get_optional_user)
 ):
     if current_user:
         # Check if impersonating
         session_token = request.cookies.get("session_token")
         from backend.auth import get_session
-        session = get_session(session_token) if session_token else None
+        session = get_session(session_token, db=db) if session_token else None
         impersonated_by = session.get("impersonated_by") if session else None
         
         return {

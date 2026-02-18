@@ -659,15 +659,15 @@ async def impersonate_faculty(
         )
 
     # Create session as target faculty
-    session_token = create_session(target_faculty.id, target_faculty.name, target_faculty.is_admin, impersonated_by=admin_user.id)
+    session_token = create_session(target_faculty.id, target_faculty.name, target_faculty.is_admin, impersonated_by=admin_user.id, db=db)
 
-    # Set session cookie (match auth.py login format)
+    # Set session cookie – 14 days, matches SESSION_LIFETIME_DAYS in auth.py
     response.set_cookie(
         key="session_token",
         value=session_token,
         httponly=True,
         samesite="lax",
-        max_age=86400  # 24 hours
+        max_age=14 * 24 * 3600  # 14 days
     )
 
     return {
@@ -698,15 +698,15 @@ async def return_to_admin(
         )
 
     # Create session as admin
-    session_token = create_session(admin_faculty.id, admin_faculty.name, admin_faculty.is_admin)
+    session_token = create_session(admin_faculty.id, admin_faculty.name, admin_faculty.is_admin, db=db)
 
-    # Set session cookie (match auth.py login format)
+    # Set session cookie – 14 days, matches SESSION_LIFETIME_DAYS in auth.py
     response.set_cookie(
         key="session_token",
         value=session_token,
         httponly=True,
         samesite="lax",
-        max_age=86400  # 24 hours
+        max_age=14 * 24 * 3600  # 14 days
     )
 
     return {

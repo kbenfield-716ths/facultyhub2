@@ -15,7 +15,7 @@ import uuid
 import csv
 import io
 
-from backend.models import get_db, Faculty, ServiceWeek, UnavailabilityRequest, ServiceWeekAssignment, DraftWeekRequest, DraftWaveConfig
+from backend.models import get_db, Faculty, ServiceWeek, UnavailabilityRequest, ServiceWeekAssignment, DraftWeekRequest, DraftWaveConfig, FacultyBlock
 from backend.auth import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/admin", tags=["admin-service"])
@@ -110,11 +110,21 @@ async def get_service_weeks_heatmap(
     
     result = []
 
-    # Find draft config for this year (active or closed) to include wave draft submissions
+    # --- BUG FIX (Bug 2): Search for draft config with broader status filter ---
+    # Previously only matched 'active'/'closed', which could miss configs in other states.
+    # Also try without year filter as a fallback in case the config year doesn't match.
     draft_config = db.query(DraftWaveConfig).filter(
         DraftWaveConfig.year == year,
         DraftWaveConfig.status.in_(['active', 'closed'])
     ).first()
+
+    # Fallback: if no config found for this year, try any active/closed config
+    # (handles cases where config.year might not match the service week year)
+    if not draft_config:
+        draft_config = db.query(DraftWaveConfig).filter(
+            DraftWaveConfig.status.in_(['active', 'closed', 'pending'])
+        ).order_by(DraftWaveConfig.year.desc()).first()
+
     draft_config_id = draft_config.id if draft_config else None
 
     for week in weeks:
@@ -124,7 +134,7 @@ async def get_service_weeks_heatmap(
             # Use historic seeded data
             unavailable_count = week.historic_unavailable_count
         else:
-            # Count direct UnavailabilityRequests
+            # Count direct UnavailabilityRequests (traditional system)
             unavailable_count = db.query(func.count(UnavailabilityRequest.id)).filter(
                 UnavailabilityRequest.week_id == week.id,
                 UnavailabilityRequest.status == "unavailable"
@@ -135,7 +145,9 @@ async def get_service_weeks_heatmap(
             UnavailabilityRequest.status == "available"
         ).scalar() or 0
 
-        # Also count wave draft submissions (DraftWeekRequest) if a draft config exists
+        # --- BUG FIX (Bug 2): Count wave draft submissions from DraftWeekRequest records ---
+        # Always count actual DraftWeekRequest records (ground truth) rather than relying
+        # on the cached WeekDraftStatus which can drift due to resubmission bugs.
         if draft_config_id and week.historic_unavailable_count == 0:
             draft_unavail = db.query(func.count(DraftWeekRequest.id)).filter(
                 DraftWeekRequest.week_id == week.id,
@@ -151,25 +163,34 @@ async def get_service_weeks_heatmap(
 
             unavailable_count += draft_unavail
             volunteer_count += draft_volunteer
-        
+
+        # --- BUG FIX (Bug 3): Count admin override blocks as unavailable ---
+        # FacultyBlocks prevent faculty from being assigned to weeks, which is
+        # functionally the same as being unavailable. Include them in the count
+        # so the heatmap accurately reflects staffing shortages.
+        block_count = db.query(func.count(FacultyBlock.id)).filter(
+            FacultyBlock.week_id == week.id
+        ).scalar() or 0
+        unavailable_count += block_count
+
         assigned_count = db.query(func.count(ServiceWeekAssignment.id)).filter(
             ServiceWeekAssignment.week_id == week.id
         ).scalar() or 0
 
         # Calculate staffing status based on unavailability levels
         # High unavailability = popular week that needs attention
-        # Thresholds: 
+        # Thresholds:
         #   Good: <= 7 unavailable (low demand)
         #   Tight: 8-11 unavailable (moderate demand)
         #   Critical: >= 12 unavailable (high demand, premium week)
-        
+
         if unavailable_count <= 7:
             staffing_status = "good"
         elif unavailable_count <= 11:
             staffing_status = "tight"
         else:
             staffing_status = "critical"
-        
+
         result.append(WeekHeatMapData(
             week_id=week.id,
             week_number=week.week_number,
@@ -181,7 +202,7 @@ async def get_service_weeks_heatmap(
             min_staff_required=week.min_staff_required,
             staffing_status=staffing_status
         ))
-    
+
     return result
 
 @router.get("/service-capacity-summary")
