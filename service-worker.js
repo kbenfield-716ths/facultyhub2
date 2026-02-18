@@ -1,5 +1,5 @@
 // service-worker.js - Enhanced PWA Service Worker
-const CACHE_VERSION = 'pccm-v20260216-144625';
+const CACHE_VERSION = 'pccm-v20260217-180846';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const API_CACHE = `${CACHE_VERSION}-api`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
@@ -9,7 +9,7 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/signup.html',
-  '/admin.html',
+  '/admin/index.html',
   '/Scheduling.html',
   '/resources.html',
   '/style.css',

@@ -5,6 +5,8 @@
 
 let activeDraft = null;
 let draftSlots = [];
+let draftFacultyList = [];        // Full faculty list from API
+let selectedFacultyIds = new Set();  // Currently selected for draft
 
 // Load draft on init
 document.addEventListener('DOMContentLoaded', function() {
@@ -65,6 +67,7 @@ function renderActiveDraft() {
   document.getElementById('activeDraftStatus').textContent = capitalize(activeDraft.status);
   document.getElementById('activeDraftWindow').textContent = activeDraft.window_size + ' hours';
   document.getElementById('activeDraftHours').textContent = activeDraft.hours_per_slot + ' hours';
+  document.getElementById('activeDraftFacultyCount').textContent = draftSlots.length;
 
   // Show/hide buttons based on status
   const pauseBtn = document.getElementById('pauseBtn');
@@ -154,9 +157,265 @@ function calculateTimeRemaining(deadline) {
   return hours + 'h ' + minutes + 'm';
 }
 
+// ==================== FACULTY PICKER ====================
+
+// Load faculty list for the picker
+async function loadFacultyForPicker() {
+  var listEl = document.getElementById('facultyPickerList');
+  if (!listEl) return;
+
+  try {
+    var response = await fetch('/api/admin/faculty', { credentials: 'same-origin' });
+    if (!response.ok) throw new Error('Failed to load faculty');
+
+    var data = await response.json();
+    // Filter to active, non-draft-exempt only
+    draftFacultyList = (Array.isArray(data) ? data : (data.faculty || [])).filter(function(f) {
+      return f.active !== false && !f.draft_exempt;
+    });
+
+    // Sort alphabetically by name
+    draftFacultyList.sort(function(a, b) {
+      return (a.name || '').localeCompare(b.name || '');
+    });
+
+    renderFacultyPicker();
+  } catch (error) {
+    console.error('Error loading faculty for picker:', error);
+    listEl.innerHTML = '<div style="text-align:center;padding:24px;color:#ef4444;">Failed to load faculty</div>';
+  }
+}
+
+// Render the faculty picker list
+function renderFacultyPicker() {
+  var listEl = document.getElementById('facultyPickerList');
+  if (!listEl || draftFacultyList.length === 0) {
+    if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:24px;color:#9ca3af;">No eligible faculty found</div>';
+    return;
+  }
+
+  listEl.innerHTML = '';
+
+  // Build ordered list: selected first (in order), then unselected
+  var orderedFaculty = getOrderedFaculty();
+
+  var priorityNum = 0;
+  orderedFaculty.forEach(function(f) {
+    var isSelected = selectedFacultyIds.has(f.id);
+    if (isSelected) priorityNum++;
+
+    var div = document.createElement('div');
+    div.className = 'faculty-pick-item' + (isSelected ? ' selected' : '');
+    div.setAttribute('data-faculty-id', f.id);
+    div.draggable = true;
+
+    div.innerHTML =
+      '<input type="checkbox" ' + (isSelected ? 'checked' : '') + ' onclick="toggleFacultySelection(\'' + f.id + '\')">' +
+      '<span class="faculty-pick-priority">' + (isSelected ? priorityNum : '-') + '</span>' +
+      '<span class="faculty-pick-name">' + (f.name || f.id) + '</span>' +
+      '<span class="faculty-pick-drag">&#x2630;</span>';
+
+    // Drag events
+    div.addEventListener('dragstart', onFacultyDragStart);
+    div.addEventListener('dragover', onFacultyDragOver);
+    div.addEventListener('dragleave', onFacultyDragLeave);
+    div.addEventListener('drop', onFacultyDrop);
+    div.addEventListener('dragend', onFacultyDragEnd);
+
+    listEl.appendChild(div);
+  });
+
+  updateFacultyCount();
+}
+
+// Get faculty in current order (selected items maintain their list order)
+function getOrderedFaculty() {
+  var listEl = document.getElementById('facultyPickerList');
+  var currentOrder = [];
+
+  if (listEl && listEl.children.length > 0) {
+    // Preserve current DOM order
+    for (var i = 0; i < listEl.children.length; i++) {
+      var id = listEl.children[i].getAttribute('data-faculty-id');
+      var faculty = draftFacultyList.find(function(f) { return f.id === id; });
+      if (faculty) currentOrder.push(faculty);
+    }
+    // Add any new faculty not yet in DOM
+    draftFacultyList.forEach(function(f) {
+      if (!currentOrder.find(function(c) { return c.id === f.id; })) {
+        currentOrder.push(f);
+      }
+    });
+    return currentOrder;
+  }
+
+  return draftFacultyList.slice();
+}
+
+// Toggle faculty selection
+function toggleFacultySelection(facultyId) {
+  if (selectedFacultyIds.has(facultyId)) {
+    selectedFacultyIds.delete(facultyId);
+  } else {
+    selectedFacultyIds.add(facultyId);
+  }
+  renderFacultyPicker();
+}
+
+// Select All / Deselect All
+function toggleSelectAllFaculty() {
+  var searchTerm = (document.getElementById('facultySearchInput') || {}).value || '';
+  var visibleFaculty = getVisibleFaculty(searchTerm);
+
+  // If all visible are selected, deselect them; otherwise select all visible
+  var allVisibleSelected = visibleFaculty.every(function(f) { return selectedFacultyIds.has(f.id); });
+
+  if (allVisibleSelected) {
+    visibleFaculty.forEach(function(f) { selectedFacultyIds.delete(f.id); });
+  } else {
+    visibleFaculty.forEach(function(f) { selectedFacultyIds.add(f.id); });
+  }
+
+  renderFacultyPicker();
+  applyFacultySearch();
+}
+
+function getVisibleFaculty(searchTerm) {
+  if (!searchTerm) return draftFacultyList.slice();
+  var term = searchTerm.toLowerCase();
+  return draftFacultyList.filter(function(f) {
+    return (f.name || '').toLowerCase().indexOf(term) !== -1;
+  });
+}
+
+function updateFacultyCount() {
+  var countEl = document.getElementById('facultySelectedCount');
+  if (countEl) {
+    var n = selectedFacultyIds.size;
+    countEl.textContent = n + ' selected' + (draftFacultyList.length ? ' of ' + draftFacultyList.length : '');
+  }
+
+  var btn = document.getElementById('selectAllBtn');
+  if (btn) {
+    btn.textContent = selectedFacultyIds.size === draftFacultyList.length ? 'Deselect All' : 'Select All';
+  }
+}
+
+// Faculty search filter
+function applyFacultySearch() {
+  var term = ((document.getElementById('facultySearchInput') || {}).value || '').toLowerCase();
+  var listEl = document.getElementById('facultyPickerList');
+  if (!listEl) return;
+
+  for (var i = 0; i < listEl.children.length; i++) {
+    var item = listEl.children[i];
+    var nameEl = item.querySelector('.faculty-pick-name');
+    var name = nameEl ? nameEl.textContent.toLowerCase() : '';
+    if (!term || name.indexOf(term) !== -1) {
+      item.classList.remove('hidden');
+    } else {
+      item.classList.add('hidden');
+    }
+  }
+}
+
+// ==================== DRAG AND DROP ====================
+
+var dragSrcEl = null;
+
+function onFacultyDragStart(e) {
+  dragSrcEl = this;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', this.getAttribute('data-faculty-id'));
+}
+
+function onFacultyDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  this.classList.add('drag-over');
+}
+
+function onFacultyDragLeave(e) {
+  this.classList.remove('drag-over');
+}
+
+function onFacultyDrop(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over');
+
+  if (dragSrcEl !== this) {
+    var list = this.parentNode;
+    // Insert dragged item before or after this item
+    var allItems = Array.from(list.children);
+    var dragIdx = allItems.indexOf(dragSrcEl);
+    var dropIdx = allItems.indexOf(this);
+
+    if (dragIdx < dropIdx) {
+      list.insertBefore(dragSrcEl, this.nextSibling);
+    } else {
+      list.insertBefore(dragSrcEl, this);
+    }
+
+    // Recalculate priority numbers
+    refreshPriorityNumbers();
+  }
+}
+
+function onFacultyDragEnd(e) {
+  this.classList.remove('dragging');
+  // Clean up all drag-over classes
+  var items = document.querySelectorAll('.faculty-pick-item');
+  items.forEach(function(item) { item.classList.remove('drag-over'); });
+}
+
+function refreshPriorityNumbers() {
+  var listEl = document.getElementById('facultyPickerList');
+  if (!listEl) return;
+
+  var num = 0;
+  for (var i = 0; i < listEl.children.length; i++) {
+    var item = listEl.children[i];
+    var id = item.getAttribute('data-faculty-id');
+    var prioEl = item.querySelector('.faculty-pick-priority');
+    if (selectedFacultyIds.has(id)) {
+      num++;
+      prioEl.textContent = num;
+    } else {
+      prioEl.textContent = '-';
+    }
+  }
+}
+
+// Get selected faculty IDs in current DOM order
+function getSelectedFacultyInOrder() {
+  var listEl = document.getElementById('facultyPickerList');
+  var ordered = [];
+  if (!listEl) return ordered;
+
+  for (var i = 0; i < listEl.children.length; i++) {
+    var id = listEl.children[i].getAttribute('data-faculty-id');
+    if (selectedFacultyIds.has(id)) {
+      ordered.push(id);
+    }
+  }
+  return ordered;
+}
+
+// ==================== MODAL CONTROLS ====================
+
 // Show create draft modal
 function showCreateDraftModal() {
   document.getElementById('createDraftModal').classList.add('show');
+  selectedFacultyIds.clear();
+  loadFacultyForPicker();
+
+  // Wire up search input
+  var searchInput = document.getElementById('facultySearchInput');
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.oninput = applyFacultySearch;
+  }
 }
 
 // Close create draft modal
@@ -168,10 +427,18 @@ function closeCreateDraftModal() {
 async function submitCreateDraft(event) {
   event.preventDefault();
 
-  const payload = {
+  var selectedList = getSelectedFacultyInOrder();
+
+  if (selectedList.length === 0) {
+    alert('Please select at least one faculty member for the draft.');
+    return;
+  }
+
+  var payload = {
     year: parseInt(document.getElementById('draftYear').value),
     window_size: parseInt(document.getElementById('windowSize').value),
-    hours_per_slot: parseInt(document.getElementById('hoursPerSlot').value)
+    hours_per_slot: parseInt(document.getElementById('hoursPerSlot').value),
+    faculty_priority: selectedList
   };
 
   if (!payload.year) {
@@ -180,7 +447,7 @@ async function submitCreateDraft(event) {
   }
 
   try {
-    const response = await fetch('/api/draft/admin/rounds', {
+    var response = await fetch('/api/draft/admin/rounds', {
       credentials: 'same-origin',
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -188,11 +455,11 @@ async function submitCreateDraft(event) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      var error = await response.json();
       throw new Error(error.detail || 'Failed to create draft');
     }
 
-    showAlert('draftAlert', 'Draft created successfully! Click "Start Draft" to begin.', 'success');
+    showAlert('draftAlert', 'Draft created with ' + selectedList.length + ' faculty! Click "Start Draft" to begin.', 'success');
     closeCreateDraftModal();
     await loadActiveDraft();
 
@@ -348,8 +615,8 @@ async function checkExpiredSlots() {
 
     const result = await response.json();
 
-    if (result.advanced_slots > 0) {
-      showAlert('draftAlert', 'Advanced ' + result.advanced_slots + ' expired slot(s)', 'success');
+    if (result.expired_count > 0 || result.activated_count > 0) {
+      showAlert('draftAlert', 'Expired: ' + (result.expired_count || 0) + ', Activated: ' + (result.activated_count || 0), 'success');
       await loadActiveDraft();
     } else {
       showAlert('draftAlert', 'No expired slots to advance', 'info');
@@ -409,6 +676,8 @@ window.pauseDraft = pauseDraft;
 window.resumeDraft = resumeDraft;
 window.completeDraft = completeDraft;
 window.checkExpiredSlots = checkExpiredSlots;
+window.toggleFacultySelection = toggleFacultySelection;
+window.toggleSelectAllFaculty = toggleSelectAllFaculty;
 
 // ==================== MODAL CLOSE FUNCTIONALITY ====================
 

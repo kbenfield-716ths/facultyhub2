@@ -32,6 +32,7 @@ from .routes.messages import router as messages_router
 from backend.email_service import send_irpa_confirmation
 from .routes import knowledge_base
 from .routes import draft
+from .routes import draft_waves
 from .models import Base, engine
 from .config import settings
 from .security import SecurityMiddleware, standard_limiter, log_audit, generate_secure_password
@@ -39,11 +40,40 @@ from .auth import optional_require_admin, require_admin
 from .routes.admin_auth import router as admin_auth_router
 from backend.routes.admin_data_management import router as data_management_router
 from backend.routes.service_week_overrides import router as service_week_overrides_router
+from backend.routes.admin_database import router as admin_database_router
 
 logger = logging.getLogger(__name__)
 
 # Create tables
 Base.metadata.create_all(bind=engine)
+
+# Run pending migrations (adds columns that create_all won't add to existing tables)
+try:
+    from sqlalchemy import text
+    with engine.connect() as _conn:
+        # Migration: draft_exempt column on faculty
+        _cols = [row[1] for row in _conn.execute(text("PRAGMA table_info(faculty)")).fetchall()]
+        if "draft_exempt" not in _cols:
+            _conn.execute(text("ALTER TABLE faculty ADD COLUMN draft_exempt BOOLEAN NOT NULL DEFAULT 0"))
+            _conn.commit()
+            logger.info("Migration: added draft_exempt column to faculty table")
+
+        # Migration: service_preference column on unavailability_requests
+        _ur_cols = [row[1] for row in _conn.execute(text("PRAGMA table_info(unavailability_requests)")).fetchall()]
+        if "service_preference" not in _ur_cols:
+            _conn.execute(text("ALTER TABLE unavailability_requests ADD COLUMN service_preference TEXT"))
+            _conn.commit()
+            logger.info("Migration: added service_preference column to unavailability_requests table")
+
+        # Migration: wave draft tables (create_all handles new tables but not columns on existing ones)
+        _wave_cols = [row[1] for row in _conn.execute(text("PRAGMA table_info(wave_faculty_assignments)")).fetchall()]
+        if "reminder_sent_at" not in _wave_cols:
+            _conn.execute(text("ALTER TABLE wave_faculty_assignments ADD COLUMN reminder_sent_at DATETIME"))
+            _conn.commit()
+            logger.info("Migration: added reminder_sent_at column to wave_faculty_assignments table")
+
+except Exception as _e:
+    logger.warning(f"Migration check skipped or failed: {_e}")
 
 # ---------- App Initialization -----------
 app = FastAPI()
@@ -77,8 +107,10 @@ app.include_router(schedule_router)
 app.include_router(messages_router)
 app.include_router(knowledge_base.router)
 app.include_router(draft.router)
+app.include_router(draft_waves.router)
 app.include_router(data_management_router)
 app.include_router(service_week_overrides_router)
+app.include_router(admin_database_router)
 
 # ---------- Static File Setup -----------
 STATIC_DIR = Path(__file__).resolve().parent.parent

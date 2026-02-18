@@ -56,7 +56,7 @@ class DraftSlotOut(BaseModel):
 
 class CreateDraftRequest(BaseModel):
     year: int
-    faculty_priority: List[str]  # List of faculty IDs in priority order
+    faculty_priority: Optional[List[str]] = None  # List of faculty IDs in priority order (if omitted, all eligible faculty included)
     window_size: int = 5
     hours_per_slot: int = 72
 
@@ -153,7 +153,18 @@ def create_draft_round(
     if existing:
         raise HTTPException(400, f"Draft round already exists for {request.year}")
     
-    # Validate faculty IDs and exclude draft_exempt faculty
+    # If no faculty list provided, include all active non-exempt faculty
+    if not request.faculty_priority:
+        all_eligible = db.query(Faculty).filter(
+            Faculty.active == True,
+            Faculty.draft_exempt == False
+        ).order_by(Faculty.name).all()
+
+        if not all_eligible:
+            raise HTTPException(400, "No eligible faculty found (all are inactive or draft exempt)")
+
+        request.faculty_priority = [f.id for f in all_eligible]
+
     faculty_ids = set(request.faculty_priority)
 
     # Check for draft_exempt faculty in the list

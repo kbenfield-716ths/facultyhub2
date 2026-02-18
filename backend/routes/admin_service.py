@@ -15,7 +15,7 @@ import uuid
 import csv
 import io
 
-from backend.models import get_db, Faculty, ServiceWeek, UnavailabilityRequest, ServiceWeekAssignment
+from backend.models import get_db, Faculty, ServiceWeek, UnavailabilityRequest, ServiceWeekAssignment, DraftWeekRequest, DraftWaveConfig
 from backend.auth import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/admin", tags=["admin-service"])
@@ -109,6 +109,14 @@ async def get_service_weeks_heatmap(
         return []  # No weeks configured for this year
     
     result = []
+
+    # Find draft config for this year (active or closed) to include wave draft submissions
+    draft_config = db.query(DraftWaveConfig).filter(
+        DraftWaveConfig.year == year,
+        DraftWaveConfig.status.in_(['active', 'closed'])
+    ).first()
+    draft_config_id = draft_config.id if draft_config else None
+
     for week in weeks:
         # Check if this is historic data (year < current year)
         # If historic_unavailable_count is set, use it; otherwise count actual requests
@@ -116,16 +124,33 @@ async def get_service_weeks_heatmap(
             # Use historic seeded data
             unavailable_count = week.historic_unavailable_count
         else:
-            # Count actual requests from database
+            # Count direct UnavailabilityRequests
             unavailable_count = db.query(func.count(UnavailabilityRequest.id)).filter(
                 UnavailabilityRequest.week_id == week.id,
                 UnavailabilityRequest.status == "unavailable"
             ).scalar() or 0
-        
+
         volunteer_count = db.query(func.count(UnavailabilityRequest.id)).filter(
             UnavailabilityRequest.week_id == week.id,
             UnavailabilityRequest.status == "available"
         ).scalar() or 0
+
+        # Also count wave draft submissions (DraftWeekRequest) if a draft config exists
+        if draft_config_id and week.historic_unavailable_count == 0:
+            draft_unavail = db.query(func.count(DraftWeekRequest.id)).filter(
+                DraftWeekRequest.week_id == week.id,
+                DraftWeekRequest.config_id == draft_config_id,
+                DraftWeekRequest.request_type == 'unavailable'
+            ).scalar() or 0
+
+            draft_volunteer = db.query(func.count(DraftWeekRequest.id)).filter(
+                DraftWeekRequest.week_id == week.id,
+                DraftWeekRequest.config_id == draft_config_id,
+                DraftWeekRequest.request_type == 'volunteer'
+            ).scalar() or 0
+
+            unavailable_count += draft_unavail
+            volunteer_count += draft_volunteer
         
         assigned_count = db.query(func.count(ServiceWeekAssignment.id)).filter(
             ServiceWeekAssignment.week_id == week.id

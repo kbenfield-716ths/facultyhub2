@@ -6,7 +6,7 @@
 let allWeeks = [];
 let currentEditingWeekId = null;
 let currentScheduleTab = 'overview';
-let currentYear = 2026;
+let scheduleCurrentYear = 2026;
 
 // Load heatmap on init
 document.addEventListener('DOMContentLoaded', function() {
@@ -33,7 +33,7 @@ function showScheduleTab(tabId) {
 
   // Load data for tab
   if (tabId === 'overview') {
-    loadHeatmap(currentYear);
+    loadHeatmap(scheduleCurrentYear);
   } else if (tabId === 'weeks') {
     loadWeeks();
   }
@@ -41,7 +41,7 @@ function showScheduleTab(tabId) {
 
 // Load heatmap
 async function loadHeatmap(year) {
-  currentYear = year;
+  scheduleCurrentYear = year;
 
   // Update button states
   document.getElementById('year2025Btn').classList.toggle('active', year === 2025);

@@ -131,12 +131,11 @@
   <!-- Admin Header -->
   <header class="admin-header">
     <div>
-      <h1>🔧 FacultyHub Admin Panel <span style="font-size: 14px; background: #10b981; color: white; padding: 4px 12px; border-radius: 6px; margin-left: 12px;">NEW</span></h1>
-      <p style="margin-top: 4px; font-size: 13px; color: #6b7280;">Modular architecture with 8 management modules</p>
+      <h1>🔧 FacultyHub Admin Panel</h1>
+      <p style="margin-top: 4px; font-size: 13px; color: #6b7280;">Modular architecture with 11 management modules</p>
     </div>
     <div style="display: flex; gap: 16px; align-items: center;">
       <span class="user-info" id="userInfo">Loading...</span>
-      <a href="/admin.html" class="back-button" style="background: #6b7280;">Legacy Admin</a>
       <a href="/" class="back-button">← Back to App</a>
     </div>
   </header>
@@ -153,7 +152,10 @@
       📅 Schedule
     </button>
     <button class="nav-tab" onclick="showModule('draft-system')" data-module="draft-system">
-      📋 Draft
+      📋 Draft (Old)
+    </button>
+    <button class="nav-tab" onclick="showModule('wave-draft')" data-module="wave-draft">
+      🌊 Wave Draft
     </button>
     <button class="nav-tab" onclick="showModule('moonlighting')" data-module="moonlighting">
       🌙 Moonlighting
@@ -164,8 +166,14 @@
     <button class="nav-tab" onclick="showModule('service-overrides')" data-module="service-overrides">
       🛠️ Overrides
     </button>
+    <button class="nav-tab" onclick="showModule('knowledge-base')" data-module="knowledge-base">
+      📚 Knowledge Base
+    </button>
     <button class="nav-tab" onclick="showModule('testing')" data-module="testing">
       🧪 Testing
+    </button>
+    <button class="nav-tab" onclick="showModule('database-viewer')" data-module="database-viewer">
+      🗄️ Database
     </button>
   </nav>
 
@@ -183,6 +191,9 @@
     <!-- Draft System Module -->
     <div id="module-draft-system" class="module-view"></div>
 
+    <!-- Wave Draft Module -->
+    <div id="module-wave-draft" class="module-view"></div>
+
     <!-- Moonlighting Module -->
     <div id="module-moonlighting" class="module-view"></div>
 
@@ -192,8 +203,14 @@
     <!-- Service Week Overrides Module -->
     <div id="module-service-overrides" class="module-view"></div>
 
+    <!-- Knowledge Base Module -->
+    <div id="module-knowledge-base" class="module-view"></div>
+
     <!-- Testing Tools Module -->
     <div id="module-testing" class="module-view"></div>
+
+    <!-- Database Viewer Module -->
+    <div id="module-database-viewer" class="module-view"></div>
   </main>
 
   <!-- Admin Footer -->
@@ -230,6 +247,11 @@
         htmlPath: '/admin/modules/draft-system/draft-system.html',
         jsPath: '/admin/modules/draft-system/draft-system.js'
       },
+      'wave-draft': {
+        name: 'Wave Draft System',
+        htmlPath: '/admin/modules/wave-draft/wave-draft.html',
+        jsPath: '/admin/modules/wave-draft/wave-draft.js'
+      },
       'moonlighting': {
         name: 'Moonlighting Management',
         htmlPath: '/admin/modules/moonlighting/moonlighting.html',
@@ -245,10 +267,20 @@
         htmlPath: '/admin/modules/service-weeks/overrides/overrides.html',
         jsPath: '/admin/modules/service-weeks/overrides/overrides.js'
       },
+      'knowledge-base': {
+        name: 'Knowledge Base',
+        htmlPath: '/admin/modules/knowledge-base/knowledge-base.html',
+        jsPath: '/admin/modules/knowledge-base/knowledge-base.js'
+      },
       'testing': {
         name: 'Testing Tools',
         htmlPath: '/admin/modules/testing/testing.html',
         jsPath: '/admin/modules/testing/testing.js'
+      },
+      'database-viewer': {
+        name: 'Database Viewer',
+        htmlPath: '/admin/modules/database-viewer/database-viewer.html',
+        jsPath: '/admin/modules/database-viewer/database-viewer.js'
       }
     };
 
@@ -370,6 +402,23 @@
           if (typeof loadBlocks === 'function') {
             console.log('Calling loadBlocks()');
             loadBlocks();
+          }
+        } else if (moduleId === 'knowledge-base') {
+          console.log('Knowledge Base - loadKBArticles exists?', typeof loadKBArticles);
+          if (typeof loadKBArticles === 'function') {
+            console.log('Calling loadKBArticles()');
+            loadKBArticles();
+          }
+        } else if (moduleId === 'wave-draft') {
+          console.log('Wave Draft - loadConfigs exists?', typeof loadConfigs);
+          console.log('Wave Draft - loadFacultyForWaves exists?', typeof loadFacultyForWaves);
+          if (typeof loadConfigs === 'function') {
+            console.log('Calling loadConfigs()');
+            loadConfigs();
+          }
+          if (typeof loadFacultyForWaves === 'function') {
+            console.log('Calling loadFacultyForWaves()');
+            loadFacultyForWaves();
           }
         } else if (moduleId === 'testing') {
           // Testing module is tab-based, no auto-load needed

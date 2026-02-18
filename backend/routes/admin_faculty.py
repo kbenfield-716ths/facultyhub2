@@ -268,13 +268,26 @@ def create_faculty(
     Create a new faculty member.
     Requires admin authentication.
     """
-    # Check if faculty ID already exists
-    existing = db.query(Faculty).filter_by(id=faculty_data.id).first()
-    if existing:
+    # Check if faculty ID already exists (case-insensitive)
+    existing_id = db.query(Faculty).filter(
+        Faculty.id.ilike(faculty_data.id)
+    ).first()
+    if existing_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Faculty with ID {faculty_data.id} already exists"
+            detail=f"Faculty with ID '{faculty_data.id}' already exists. Please use a different ID."
         )
+
+    # Check if email already exists (if email is provided)
+    if faculty_data.email:
+        existing_email = db.query(Faculty).filter(
+            Faculty.email.ilike(faculty_data.email)
+        ).first()
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"A faculty member with email '{faculty_data.email}' already exists (ID: {existing_email.id}). Please use a different email or update the existing faculty member."
+            )
 
     # Create faculty with default password "PCCM2025!"
     default_password = "PCCM2025!"
@@ -296,7 +309,7 @@ def create_faculty(
         app_icu_weeks=faculty_data.app_icu_weeks,
         procedure_weeks=faculty_data.procedure_weeks,
         consult_weeks=faculty_data.consult_weeks,
-        hashed_password=hashed_password,
+        password_hash=hashed_password,
         password_changed=False,
         registered=False
     )
@@ -346,8 +359,20 @@ def update_faculty(
             detail="Faculty not found"
         )
 
-    # Update provided fields
+    # If updating email, check for duplicates
     update_data = faculty_data.dict(exclude_unset=True)
+    if 'email' in update_data and update_data['email']:
+        existing_email = db.query(Faculty).filter(
+            Faculty.email.ilike(update_data['email']),
+            Faculty.id != faculty_id  # Exclude current faculty member
+        ).first()
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Email '{update_data['email']}' is already in use by another faculty member (ID: {existing_email.id}). Please use a different email."
+            )
+
+    # Update provided fields
     for field, value in update_data.items():
         setattr(faculty, field, value)
 
@@ -442,7 +467,7 @@ def reset_faculty_password(
 
     # Reset to default password
     default_password = "PCCM2025!"
-    faculty.hashed_password = hash_password(default_password)
+    faculty.password_hash = hash_password(default_password)
     faculty.password_changed = False
 
     db.commit()
@@ -634,16 +659,15 @@ async def impersonate_faculty(
         )
 
     # Create session as target faculty
-    session_token = create_session(target_faculty.id, db)
+    session_token = create_session(target_faculty.id, target_faculty.name, target_faculty.is_admin, impersonated_by=admin_user.id)
 
-    # Set session cookie
+    # Set session cookie (match auth.py login format)
     response.set_cookie(
-        key="session",
+        key="session_token",
         value=session_token,
         httponly=True,
-        secure=True,
         samesite="lax",
-        max_age=86400 * 7  # 7 days
+        max_age=86400  # 24 hours
     )
 
     return {
@@ -674,16 +698,15 @@ async def return_to_admin(
         )
 
     # Create session as admin
-    session_token = create_session(admin_faculty.id, db)
+    session_token = create_session(admin_faculty.id, admin_faculty.name, admin_faculty.is_admin)
 
-    # Set session cookie
+    # Set session cookie (match auth.py login format)
     response.set_cookie(
-        key="session",
+        key="session_token",
         value=session_token,
         httponly=True,
-        secure=True,
         samesite="lax",
-        max_age=86400 * 7
+        max_age=86400  # 24 hours
     )
 
     return {

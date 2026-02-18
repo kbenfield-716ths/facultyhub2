@@ -252,6 +252,19 @@ function showOverrideAlert(message, type) {
   }
 }
 
+// ==================== GLOBAL FUNCTION EXPORTS ====================
+// Make functions globally accessible for inline onclick handlers
+
+window.showOverrideTab = showOverrideTab;
+window.showCreateBlockModal = showCreateBlockModal;
+window.showCreateAssignmentModal = showCreateAssignmentModal;
+window.closeCreateBlockModal = closeCreateBlockModal;
+window.closeCreateAssignmentModal = closeCreateAssignmentModal;
+window.submitBlock = submitBlock;
+window.submitAssignment = submitAssignment;
+window.deleteBlock = deleteBlock;
+window.deleteAssignment = deleteAssignment;
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
   loadBlocks();

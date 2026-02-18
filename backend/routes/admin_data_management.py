@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from pydantic import BaseModel
 
-from backend.models import get_db, Faculty, UnavailabilityRequest, ServiceWeek, Signup, Shift, Month
+from backend.models import get_db, Faculty, UnavailabilityRequest, ServiceWeek, Signup, Shift, Month, DraftWeekRequest, DraftWaveConfig
 from backend.auth import require_admin
 
 router = APIRouter(prefix="/api/admin/data-management", tags=["data-management"])
@@ -23,7 +23,9 @@ async def get_unavailability_requests(
     db: Session = Depends(get_db),
     current_user: Faculty = Depends(require_admin)
 ):
-    """Get unavailability requests with filters"""
+    """Get unavailability requests with filters — includes both direct submissions and wave draft submissions"""
+
+    # ── 1. Direct UnavailabilityRequests ──────────────────────────────────────
     query = db.query(
         UnavailabilityRequest.id,
         UnavailabilityRequest.faculty_id,
@@ -37,7 +39,6 @@ async def get_unavailability_requests(
         UnavailabilityRequest.created_at
     ).join(Faculty).join(ServiceWeek)
 
-    # Apply filters
     if year != "all":
         query = query.filter(ServiceWeek.year == int(year))
     if faculty != "all":
@@ -45,8 +46,8 @@ async def get_unavailability_requests(
     if status != "all":
         query = query.filter(UnavailabilityRequest.status == status)
 
-    results = query.all()
-    return [{
+    direct_results = query.all()
+    combined = [{
         'id': r.id,
         'faculty_id': r.faculty_id,
         'faculty_name': r.faculty_name,
@@ -56,8 +57,61 @@ async def get_unavailability_requests(
         'status': r.status,
         'points_spent': r.points_spent,
         'points_earned': r.points_earned,
-        'created_at': r.created_at.isoformat()
-    } for r in results]
+        'created_at': r.created_at.isoformat(),
+        'source': 'Direct'
+    } for r in direct_results]
+
+    # ── 2. Wave Draft Requests (DraftWeekRequest) ─────────────────────────────
+    # Find relevant draft configs based on year filter
+    draft_query = db.query(DraftWaveConfig).filter(
+        DraftWaveConfig.status.in_(['active', 'closed'])
+    )
+    if year != "all":
+        draft_query = draft_query.filter(DraftWaveConfig.year == int(year))
+    draft_configs = draft_query.all()
+
+    for config in draft_configs:
+        dq = db.query(
+            DraftWeekRequest.id,
+            DraftWeekRequest.faculty_id,
+            Faculty.name.label('faculty_name'),
+            DraftWeekRequest.week_id,
+            ServiceWeek.label.label('week_label'),
+            ServiceWeek.week_number,
+            DraftWeekRequest.request_type,
+            DraftWeekRequest.submitted_at
+        ).join(Faculty, DraftWeekRequest.faculty_id == Faculty.id
+        ).join(ServiceWeek, DraftWeekRequest.week_id == ServiceWeek.id
+        ).filter(DraftWeekRequest.config_id == config.id)
+
+        if faculty != "all":
+            dq = dq.filter(Faculty.name == faculty)
+
+        # Map request_type to status for consistent display
+        # 'unavailable' → 'unavailable', 'volunteer' → 'available'
+        if status != "all":
+            mapped_type = 'volunteer' if status == 'available' else status
+            dq = dq.filter(DraftWeekRequest.request_type == mapped_type)
+
+        for r in dq.all():
+            mapped_status = 'available' if r.request_type == 'volunteer' else r.request_type
+            combined.append({
+                'id': r.id,
+                'faculty_id': r.faculty_id,
+                'faculty_name': r.faculty_name,
+                'week_id': r.week_id,
+                'week_label': r.week_label,
+                'week_number': r.week_number,
+                'status': mapped_status,
+                'points_spent': 0,
+                'points_earned': 0,
+                'created_at': r.submitted_at.isoformat(),
+                'source': 'Wave Draft'
+            })
+
+    # Sort combined by week_number, then faculty_name for a clean display
+    combined.sort(key=lambda x: (x['week_number'], x['faculty_name']))
+    return combined
 
 @router.post("/delete-unavailability")
 async def delete_unavailability(

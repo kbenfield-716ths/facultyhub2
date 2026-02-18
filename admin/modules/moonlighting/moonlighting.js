@@ -133,7 +133,7 @@ function renderSignups(signups) {
 
     row.innerHTML = '<td>' + signup.provider_id + '</td>' +
                     '<td>' + signup.provider_name + '</td>' +
-                    '<td>' + formatMonthYear(signup.month) + '</td>' +
+                    '<td>' + formatMonthYearString(signup.month) + '</td>' +
                     '<td>' + formatDate(signup.date) + '</td>' +
                     '<td>' + dayOfWeek + '</td>' +
                     '<td style="text-align: center;">' + (signup.desired_nights || 0) + '</td>' +
@@ -156,7 +156,7 @@ function updateSignupsStats(signups) {
 }
 
 // Format month/year from YYYY-MM string
-function formatMonthYear(monthStr) {
+function formatMonthYearString(monthStr) {
   if (!monthStr) return '';
   const parts = monthStr.split('-');
   if (parts.length !== 2) return monthStr;
@@ -253,7 +253,7 @@ function renderAssignments(assignments) {
                     '<td>' + assignment.shift_name + '</td>' +
                     '<td>' + formatDate(assignment.date) + '</td>' +
                     '<td>' + dayOfWeek + '</td>' +
-                    '<td>' + formatMonthYear(assignment.month) + '</td>';
+                    '<td>' + formatMonthYearString(assignment.month) + '</td>';
 
     tbody.appendChild(row);
   });
@@ -308,7 +308,7 @@ function exportAssignmentsCSV() {
 async function generateMoonlightingSchedule() {
   const month = document.getElementById('generateMonth').value;
 
-  if (!confirm('Run optimizer for ' + formatMonthYear(month) + '?\n\nThis will generate moonlighting assignments based on provider signups.')) {
+  if (!confirm('Run optimizer for ' + formatMonthYearString(month) + '?\n\nThis will generate moonlighting assignments based on provider signups.')) {
     return;
   }
 
@@ -329,7 +329,7 @@ async function generateMoonlightingSchedule() {
 
     showAlert('moonlightingAlert',
       'Successfully generated ' + result.assignments_created + ' assignments for ' +
-      formatMonthYear(month) + '!', 'success');
+      formatMonthYearString(month) + '!', 'success');
 
     // Switch to assignments tab and reload
     document.getElementById('assignmentsMonth').value = month;
@@ -340,3 +340,13 @@ async function generateMoonlightingSchedule() {
     showAlert('moonlightingAlert', 'Failed to generate schedule: ' + error.message, 'error');
   }
 }
+
+// ==================== GLOBAL FUNCTION EXPORTS ====================
+// Make functions globally accessible for inline onclick handlers
+
+window.showMoonlightingTab = showMoonlightingTab;
+window.loadSignups = loadSignups;
+window.exportSignupsCSV = exportSignupsCSV;
+window.generateMoonlightingSchedule = generateMoonlightingSchedule;
+window.loadAssignments = loadAssignments;
+window.exportAssignmentsCSV = exportAssignmentsCSV;

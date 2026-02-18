@@ -1,0 +1,327 @@
+<div class="module-container">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">🌊 Wave-Based Draft System</h2>
+        <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
+          Staggered-start availability requests with first-come-first-served capacity limits
+        </p>
+      </div>
+      <button class="btn-primary" onclick="showCreateConfigModal()">➕ Create New Draft Year</button>
+    </div>
+
+    <!-- Alert -->
+    <div id="waveDraftAlert" class="alert"></div>
+
+    <!-- Active Config Section -->
+    <div id="activeConfigSection" style="display: none;">
+      <div id="configHeaderCard" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
+        <h3 style="margin-bottom: 16px;" id="configHeaderTitle">🎯 Wave Draft Configuration</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+          <div>
+            <div style="font-size: 12px; opacity: 0.9;">Academic Year</div>
+            <div style="font-size: 28px; font-weight: 700;" id="activeConfigYear">-</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; opacity: 0.9;">Close Date</div>
+            <div style="font-size: 18px; font-weight: 600;" id="activeConfigCloseDate">-</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; opacity: 0.9;">Status</div>
+            <div style="font-size: 24px; font-weight: 700; text-transform: uppercase;" id="activeConfigStatus">-</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; opacity: 0.9;">Total Waves</div>
+            <div style="font-size: 28px; font-weight: 700;" id="activeConfigWaveCount">0</div>
+          </div>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn-success" onclick="activateConfig()" id="activateBtn" style="display: none;">🚀 Activate Draft</button>
+          <button class="btn-primary" onclick="notifyDueWaves()" id="notifyBtn" style="display: none;">📧 Send Due Notifications</button>
+          <button class="btn-warning" onclick="resetToPending()" id="resetToPendingBtn" style="display: none;">⚙️ Reset to Pending</button>
+          <button class="btn-secondary" onclick="viewWeekCapacity()">📊 View Week Capacity</button>
+        </div>
+      </div>
+
+      <!-- Waves List -->
+      <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px; display: flex; justify-content: space-between; align-items: center;">
+        <span>Configured Waves</span>
+        <button class="btn-sm btn-primary" onclick="showAddWaveModal()" id="addWaveBtn">➕ Add Wave</button>
+      </h3>
+
+      <div id="wavesList">
+        <p style="color: #6b7280; text-align: center; padding: 40px;">Loading waves...</p>
+      </div>
+    </div>
+
+    <!-- No Active Config -->
+    <div id="noActiveConfig" style="text-align: center; padding: 60px 20px; color: #6b7280;">
+      <div style="font-size: 64px; margin-bottom: 16px;">🌊</div>
+      <h3 style="color: #1f2937; margin-bottom: 8px;">No Active Wave Draft</h3>
+      <p>Create a new draft configuration to begin managing wave-based availability requests.</p>
+    </div>
+
+    <!-- All Configs List -->
+    <div style="margin-top: 40px;">
+      <h3 style="margin-bottom: 20px; color: #1f2937; font-size: 18px;">All Draft Configurations</h3>
+      <div id="allConfigsList">
+        <p style="color: #6b7280; text-align: center; padding: 20px;">Loading...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Config Modal -->
+<div id="createConfigModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Create Wave Draft Configuration</h3>
+      <span class="close-btn" onclick="closeCreateConfigModal()">&times;</span>
+    </div>
+    <form id="createConfigForm" onsubmit="submitCreateConfig(event)">
+      <div class="form-group">
+        <label>Academic Year *</label>
+        <input type="number" id="configYear" required min="2024" max="2030" placeholder="2025">
+        <small>The academic year for this draft (e.g., 2025 for 2025-2026)</small>
+      </div>
+      <div class="form-group">
+        <label>Submission Close Date & Time *</label>
+        <input type="datetime-local" id="configCloseDate" required>
+        <small>When all submissions close - everyone must submit before this date</small>
+      </div>
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn-primary">Create Configuration</button>
+        <button type="button" class="btn-secondary" onclick="closeCreateConfigModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Wave Modal -->
+<div id="addWaveModal" class="modal">
+  <div class="modal-content" style="max-width: 700px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Add Wave</h3>
+      <span class="close-btn" onclick="closeAddWaveModal()">&times;</span>
+    </div>
+    <form id="addWaveForm" onsubmit="submitAddWave(event)">
+      <div class="form-group">
+        <label>Wave Name *</label>
+        <input type="text" id="waveName" required placeholder="e.g., Test Wave, Wednesday Wave">
+        <small>Descriptive name for this wave (not shown to faculty)</small>
+      </div>
+      <div class="form-group">
+        <label>Wave Open Date & Time *</label>
+        <input type="datetime-local" id="waveOpenDate" required>
+        <small>When faculty in this wave can start submitting requests</small>
+      </div>
+      <div class="form-group">
+        <label>Faculty Members *</label>
+        <div id="facultyCheckboxes" style="max-height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; background: #f9fafb;">
+          <p style="color: #6b7280;">Loading faculty...</p>
+        </div>
+        <small>Select faculty to include in this wave</small>
+      </div>
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn-primary">Add Wave</button>
+        <button type="button" class="btn-secondary" onclick="closeAddWaveModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Week Capacity Modal -->
+<div id="weekCapacityModal" class="modal">
+  <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-header">
+      <h3 class="modal-title">Week Capacity Status</h3>
+      <span class="close-btn" onclick="closeWeekCapacityModal()">&times;</span>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <p style="color: #6b7280; font-size: 14px;">Real-time capacity for all weeks in the draft</p>
+    </div>
+    <div id="weekCapacityContent">
+      <p style="color: #6b7280; text-align: center; padding: 40px;">Loading...</p>
+    </div>
+    <div style="margin-top: 20px;">
+      <button class="btn-secondary" onclick="closeWeekCapacityModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.close-btn {
+  cursor: pointer;
+  font-size: 28px;
+  color: #6b7280;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #1f2937;
+}
+
+.wave-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+}
+
+.wave-card:hover {
+  border-color: #06b6d4;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1);
+}
+
+.wave-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.wave-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.wave-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.wave-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.wave-badge.open {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.wave-badge.future {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.wave-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.wave-info-item {
+  font-size: 13px;
+}
+
+.wave-info-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.wave-info-value {
+  color: #1f2937;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.faculty-checkbox-item {
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  transition: background 0.2s;
+}
+
+.faculty-checkbox-item:hover {
+  background: white;
+}
+
+.faculty-checkbox-item input {
+  margin-right: 8px;
+}
+
+.config-list-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.config-list-item.active {
+  background: #ecfeff;
+  border-color: #06b6d4;
+}
+
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-warning:hover {
+  background: #d97706;
+}
+</style>

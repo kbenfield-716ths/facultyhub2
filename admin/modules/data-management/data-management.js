@@ -72,7 +72,7 @@ function renderUnavailabilityTable() {
   if (unavailabilityData.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align: center; padding: 40px; color: #9ca3af;">
+        <td colspan="9" style="text-align: center; padding: 40px; color: #9ca3af;">
           No requests found. Try adjusting the filters.
         </td>
       </tr>
@@ -82,16 +82,21 @@ function renderUnavailabilityTable() {
 
   tbody.innerHTML = unavailabilityData.map(req => {
     const isSelected = selectedUnavail.has(req.id);
+    const isWaveDraft = req.source === 'Wave Draft';
     const statusBadge = req.status === 'unavailable'
       ? '<span class="badge badge-inactive">Unavailable</span>'
       : '<span class="badge badge-active">Available</span>';
+    const sourceBadge = isWaveDraft
+      ? '<span style="font-size:11px; background:#ede9fe; color:#5b21b6; padding:2px 7px; border-radius:10px; font-weight:600;">Wave Draft</span>'
+      : '<span style="font-size:11px; background:#e0f2fe; color:#0369a1; padding:2px 7px; border-radius:10px; font-weight:600;">Direct</span>';
 
     return `
       <tr class="${isSelected ? 'selected-row' : ''}">
         <td>
           <input type="checkbox"
             ${isSelected ? 'checked' : ''}
-            onchange="toggleUnavailSelection('${req.id}')">
+            ${isWaveDraft ? 'disabled title="Wave draft submissions cannot be deleted here"' : ''}
+            ${isWaveDraft ? '' : `onchange="toggleUnavailSelection('${req.id}')"`}>
         </td>
         <td>${req.faculty_name}</td>
         <td>${req.week_label}</td>
@@ -100,6 +105,7 @@ function renderUnavailabilityTable() {
         <td>${req.points_spent || 0}</td>
         <td>${req.points_earned || 0}</td>
         <td>${new Date(req.created_at).toLocaleDateString()}</td>
+        <td>${sourceBadge}</td>
       </tr>
     `;
   }).join('');
@@ -203,7 +209,7 @@ function exportUnavailData() {
   const selectedData = unavailabilityData.filter(req => selectedUnavail.has(req.id));
   const csv = convertToCSV(selectedData, [
     'id', 'faculty_id', 'faculty_name', 'week_id', 'week_label',
-    'week_number', 'status', 'points_spent', 'points_earned', 'created_at'
+    'week_number', 'status', 'points_spent', 'points_earned', 'created_at', 'source'
   ]);
 
   downloadCSV(csv, `unavailability-requests-${new Date().toISOString().split('T')[0]}.csv`);
@@ -455,6 +461,25 @@ function showDataAlert(message, type) {
     setTimeout(() => showDataAlert('', 'clear'), 3000);
   }
 }
+
+// ==================== GLOBAL FUNCTION EXPORTS ====================
+// Make functions globally accessible for inline onclick handlers
+
+window.showDataTab = showDataTab;
+window.loadUnavailabilityData = loadUnavailabilityData;
+window.loadMoonlightingData = loadMoonlightingData;
+window.selectAllUnavail = selectAllUnavail;
+window.deselectAllUnavail = deselectAllUnavail;
+window.selectAllMoonlight = selectAllMoonlight;
+window.deselectAllMoonlight = deselectAllMoonlight;
+window.toggleAllUnavail = toggleAllUnavail;
+window.toggleAllMoonlight = toggleAllMoonlight;
+window.toggleUnavailSelection = toggleUnavailSelection;
+window.toggleMoonlightSelection = toggleMoonlightSelection;
+window.deleteSelectedUnavail = deleteSelectedUnavail;
+window.deleteSelectedMoonlight = deleteSelectedMoonlight;
+window.exportUnavailData = exportUnavailData;
+window.exportMoonlightData = exportMoonlightData;
 
 // Initialize on module load
 document.addEventListener('DOMContentLoaded', () => {

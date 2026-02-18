@@ -34,6 +34,10 @@
             <div style="font-size: 12px; opacity: 0.9;">Hours per Slot</div>
             <div style="font-size: 24px; font-weight: 700;" id="activeDraftHours">-</div>
           </div>
+          <div>
+            <div style="font-size: 12px; opacity: 0.9;">Faculty in Draft</div>
+            <div style="font-size: 24px; font-weight: 700;" id="activeDraftFacultyCount">-</div>
+          </div>
         </div>
         <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
           <button class="btn-secondary" onclick="pauseDraft()" id="pauseBtn" style="display: none;">⏸️ Pause Draft</button>
@@ -105,7 +109,7 @@
 
 <!-- Create Draft Modal -->
 <div id="createDraftModal" class="modal">
-  <div class="modal-content">
+  <div class="modal-content" style="max-width: 720px;">
     <div class="modal-header">
       <h3 class="modal-title">Create New Draft Round</h3>
       <span class="close-btn" onclick="closeCreateDraftModal()">&times;</span>
@@ -136,9 +140,28 @@
         </div>
       </div>
 
-      <div class="info-box info-box-info">
+      <!-- Faculty Selection -->
+      <div class="form-group" style="margin-top: 8px;">
+        <label>Faculty to Include</label>
+        <small style="display: block; margin-bottom: 8px; color: #6b7280;">Select which faculty participate in this draft. Drag to set priority order.</small>
+
+        <!-- Toolbar -->
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;">
+          <input type="text" id="facultySearchInput" placeholder="Search faculty..."
+            style="flex: 1; min-width: 160px; padding: 7px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 13px;">
+          <button type="button" class="btn-secondary btn-sm" onclick="toggleSelectAllFaculty()" id="selectAllBtn">Select All</button>
+          <span id="facultySelectedCount" style="font-size: 13px; color: #6b7280; white-space: nowrap;">0 selected</span>
+        </div>
+
+        <!-- Faculty List -->
+        <div id="facultyPickerList" style="max-height: 260px; overflow-y: auto; border: 2px solid #e5e7eb; border-radius: 8px; background: #f9fafb;">
+          <div style="text-align: center; padding: 24px; color: #9ca3af;">Loading faculty...</div>
+        </div>
+      </div>
+
+      <div class="info-box info-box-info" style="margin-top: 16px;">
         <strong>How It Works</strong>
-        <p>Faculty will be assigned a priority order. Each faculty gets a time window to submit their availability requests. Slots open automatically based on the stagger time.</p>
+        <p>Selected faculty are assigned a priority order (top = first). Each faculty gets a time window to submit their availability requests. Slots open automatically based on the stagger time. You can include just a few people for testing, then create a full draft later.</p>
       </div>
 
       <div style="display: flex; gap: 12px; margin-top: 24px;">
@@ -148,3 +171,40 @@
     </form>
   </div>
 </div>
+
+<style>
+.faculty-pick-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  cursor: grab;
+  user-select: none;
+  transition: background 0.15s;
+}
+.faculty-pick-item:last-child { border-bottom: none; }
+.faculty-pick-item:hover { background: #f0f4ff; }
+.faculty-pick-item.dragging { opacity: 0.4; background: #dbeafe; }
+.faculty-pick-item.drag-over { border-top: 3px solid #3b82f6; padding-top: 6px; }
+.faculty-pick-item.hidden { display: none; }
+.faculty-pick-item input[type="checkbox"] { flex-shrink: 0; }
+.faculty-pick-priority {
+  width: 24px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+.faculty-pick-item.selected .faculty-pick-priority { color: #3b82f6; }
+.faculty-pick-name { flex: 1; font-size: 14px; color: #1f2937; }
+.faculty-pick-drag {
+  color: #d1d5db;
+  font-size: 16px;
+  flex-shrink: 0;
+  cursor: grab;
+}
+.faculty-pick-item.selected .faculty-pick-drag { color: #93c5fd; }
+</style>

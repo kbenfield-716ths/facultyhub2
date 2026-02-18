@@ -213,3 +213,12 @@ function showTestingAlert(message, type) {
     setTimeout(function() { showTestingAlert('', 'clear'); }, 5000);
   }
 }
+
+// ==================== GLOBAL FUNCTION EXPORTS ====================
+// Make functions globally accessible for inline onclick handlers
+
+window.resetPoints = resetPoints;
+window.clearServiceRequests = clearServiceRequests;
+window.clearMoonlightingSignups = clearMoonlightingSignups;
+window.clearServiceAssignments = clearServiceAssignments;
+window.resetAll = resetAll;

@@ -3,7 +3,7 @@
  * Search, password reset, unlock, username change, database queries, service weeks
  */
 
-let currentYear = new Date().getFullYear();
+let userMgmtCurrentYear = new Date().getFullYear();
 let currentUserDetails = null;
 
 // Initialize module
@@ -202,7 +202,7 @@ async function viewUserDetails(facultyId) {
     // Fetch service weeks for current year
     let serviceWeeks = [];
     try {
-      const weeksResponse = await fetch(`/api/admin/faculty/${facultyId}/service-weeks?year=${currentYear}`, {
+      const weeksResponse = await fetch(`/api/admin/faculty/${facultyId}/service-weeks?year=${userMgmtCurrentYear}`, {
         credentials: 'same-origin'
       });
 
@@ -281,7 +281,7 @@ async function viewUserDetails(facultyId) {
       html += `
         <div class="service-weeks-section">
           <div class="service-weeks-header">
-            <h3 class="service-weeks-title">📅 Service Weeks ${currentYear}</h3>
+            <h3 class="service-weeks-title">📅 Service Weeks ${userMgmtCurrentYear}</h3>
             <span style="color: #6b7280; font-size: 14px;">${serviceWeeks.length} assignments</span>
           </div>
       `;
@@ -307,7 +307,7 @@ async function viewUserDetails(facultyId) {
         <div style="background: #f9fafb; padding: 20px; border-radius: 8px; text-align: center; color: #6b7280; margin-top: 20px;">
           <div style="font-size: 48px; margin-bottom: 12px;">📅</div>
           <div style="font-weight: 600; margin-bottom: 4px;">No Service Weeks Assigned</div>
-          <div style="font-size: 14px;">This faculty member has no service weeks for ${currentYear}</div>
+          <div style="font-size: 14px;">This faculty member has no service weeks for ${userMgmtCurrentYear}</div>
         </div>
       `;
     }
@@ -513,6 +513,20 @@ function clearQuery() {
   document.getElementById('umQueryResults').innerHTML = '';
   showUserMgmtAlert('umQueryAlert', '', 'clear');
 }
+
+// ==================== GLOBAL FUNCTION EXPORTS ====================
+// Make functions globally accessible for inline onclick handlers
+
+window.showUserMgmtTab = showUserMgmtTab;
+window.searchUsers = searchUsers;
+window.viewUserDetails = viewUserDetails;
+window.closeUserDetailsModal = closeUserDetailsModal;
+window.resetUserPassword = resetUserPassword;
+window.unlockUserAccount = unlockUserAccount;
+window.changeUsername = changeUsername;
+window.executeQuery = executeQuery;
+window.clearQuery = clearQuery;
+window.initUserManagement = initUserManagement;
 
 // Close modal on background click
 window.addEventListener('click', function(event) {

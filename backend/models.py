@@ -451,6 +451,107 @@ class MessageReadStatus(Base):
 
 
 # ==========================================
+# WAVE-BASED DRAFT SYSTEM
+# ==========================================
+
+class DraftWaveConfig(Base):
+    """Configuration for wave-based draft system"""
+    __tablename__ = "draft_wave_configs"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    year = Column(Integer, nullable=False, unique=True)  # Academic year
+    close_date = Column(DateTime, nullable=False)  # When all submissions close
+    status = Column(String, default='pending')  # pending, active, closed
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    activated_at = Column(DateTime, nullable=True)
+    closed_at = Column(DateTime, nullable=True)
+
+    waves = relationship("DraftWave", back_populates="config", cascade="all, delete-orphan")
+    week_status = relationship("WeekDraftStatus", back_populates="config", cascade="all, delete-orphan")
+    requests = relationship("DraftWeekRequest", back_populates="config", cascade="all, delete-orphan")
+
+
+class DraftWave(Base):
+    """Individual waves in the draft (e.g., Test Wave, Wednesday Wave)"""
+    __tablename__ = "draft_waves"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    config_id = Column(String, ForeignKey("draft_wave_configs.id"), nullable=False)
+    name = Column(String, nullable=False)  # e.g., "Test Wave", "Wednesday Wave"
+    open_date = Column(DateTime, nullable=False)  # When this wave can start submitting
+    wave_order = Column(Integer, nullable=False)  # Order of waves (1, 2, 3, etc.)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    config = relationship("DraftWaveConfig", back_populates="waves")
+    faculty_assignments = relationship("WaveFacultyAssignment", back_populates="wave", cascade="all, delete-orphan")
+
+
+class WaveFacultyAssignment(Base):
+    """Assigns faculty members to specific waves"""
+    __tablename__ = "wave_faculty_assignments"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    wave_id = Column(String, ForeignKey("draft_waves.id"), nullable=False)
+    faculty_id = Column(String, ForeignKey("faculty.id"), nullable=False)
+    notified_at = Column(DateTime, nullable=True)  # When initial email was sent
+    reminder_sent_at = Column(DateTime, nullable=True)  # When reminder email was sent (48hr)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    wave = relationship("DraftWave", back_populates="faculty_assignments")
+    faculty = relationship("Faculty")
+
+    __table_args__ = (
+        Index('idx_wave_faculty_unique', 'wave_id', 'faculty_id', unique=True),
+    )
+
+
+class WeekDraftStatus(Base):
+    """Tracks capacity status for each week in the draft"""
+    __tablename__ = "week_draft_status"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    config_id = Column(String, ForeignKey("draft_wave_configs.id"), nullable=False)
+    week_id = Column(String, ForeignKey("service_weeks.id"), nullable=False)
+
+    unavailable_count = Column(Integer, default=0)  # Count of unavailable requests
+    volunteer_count = Column(Integer, default=0)  # Count of volunteer requests
+
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    config = relationship("DraftWaveConfig", back_populates="week_status")
+    week = relationship("ServiceWeek")
+
+    __table_args__ = (
+        Index('idx_week_status_config_week', 'config_id', 'week_id', unique=True),
+    )
+
+
+class DraftWeekRequest(Base):
+    """Individual faculty requests for unavailability or volunteering"""
+    __tablename__ = "draft_week_requests"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    config_id = Column(String, ForeignKey("draft_wave_configs.id"), nullable=False)
+    faculty_id = Column(String, ForeignKey("faculty.id"), nullable=False)
+    week_id = Column(String, ForeignKey("service_weeks.id"), nullable=False)
+
+    request_type = Column(String, nullable=False)  # 'unavailable' or 'volunteer'
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+
+    config = relationship("DraftWaveConfig", back_populates="requests")
+    faculty = relationship("Faculty")
+    week = relationship("ServiceWeek")
+
+    __table_args__ = (
+        Index('idx_draft_request_faculty_week', 'faculty_id', 'week_id'),
+        Index('idx_draft_request_config', 'config_id'),
+    )
+
+
+# ==========================================
 # DATABASE INITIALIZATION
 # ==========================================
 

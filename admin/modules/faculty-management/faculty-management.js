@@ -13,6 +13,29 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+// Base points calculation: effort% × rank multiplier
+// Assistant=1, Associate=1.75, Full=2.5
+function computeBasePoints(effortPct, rank) {
+  const multipliers = { 'Assistant': 1, 'Associate': 1.75, 'Full': 2.5 };
+  const m = multipliers[rank];
+  if (!m || !effortPct) return '';
+  return Math.round(effortPct * m);
+}
+
+function calcNewBasePoints() {
+  const effort = parseFloat(document.getElementById('newFacultyEffort').value);
+  const rank = document.getElementById('newFacultyRank').value;
+  const result = computeBasePoints(effort, rank);
+  if (result !== '') document.getElementById('newFacultyBasePoints').value = result;
+}
+
+function calcEditBasePoints() {
+  const effort = parseFloat(document.getElementById('editFacultyEffort').value);
+  const rank = document.getElementById('editFacultyRank').value;
+  const result = computeBasePoints(effort, rank);
+  if (result !== '') document.getElementById('editFacultyBasePoints').value = result;
+}
+
 // Load faculty list
 async function loadFaculty() {
   try {
@@ -47,9 +70,29 @@ function renderFacultyTable() {
   allFaculty.forEach(function(faculty) {
     const row = document.createElement('tr');
 
-    // Compute totals
-    const total = (faculty.micu_count || 0) + (faculty.app_icu_count || 0) +
-                  (faculty.procedures_count || 0) + (faculty.consults_count || 0);
+    // Compute actual assignments from service_weeks
+    const micuActual = (faculty.service_weeks && faculty.service_weeks.MICU) || 0;
+    const appIcuActual = (faculty.service_weeks && faculty.service_weeks.APP_ICU) || 0;
+    const proceduresActual = (faculty.service_weeks && faculty.service_weeks.Procedures) || 0;
+    const consultsActual = (faculty.service_weeks && faculty.service_weeks.Consults) || 0;
+    const totalActual = micuActual + appIcuActual + proceduresActual + consultsActual;
+
+    // Get expected targets
+    const micuTarget = faculty.micu_weeks || 0;
+    const appIcuTarget = faculty.app_icu_weeks || 0;
+    const proceduresTarget = faculty.procedure_weeks || 0;
+    const consultsTarget = faculty.consult_weeks || 0;
+    const totalTarget = micuTarget + appIcuTarget + proceduresTarget + consultsTarget;
+
+    // Helper function to format actual/target with color coding
+    function formatActualTarget(actual, target) {
+      if (target === 0) return actual; // No target set, just show actual
+      const diff = actual - target;
+      let color = '#6b7280'; // default gray
+      if (diff > 0) color = '#10b981'; // green if over
+      if (diff < 0) color = '#ef4444'; // red if under
+      return '<span style="color: ' + color + '; font-weight: 600;">' + actual + '</span> / ' + target;
+    }
 
     // Status badge
     const statusBadge = faculty.active
@@ -71,19 +114,22 @@ function renderFacultyTable() {
                     '<td style="font-size: 13px;">' + (faculty.email || '-') + '</td>' +
                     '<td>' + (faculty.rank || '-') + '</td>' +
                     '<td style="text-align: center;">' + (faculty.clinical_effort_pct || 0) + '%</td>' +
-                    '<td style="text-align: center; font-weight: 600;">' + (faculty.bonus_points || 0) + '</td>' +
-                    '<td style="text-align: center;">' + (faculty.micu_count || 0) + '</td>' +
-                    '<td style="text-align: center;">' + (faculty.app_icu_count || 0) + '</td>' +
-                    '<td style="text-align: center;">' + (faculty.procedures_count || 0) + '</td>' +
-                    '<td style="text-align: center;">' + (faculty.consults_count || 0) + '</td>' +
-                    '<td style="text-align: center; font-weight: 700;">' + total + '</td>' +
+                    '<td style="text-align: center; font-weight: 600;">' + (faculty.base_points || 0) + '</td>' +
+                    '<td style="text-align: center;">' + formatActualTarget(micuActual, micuTarget) + '</td>' +
+                    '<td style="text-align: center;">' + formatActualTarget(appIcuActual, appIcuTarget) + '</td>' +
+                    '<td style="text-align: center;">' + formatActualTarget(proceduresActual, proceduresTarget) + '</td>' +
+                    '<td style="text-align: center;">' + formatActualTarget(consultsActual, consultsTarget) + '</td>' +
+                    '<td style="text-align: center; font-weight: 700;">' + formatActualTarget(totalActual, totalTarget) + '</td>' +
                     '<td>' + statusBadge + '</td>' +
-                    '<td><div class="action-buttons">' +
-                      '<button class="btn-primary btn-sm" onclick="openEditFaculty(\'' + faculty.id + '\')">Edit</button>' +
+                    '<td><div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">' +
+                      '<button class="btn-primary btn-sm" style="min-width: 90px;" onclick="openEditFaculty(\'' + faculty.id + '\')">Edit</button>' +
                       (faculty.active
-                        ? '<button class="btn-secondary btn-sm" onclick="toggleFacultyStatus(\'' + faculty.id + '\', false)">Deactivate</button>'
-                        : '<button class="btn-success btn-sm" onclick="toggleFacultyStatus(\'' + faculty.id + '\', true)">Activate</button>') +
-                      '<button class="btn-danger btn-sm" onclick="deleteFaculty(\'' + faculty.id + '\')">Delete</button>' +
+                        ? '<button class="btn-sm" style="min-width: 90px; background: #f59e0b; color: white; border: 1px solid #f59e0b;" onclick="toggleFacultyStatus(\'' + faculty.id + '\', false)">Deactivate</button>'
+                        : '<button class="btn-success btn-sm" style="min-width: 90px;" onclick="toggleFacultyStatus(\'' + faculty.id + '\', true)">Activate</button>') +
+                      (faculty.is_admin
+                        ? '<button class="btn-sm" style="min-width: 90px; background: #8b5cf6; color: white; border: 1px solid #8b5cf6;" onclick="toggleAdmin(\'' + faculty.id + '\')" title="Remove admin">🔓 Unadmin</button>'
+                        : '<button class="btn-sm" style="min-width: 90px; background: #6366f1; color: white; border: 1px solid #6366f1;" onclick="toggleAdmin(\'' + faculty.id + '\')" title="Make admin">🔐 Admin</button>') +
+                      '<button class="btn-danger btn-sm" style="min-width: 90px;" onclick="deleteFaculty(\'' + faculty.id + '\')">Delete</button>' +
                     '</div></td>';
 
     tbody.appendChild(row);
@@ -102,9 +148,12 @@ async function addFaculty() {
   const id = document.getElementById('newFacultyId').value.trim().toLowerCase();
   const name = document.getElementById('newFacultyName').value.trim();
   const email = document.getElementById('newFacultyEmail').value.trim();
+  const rank = document.getElementById('newFacultyRank').value;
+  const clinical_effort_pct = parseInt(document.getElementById('newFacultyEffort').value) || 0;
+  const base_points = parseInt(document.getElementById('newFacultyBasePoints').value) || 0;
 
-  if (!id || !name) {
-    showAlert('facultyAlert', 'Please provide both ID and Name', 'error');
+  if (!id || !name || !email || !rank) {
+    showAlert('facultyAlert', 'Please fill in all required fields (ID, Name, Email, Rank)', 'error');
     return;
   }
 
@@ -116,7 +165,10 @@ async function addFaculty() {
       body: JSON.stringify({
         id: id,
         name: name,
-        email: email || null
+        email: email,
+        rank: rank,
+        clinical_effort_pct: clinical_effort_pct,
+        base_points: base_points
       })
     });
 
@@ -131,6 +183,9 @@ async function addFaculty() {
     document.getElementById('newFacultyId').value = '';
     document.getElementById('newFacultyName').value = '';
     document.getElementById('newFacultyEmail').value = '';
+    document.getElementById('newFacultyRank').value = '';
+    document.getElementById('newFacultyEffort').value = '';
+    document.getElementById('newFacultyBasePoints').value = '';
 
     // Reload list
     await loadFaculty();
@@ -196,11 +251,17 @@ async function submitEditFaculty(event) {
     consult_weeks: parseInt(document.getElementById('editFacultyConsultWeeks').value) || 0
   };
 
+  // Strip null values — the backend uses exclude_unset, so omitting a field
+  // keeps the existing DB value rather than overwriting it with null
+  const cleanPayload = Object.fromEntries(
+    Object.entries(payload).filter(([_, v]) => v !== null)
+  );
+
   try {
     const response = await fetch('/api/admin/faculty/' + currentEditingId, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)
+      body: JSON.stringify(cleanPayload)
     });
 
     if (!response.ok) {
@@ -281,6 +342,54 @@ async function deleteFaculty(facultyId) {
     showAlert('facultyAlert', 'Failed to delete faculty: ' + error.message, 'error');
   }
 }
+
+// Toggle admin status
+async function toggleAdmin(facultyId) {
+  const faculty = allFaculty.find(function(f) { return f.id === facultyId; });
+  if (!faculty) return;
+
+  const newStatus = !faculty.is_admin;
+  const action = newStatus ? 'grant admin privileges to' : 'remove admin privileges from';
+
+  if (!confirm('Are you sure you want to ' + action + ' ' + faculty.name + '?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/admin/faculty/' + facultyId, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ is_admin: newStatus })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to update admin status');
+    }
+
+    showAlert('facultyAlert', faculty.name + ' admin status updated', 'success');
+    await loadFaculty();
+
+  } catch (error) {
+    console.error('Error toggling admin:', error);
+    showAlert('facultyAlert', 'Failed to update admin status: ' + error.message, 'error');
+  }
+}
+
+
+// ==================== GLOBAL FUNCTION EXPORTS ====================
+// Make functions globally accessible for inline onclick handlers
+
+window.calcNewBasePoints = calcNewBasePoints;
+window.calcEditBasePoints = calcEditBasePoints;
+window.loadFaculty = loadFaculty;
+window.addFaculty = addFaculty;
+window.openEditFaculty = openEditFaculty;
+window.closeEditFacultyModal = closeEditFacultyModal;
+window.submitEditFaculty = submitEditFaculty;
+window.toggleFacultyStatus = toggleFacultyStatus;
+window.deleteFaculty = deleteFaculty;
+window.toggleAdmin = toggleAdmin;
 
 // ==================== MODAL CLOSE FUNCTIONALITY ====================
 

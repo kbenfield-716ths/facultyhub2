@@ -1,0 +1,133 @@
+<div class="module-container">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">📚 Knowledge Base</h2>
+        <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
+          Manage articles, policies, and documentation for faculty
+        </p>
+      </div>
+      <button class="btn-primary" onclick="showCreateArticleModal()">➕ New Article</button>
+    </div>
+
+    <!-- Alert -->
+    <div id="kbAlert" class="alert"></div>
+
+    <!-- Stats -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div style="background: #dbeafe; padding: 16px; border-radius: 8px; text-align: center;">
+        <div style="font-size: 28px; font-weight: 700; color: #1e40af;" id="kbTotalCount">0</div>
+        <div style="font-size: 13px; color: #1e40af;">Total Articles</div>
+      </div>
+      <div style="background: #d1fae5; padding: 16px; border-radius: 8px; text-align: center;">
+        <div style="font-size: 28px; font-weight: 700; color: #065f46;" id="kbPublishedCount">0</div>
+        <div style="font-size: 13px; color: #065f46;">Published</div>
+      </div>
+      <div style="background: #fef3c7; padding: 16px; border-radius: 8px; text-align: center;">
+        <div style="font-size: 28px; font-weight: 700; color: #92400e;" id="kbDraftCount">0</div>
+        <div style="font-size: 13px; color: #92400e;">Drafts</div>
+      </div>
+    </div>
+
+    <!-- Category filter -->
+    <div style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+      <button class="btn-secondary btn-sm kb-cat-btn active" onclick="filterKBCategory('all')">All</button>
+      <button class="btn-secondary btn-sm kb-cat-btn" onclick="filterKBCategory('Policies')">Policies</button>
+      <button class="btn-secondary btn-sm kb-cat-btn" onclick="filterKBCategory('Procedures')">Procedures</button>
+      <button class="btn-secondary btn-sm kb-cat-btn" onclick="filterKBCategory('Clinical Guidelines')">Clinical Guidelines</button>
+      <button class="btn-secondary btn-sm kb-cat-btn" onclick="filterKBCategory('IT Support')">IT Support</button>
+    </div>
+
+    <!-- Articles Table -->
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Author</th>
+            <th>Updated</th>
+            <th style="width: 180px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="kbTableBody">
+          <tr><td colspan="6" class="loading">Loading articles...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Article Modal -->
+<div id="articleModal" class="modal">
+  <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="articleModalTitle">New Article</h3>
+      <span class="close-btn" onclick="closeArticleModal()">&times;</span>
+    </div>
+
+    <form id="articleForm" onsubmit="submitArticle(event)">
+      <input type="hidden" id="articleEditId" value="">
+
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" id="articleTitle" required placeholder="Article title">
+      </div>
+
+      <div class="form-group">
+        <label>Description *</label>
+        <input type="text" id="articleDescription" required placeholder="Brief summary shown in article list">
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="articleCategory" required>
+            <option value="Policies">Policies</option>
+            <option value="Procedures">Procedures</option>
+            <option value="Clinical Guidelines">Clinical Guidelines</option>
+            <option value="IT Support">IT Support</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Display Order</label>
+          <input type="number" id="articleOrder" value="0" min="0">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="articlePublished" checked>
+          Published (visible to all faculty)
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label>Content (Markdown) *</label>
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <button type="button" class="btn-secondary btn-sm" onclick="toggleKBPreview()" id="kbPreviewToggle">Show Preview</button>
+        </div>
+        <div style="display: flex; gap: 16px;">
+          <textarea id="articleContent" required placeholder="Write your article content in Markdown..."
+            style="flex: 1; min-height: 400px; font-family: monospace; font-size: 14px; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; resize: vertical;"></textarea>
+          <div id="kbPreviewPane" style="flex: 1; min-height: 400px; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; overflow-y: auto; display: none; background: #fafafa;">
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn-primary" id="articleSubmitBtn">Create Article</button>
+        <button type="button" class="btn-secondary" onclick="closeArticleModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.kb-cat-btn.active {
+  background: #667eea !important;
+  color: white !important;
+  border-color: #667eea !important;
+}
+</style>

@@ -578,9 +578,9 @@ def send_draft_notification(faculty_id: str, priority: int, deadline: datetime, 
         
         send_email(
             to_email=faculty.email,
+            to_name=faculty.name,
             subject=subject,
-            html_body=html_body,
-            text_body=text_body
+            html_content=html_body
         )
         
         print(f"Draft notification sent to {faculty.name} ({faculty.email})")
