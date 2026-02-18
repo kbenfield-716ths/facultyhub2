@@ -14,10 +14,10 @@ import uuid
 from ..models import (
     get_db, Faculty, ServiceWeek,
     DraftWaveConfig, DraftWave, WaveFacultyAssignment,
-    WeekDraftStatus, DraftWeekRequest
+    WeekDraftStatus, DraftWeekRequest, FacultyBlock
 )
 from ..auth import get_current_user, require_admin
-from ..email_service import send_email
+from ..email_service import send_email, send_wave_draft_confirmation
 
 router = APIRouter(prefix="/api/draft-waves", tags=["draft-waves"])
 
@@ -744,18 +744,48 @@ def get_week_status(
     # Get all weeks with their status
     week_statuses = db.query(WeekDraftStatus).filter_by(config_id=config.id).all()
 
+    # --- BUG FIX: Reconcile cached counts with actual DraftWeekRequest records ---
+    # This corrects any drift from prior resubmission bugs
+    needs_commit = False
+    for ws in week_statuses:
+        actual_unavail = db.query(func.count(DraftWeekRequest.id)).filter(
+            DraftWeekRequest.config_id == config.id,
+            DraftWeekRequest.week_id == ws.week_id,
+            DraftWeekRequest.request_type == 'unavailable'
+        ).scalar() or 0
+        actual_vol = db.query(func.count(DraftWeekRequest.id)).filter(
+            DraftWeekRequest.config_id == config.id,
+            DraftWeekRequest.week_id == ws.week_id,
+            DraftWeekRequest.request_type == 'volunteer'
+        ).scalar() or 0
+
+        if ws.unavailable_count != actual_unavail or ws.volunteer_count != actual_vol:
+            ws.unavailable_count = actual_unavail
+            ws.volunteer_count = actual_vol
+            needs_commit = True
+
+    if needs_commit:
+        db.commit()
+
     result = []
     for ws in week_statuses:
         week = db.query(ServiceWeek).filter_by(id=ws.week_id).first()
         if week:
+            # Include admin override blocks in the unavailable count
+            # so capacity checks reflect true staffing availability
+            block_count = db.query(func.count(FacultyBlock.id)).filter(
+                FacultyBlock.week_id == ws.week_id
+            ).scalar() or 0
+            total_unavailable = ws.unavailable_count + block_count
+
             result.append(WeekStatusOut(
                 week_id=week.id,
                 week_number=week.week_number,
                 start_date=week.start_date.isoformat(),
                 end_date=week.end_date.isoformat(),
-                unavailable_count=ws.unavailable_count,
+                unavailable_count=total_unavailable,
                 volunteer_count=ws.volunteer_count,
-                unavailable_locked=ws.unavailable_count >= 12,
+                unavailable_locked=total_unavailable >= 12,
                 volunteer_locked=ws.volunteer_count >= 6
             ))
 
@@ -798,7 +828,25 @@ def submit_requests(
     if overlap:
         raise HTTPException(400, "Cannot request both unavailable and volunteer for the same week")
 
-    # Delete existing requests
+    # --- BUG FIX: Decrement WeekDraftStatus counts for OLD requests before deleting ---
+    # Without this, every resubmission inflates the cached counts in WeekDraftStatus
+    old_requests = db.query(DraftWeekRequest).filter(
+        DraftWeekRequest.config_id == config.id,
+        DraftWeekRequest.faculty_id == current_user.id
+    ).all()
+
+    for old_req in old_requests:
+        old_week_status = db.query(WeekDraftStatus).filter(
+            WeekDraftStatus.config_id == config.id,
+            WeekDraftStatus.week_id == old_req.week_id
+        ).first()
+        if old_week_status:
+            if old_req.request_type == 'unavailable':
+                old_week_status.unavailable_count = max(0, old_week_status.unavailable_count - 1)
+            elif old_req.request_type == 'volunteer':
+                old_week_status.volunteer_count = max(0, old_week_status.volunteer_count - 1)
+
+    # Now delete old requests (counts already decremented above)
     db.query(DraftWeekRequest).filter(
         DraftWeekRequest.config_id == config.id,
         DraftWeekRequest.faculty_id == current_user.id
@@ -862,7 +910,74 @@ def submit_requests(
 
         added.append({"week_id": week_id, "type": "volunteer"})
 
+    # --- BUG FIX: Reconcile WeekDraftStatus with actual DraftWeekRequest counts ---
+    # This ensures counts are always correct, even if they drifted from prior submissions
+    affected_week_ids = set(payload.unavailable_week_ids) | set(payload.volunteer_week_ids) | set(old_req.week_id for old_req in old_requests)
+    for wid in affected_week_ids:
+        ws = db.query(WeekDraftStatus).filter(
+            WeekDraftStatus.config_id == config.id,
+            WeekDraftStatus.week_id == wid
+        ).first()
+        if ws:
+            actual_unavail = db.query(func.count(DraftWeekRequest.id)).filter(
+                DraftWeekRequest.config_id == config.id,
+                DraftWeekRequest.week_id == wid,
+                DraftWeekRequest.request_type == 'unavailable'
+            ).scalar() or 0
+            actual_vol = db.query(func.count(DraftWeekRequest.id)).filter(
+                DraftWeekRequest.config_id == config.id,
+                DraftWeekRequest.week_id == wid,
+                DraftWeekRequest.request_type == 'volunteer'
+            ).scalar() or 0
+            ws.unavailable_count = actual_unavail
+            ws.volunteer_count = actual_vol
+
     db.commit()
+
+    # --- Send confirmation email ---
+    try:
+        # Gather week details for the email
+        unavailable_weeks = []
+        volunteer_weeks = []
+        for item in added:
+            week = db.query(ServiceWeek).filter(ServiceWeek.id == item["week_id"]).first()
+            if week:
+                week_info = {
+                    "week_number": week.week_number,
+                    "label": week.label,
+                    "start_date": week.start_date.strftime("%Y-%m-%d") if week.start_date else "",
+                    "end_date": week.end_date.strftime("%Y-%m-%d") if week.end_date else "",
+                    "point_cost": week.point_cost_off if item["type"] == "unavailable" else 0,
+                    "point_reward": week.point_reward_work if item["type"] == "volunteer" else 0
+                }
+                if item["type"] == "unavailable":
+                    unavailable_weeks.append(week_info)
+                elif item["type"] == "volunteer":
+                    volunteer_weeks.append(week_info)
+
+        # Build rejected list with week labels
+        rejected_with_labels = []
+        for item in rejected:
+            week = db.query(ServiceWeek).filter(ServiceWeek.id == item["week_id"]).first()
+            rejected_with_labels.append({
+                "label": week.label if week else item["week_id"],
+                "type": item["type"],
+                "reason": item.get("reason", "")
+            })
+
+        academic_year = f"{config.year}-{config.year + 1}"
+
+        send_wave_draft_confirmation(
+            faculty_name=current_user.name,
+            faculty_email=current_user.email,
+            unavailable_weeks=unavailable_weeks,
+            volunteer_weeks=volunteer_weeks,
+            rejected=rejected_with_labels,
+            academic_year=academic_year
+        )
+    except Exception as e:
+        # Log but don't fail the submission if email fails
+        print(f"[WARN] Failed to send wave draft confirmation email to {current_user.email}: {e}")
 
     return {
         "status": "submitted",
