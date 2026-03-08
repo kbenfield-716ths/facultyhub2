@@ -104,10 +104,14 @@ function renderFacultyTable() {
       ? ' <span class="badge badge-info">Admin</span>'
       : '';
 
-    // Moonlighter badge
-    const moonlighterBadge = faculty.moonlighter
-      ? ' <span class="badge badge-warning">🌙 Moonlighter</span>'
-      : '';
+    // Moonlighter badge (with priority indicator for moonlighters)
+    let moonlighterBadge = '';
+    if (faculty.moonlighter) {
+      const prio = faculty.moonlighting_priority || 2;
+      const prioLabel = prio === 1 ? ' ⭐High' : (prio === 3 ? ' Low' : '');
+      moonlighterBadge = ' <span class="badge badge-warning" title="Moonlighting priority: ' +
+        (prio === 1 ? 'High' : prio === 3 ? 'Low' : 'Medium') + '">🌙 Moonlighter' + prioLabel + '</span>';
+    }
 
     row.innerHTML = '<td style="font-weight: 600;">' + (faculty.id || '') + '</td>' +
                     '<td>' + (faculty.name || '') + adminBadge + moonlighterBadge + '</td>' +
@@ -213,6 +217,11 @@ function openEditFaculty(facultyId) {
   document.getElementById('editFacultyAdmin').checked = faculty.is_admin || false;
   document.getElementById('editFacultyMoonlighter').checked = faculty.moonlighter || false;
   document.getElementById('editFacultyDraftExempt').checked = faculty.draft_exempt || false;
+  document.getElementById('editFacultyMoonlightingPriority').value = faculty.moonlighting_priority || 2;
+
+  // Show/hide the priority field depending on whether this person is a moonlighter
+  document.getElementById('moonlightingPriorityGroup').style.display =
+    faculty.moonlighter ? '' : 'none';
 
   // Expected clinical weeks
   document.getElementById('editFacultyMicuWeeks').value = faculty.micu_weeks || 0;
@@ -245,6 +254,7 @@ async function submitEditFaculty(event) {
     is_admin: document.getElementById('editFacultyAdmin').checked,
     moonlighter: document.getElementById('editFacultyMoonlighter').checked,
     draft_exempt: document.getElementById('editFacultyDraftExempt').checked,
+    moonlighting_priority: parseInt(document.getElementById('editFacultyMoonlightingPriority').value) || 2,
     micu_weeks: parseInt(document.getElementById('editFacultyMicuWeeks').value) || 0,
     app_icu_weeks: parseInt(document.getElementById('editFacultyAppIcuWeeks').value) || 0,
     procedure_weeks: parseInt(document.getElementById('editFacultyProcedureWeeks').value) || 0,

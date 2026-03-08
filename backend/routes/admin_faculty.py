@@ -34,6 +34,7 @@ class FacultyCreate(BaseModel):
     is_admin: bool = False
     moonlighter: bool = False
     draft_exempt: bool = False
+    moonlighting_priority: int = 2  # 1=high, 2=medium, 3=low
     micu_weeks: int = 0
     app_icu_weeks: int = 0
     procedure_weeks: int = 0
@@ -52,6 +53,7 @@ class FacultyUpdate(BaseModel):
     is_admin: Optional[bool] = None
     moonlighter: Optional[bool] = None
     draft_exempt: Optional[bool] = None
+    moonlighting_priority: Optional[int] = None  # 1=high, 2=medium, 3=low
     micu_weeks: Optional[int] = None
     app_icu_weeks: Optional[int] = None
     procedure_weeks: Optional[int] = None
@@ -83,6 +85,7 @@ class FacultyResponse(BaseModel):
     registered: bool
     moonlighter: bool
     draft_exempt: bool
+    moonlighting_priority: int = 2  # 1=high, 2=medium, 3=low
     micu_weeks: int
     app_icu_weeks: int
     procedure_weeks: int
@@ -184,6 +187,7 @@ def list_faculty(
             registered=faculty.registered,
             moonlighter=faculty.moonlighter,
             draft_exempt=faculty.draft_exempt or False,
+            moonlighting_priority=getattr(faculty, "moonlighting_priority", None) or 2,
             micu_weeks=faculty.micu_weeks,
             app_icu_weeks=faculty.app_icu_weeks,
             procedure_weeks=faculty.procedure_weeks,
@@ -305,6 +309,7 @@ def create_faculty(
         is_admin=faculty_data.is_admin,
         moonlighter=faculty_data.moonlighter,
         draft_exempt=faculty_data.draft_exempt,
+        moonlighting_priority=faculty_data.moonlighting_priority,
         micu_weeks=faculty_data.micu_weeks,
         app_icu_weeks=faculty_data.app_icu_weeks,
         procedure_weeks=faculty_data.procedure_weeks,
@@ -333,6 +338,7 @@ def create_faculty(
         registered=new_faculty.registered,
         moonlighter=new_faculty.moonlighter,
         draft_exempt=new_faculty.draft_exempt,
+        moonlighting_priority=getattr(new_faculty, "moonlighting_priority", None) or 2,
         micu_weeks=new_faculty.micu_weeks,
         app_icu_weeks=new_faculty.app_icu_weeks,
         procedure_weeks=new_faculty.procedure_weeks,

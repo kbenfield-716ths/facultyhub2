@@ -6,7 +6,7 @@ These allow faculty to submit their unavailable/available weeks.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 import uuid
@@ -36,7 +36,7 @@ class UnavailabilityRequestInput(BaseModel):
     """
     week_id: str
     status: str  # "unavailable" or "available"
-    service_preference: str = None  # Optional preference for service type
+    service_preference: Optional[str] = None  # Optional preference for service type
     # These fields are accepted but recalculated server-side for security
     points_spent: int = 0
     points_earned: int = 0

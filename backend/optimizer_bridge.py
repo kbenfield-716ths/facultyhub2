@@ -44,9 +44,9 @@ def run_optimizer_for_month(db, month_row: Month, strategy: str, night_slots: in
                     "name": faculty.name,
                     "desired_nights": signup.desired_nights,
                     "requested_dates": [],
-                    # You can later add a true priority field to Faculty;
-                    # for now, everyone is "medium" priority = 2
-                    "priority": 2,
+                    # moonlighting_priority: 1=high, 2=medium, 3=low.
+                    # Defaults to 2 for faculty without the field set.
+                    "priority": getattr(faculty, "moonlighting_priority", None) or 2,
                 }
             faculty_records[fid]["requested_dates"].append(shift.date.isoformat())
 

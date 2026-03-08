@@ -1738,7 +1738,10 @@
 
           if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.detail || 'Failed to submit wave draft requests');
+            const errorMsg = Array.isArray(error.detail)
+              ? error.detail.map(e => e.msg || JSON.stringify(e)).join('; ')
+              : (error.detail || 'Failed to submit wave draft requests');
+            throw new Error(errorMsg);
           }
 
           const result = await response.json();
@@ -1793,7 +1796,10 @@
 
           if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.detail || 'Failed to submit requests');
+            const errorMsg = Array.isArray(error.detail)
+              ? error.detail.map(e => e.msg || JSON.stringify(e)).join('; ')
+              : (error.detail || 'Failed to submit requests');
+            throw new Error(errorMsg);
           }
 
           closeModal();

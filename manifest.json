@@ -1,7 +1,7 @@
 {
-  "name": "IRPA Faculty Hub",
-  "short_name": "IRPA Hub",
-  "description": "Faculty scheduling and resources for IRPA",
+  "name": "UVA PCCM Faculty Hub",
+  "short_name": "UVA-PCCM",
+  "description": "Faculty scheduling and resources for UVA PCCM",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f6f6f9",

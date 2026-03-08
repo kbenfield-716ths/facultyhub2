@@ -27,6 +27,9 @@ import pandas as pd
 # How many people are required per night (1 by default)
 NIGHT_SLOTS = 1
 
+# Hard cap on shifts any single provider can receive regardless of desired count
+MAX_SHIFTS_PER_FACULTY = 6
+
 @dataclass
 class Faculty:
     id: str
@@ -83,13 +86,25 @@ class MoonlighterScheduleOptimizer:
         self.all_nights: List[str] = sorted(self.requests_by_night.keys())
 
     def _need_score(self, fid: str) -> float:
-        """Score used to prioritize who gets the next slot: higher = more need"""
+        """Score used to prioritize who gets the next slot: higher = more need.
+
+        Uses unfulfillment ratio rather than raw gap so that someone who wants
+        1 shift and has 0 scores as highly as someone who wants 6 and has 0.
+        Includes a starvation bonus to prevent anyone being completely shut out.
+        """
         f = self.faculty[fid]
         assigned = len(self.assigned_for_faculty[fid])
-        gap = f.desired - assigned
+        gap = max(0, f.desired - assigned)
+        if f.desired == 0:
+            return 0.0
+        # Unfulfillment ratio (0..1) scaled to 0..10
+        unfulfillment = (gap / f.desired) * 10.0
+        # Starvation prevention: large bonus when someone has zero assignments
+        # so they can't be completely shut out by people with higher raw gaps
+        starvation_bonus = 5.0 if assigned == 0 else 0.0
         # Priority bonus: 1=high -> +2, 2=med -> +1, 3=low -> +0
         prio_bonus = {1: 2.0, 2: 1.0, 3: 0.0}.get(f.priority, 1.0)
-        return gap * 10.0 + prio_bonus
+        return unfulfillment + starvation_bonus + prio_bonus
 
     def optimize(self, strategy: str = "balanced") -> Dict:
         """
@@ -104,6 +119,23 @@ class MoonlighterScheduleOptimizer:
         if strategy not in {"balanced","coverage","satisfaction"}:
             strategy = "balanced"
 
+        # ── Pre-pass: lock in all requested nights for priority=1 (High) faculty ──
+        # These faculty are guaranteed their requested dates before the general
+        # competition runs (e.g. faculty who must travel to participate).
+        # Desired-nights cap is still respected so they don't get over-assigned.
+        high_priority_ids = {fid for fid, f in self.faculty.items() if f.priority == 1}
+        for fid in sorted(high_priority_ids):  # deterministic ordering
+            f = self.faculty[fid]
+            for night in sorted(f.requests):
+                if len(self.assigned_for_faculty[fid]) >= min(f.desired, MAX_SHIFTS_PER_FACULTY):
+                    break
+                if len(self.assignments_by_night[night]) >= self.night_slots:
+                    continue
+                if fid in self.assignments_by_night[night]:
+                    continue
+                self.assignments_by_night[night].append(fid)
+                self.assigned_for_faculty[fid].append(night)
+
         # assignment loop
         for night in nights_sorted:
             requesters = list(self.requests_by_night[night])
@@ -112,8 +144,9 @@ class MoonlighterScheduleOptimizer:
 
             # Sort candidates according to strategy
             if strategy == "balanced":
-                # need score (higher first); tie-break: fewer assigned, then priority, then name
-                requesters.sort(key=lambda fid: (self._need_score(fid), -len(self.faculty[fid].requests), -self.faculty[fid].priority, self.faculty[fid].name), reverse=True)
+                # need score (higher first); tie-break: fewer total requests
+                # (more constrained people = higher urgency)
+                requesters.sort(key=lambda fid: (self._need_score(fid), -len(self.faculty[fid].requests)), reverse=True)
             elif strategy == "coverage":
                 requesters.sort(key=lambda fid: (self.faculty[fid].priority, len(self.assigned_for_faculty[fid])), reverse=False)
             else: # satisfaction
@@ -123,6 +156,8 @@ class MoonlighterScheduleOptimizer:
                 if len(self.assignments_by_night[night]) >= self.night_slots:
                     break
                 f = self.faculty[fid]
+                if len(self.assigned_for_faculty[fid]) >= MAX_SHIFTS_PER_FACULTY:
+                    continue  # hard cap — no provider can exceed this regardless of strategy
                 if len(self.assigned_for_faculty[fid]) >= f.desired and strategy != "coverage":
                     continue  # in satisfaction/balanced, don't exceed desired unless coverage strategy
                 # Avoid double-booking same person multiple times in one night
@@ -131,15 +166,43 @@ class MoonlighterScheduleOptimizer:
                 self.assignments_by_night[night].append(fid)
                 self.assigned_for_faculty[fid].append(night)
 
-            # coverage strategy: if still open slots, allow exceeding desired
+            # coverage strategy: if still open slots, allow exceeding desired (but not hard cap)
             if strategy == "coverage" and len(self.assignments_by_night[night]) < self.night_slots:
                 for fid in requesters:
                     if len(self.assignments_by_night[night]) >= self.night_slots:
                         break
                     if fid in self.assignments_by_night[night]:
                         continue
+                    if len(self.assigned_for_faculty[fid]) >= MAX_SHIFTS_PER_FACULTY:
+                        continue
                     self.assignments_by_night[night].append(fid)
                     self.assigned_for_faculty[fid].append(night)
+
+        # ── Coverage safety pass ──────────────────────────────────────────────
+        # After the main loop, any night that still has open slots gets filled
+        # by the best available requester, ignoring the desired-nights cap.
+        # This ensures maximum night coverage always takes priority over
+        # individual desired-count limits.
+        for night in nights_sorted:
+            if len(self.assignments_by_night[night]) >= self.night_slots:
+                continue  # already fully covered
+            remaining = list(self.requests_by_night[night])
+            if not remaining:
+                continue
+            # Sort by need score so priority and fairness still apply
+            remaining.sort(
+                key=lambda fid: (self._need_score(fid), -len(self.faculty[fid].requests)),
+                reverse=True
+            )
+            for fid in remaining:
+                if len(self.assignments_by_night[night]) >= self.night_slots:
+                    break
+                if fid in self.assignments_by_night[night]:
+                    continue
+                if len(self.assigned_for_faculty[fid]) >= MAX_SHIFTS_PER_FACULTY:
+                    continue
+                self.assignments_by_night[night].append(fid)
+                self.assigned_for_faculty[fid].append(night)
 
         return self._build_output()
 
