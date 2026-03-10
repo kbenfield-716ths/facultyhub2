@@ -660,6 +660,18 @@ function exportScheduleInputs() {
 }
 window.exportScheduleInputs = exportScheduleInputs;
 
+function exportFacultyGrid() {
+  const year = parseInt(document.getElementById('assignmentsYearSelect').value);
+  // Downloads a CSV grid: rows = weeks, columns = faculty, values = service/Unavailable/Open
+  const a = document.createElement('a');
+  a.href = '/api/admin/service-schedule/export-faculty-grid?year=' + year;
+  a.download = 'faculty-grid-' + year + '-' + (year + 1) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+window.exportFacultyGrid = exportFacultyGrid;
+
 /**
  * Find and remove auto-generated assignments that violate a FacultyBlock.
  * Shows a dry-run preview first, then asks the user to confirm removal.

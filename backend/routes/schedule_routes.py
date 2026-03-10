@@ -448,6 +448,102 @@ async def export_schedule_inputs_csv(
     )
 
 
+@router.get("/service-schedule/export-faculty-grid")
+async def export_faculty_grid_csv(
+    year: int = 2026,
+    db: Session = Depends(get_db),
+    current_user: Faculty = Depends(require_admin)
+):
+    """
+    Export a faculty-week grid CSV for human review.
+
+    Columns: Week #, Start Date, End Date, Week Type, then one column per
+    active faculty member (sorted by last name).
+
+    Cell values:
+      - The service abbreviation if assigned (MICU, APP-ICU, Procedures, Consults, Backup)
+      - "Unavailable" if the faculty submitted unavailability for that week
+      - "Open" if no assignment and not unavailable
+    """
+    from backend.models import ServiceWeek, ServiceWeekAssignment, UnavailabilityRequest, DraftWeekRequest, FacultyBlock
+
+    # All active faculty sorted by last name then first name
+    all_faculty = db.query(Faculty).filter(Faculty.active == True).order_by(Faculty.name).all()
+    # Sort by last name token
+    all_faculty_sorted = sorted(all_faculty, key=lambda f: (f.name.split()[-1].lower(), f.name.lower()))
+
+    weeks = db.query(ServiceWeek).filter(
+        ServiceWeek.year == year
+    ).order_by(ServiceWeek.week_number).all()
+
+    if not weeks:
+        raise HTTPException(status_code=404, detail=f"No weeks found for year {year}")
+
+    week_ids = [w.id for w in weeks]
+
+    # Assignment map: (week_id, faculty_id) -> service label
+    assignments = db.query(ServiceWeekAssignment).filter(
+        ServiceWeekAssignment.week_id.in_(week_ids)
+    ).all()
+    assign_map = {}  # (week_id, faculty_id) -> service_type
+    for a in assignments:
+        assign_map[(a.week_id, a.faculty_id)] = a.service_type
+
+    # Unavailability map: week_id -> set of faculty_ids
+    unavail_set = set()
+    for req in db.query(UnavailabilityRequest).filter(
+        UnavailabilityRequest.status == "unavailable"
+    ).all():
+        if req.week_id in {w.id for w in weeks}:
+            unavail_set.add((req.week_id, req.faculty_id))
+
+    # Also include DraftWeekRequest unavailability
+    for dr in db.query(DraftWeekRequest).filter(
+        DraftWeekRequest.week_id.in_(week_ids),
+        DraftWeekRequest.request_type == "unavailable"
+    ).all():
+        unavail_set.add((dr.week_id, dr.faculty_id))
+
+    # FacultyBlock map: week_id -> set of faculty_ids (show as "Blocked")
+    block_set = set()
+    for b in db.query(FacultyBlock).filter(FacultyBlock.week_id.in_(week_ids)).all():
+        block_set.add((b.week_id, b.faculty_id))
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header row: Week #, Start Date, End Date, Week Type, then faculty names
+    header = ["Week #", "Start Date", "End Date", "Week Type"] + [f.name for f in all_faculty_sorted]
+    writer.writerow(header)
+
+    for week in weeks:
+        row = [
+            week.week_number,
+            week.start_date.isoformat(),
+            week.end_date.isoformat(),
+            week.week_type,
+        ]
+        for f in all_faculty_sorted:
+            key = (week.id, f.id)
+            if key in assign_map:
+                row.append(assign_map[key])
+            elif key in block_set:
+                row.append("Blocked")
+            elif key in unavail_set:
+                row.append("Unavailable")
+            else:
+                row.append("Open")
+        writer.writerow(row)
+
+    output.seek(0)
+    filename = f"faculty-grid-{year}-{year+1}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 @router.delete("/service-schedule/auto-only")
 async def clear_auto_generated_schedule(
     year: int = 2026,

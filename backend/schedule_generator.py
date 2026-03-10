@@ -44,19 +44,22 @@ class FacultyCapacity:
     last_assigned_week: int = -999  # Track last week number assigned (for back-to-back prevention)
     assigned_weeks: Set[int] = field(default_factory=set)  # All weeks this faculty is assigned
 
-    def can_work_service(self, service_type: str) -> bool:
+    def can_work_service(self, service_type: str, flex: bool = False) -> bool:
         """Check if faculty can work more weeks of this service.
-        Hard cap: never exceed the allotted target (Rule 2)."""
+        Hard cap: never exceed the allotted target (Rule 2).
+        flex=True allows up to target+1 as a last-resort fallback for
+        faculty whose target > 0 (zero-allocation is always a hard block)."""
+        limit = 1 if flex else 0
         if service_type == "MICU":
-            return self.micu_target > 0 and self.micu_assigned < self.micu_target
+            return self.micu_target > 0 and self.micu_assigned < self.micu_target + limit
         elif service_type == "APP-ICU":
-            return self.app_icu_target > 0 and self.app_icu_assigned < self.app_icu_target
+            return self.app_icu_target > 0 and self.app_icu_assigned < self.app_icu_target + limit
         elif service_type == "Procedures":
-            return self.procedures_target > 0 and self.procedures_assigned < self.procedures_target
+            return self.procedures_target > 0 and self.procedures_assigned < self.procedures_target + limit
         elif service_type == "Consults":
-            return self.consults_target > 0 and self.consults_assigned < self.consults_target
+            return self.consults_target > 0 and self.consults_assigned < self.consults_target + limit
         elif service_type == "Backup":
-            return self.backup_target > 0 and self.backup_assigned < self.backup_target
+            return self.backup_target > 0 and self.backup_assigned < self.backup_target + limit
         return False
 
     def can_work_week(self, week_number: int) -> bool:
@@ -290,7 +293,8 @@ def generate_schedule(
                 if slots_needed <= 0:
                     continue
 
-                eligible = []
+                strict_eligible = []
+                flex_eligible = []
                 for fid, cap in cap_map.items():
                     if fid in unavailable_this_week or fid in blocked_this_week:
                         continue
@@ -301,14 +305,22 @@ def generate_schedule(
                     if not cap.can_work_week(week_number):
                         run_b2b += 1
                         continue
-                    if cap.can_work_service(service_type):
-                        eligible.append((fid, cap))
+                    if cap.can_work_service(service_type, flex=False):
+                        strict_eligible.append((fid, cap))
+                    elif cap.can_work_service(service_type, flex=True):
+                        # At cap but target > 0 — eligible as ±1 overflow only
+                        flex_eligible.append((fid, cap))
 
-                eligible.sort(key=lambda x: (
+                # Sort each tier: volunteers first, then most-needed, then random
+                sort_key = lambda x: (
                     0 if x[0] in volunteers_this_week else 1,
                     -x[1].get_priority_score(service_type),
                     random.random()
-                ))
+                )
+                strict_eligible.sort(key=sort_key)
+                flex_eligible.sort(key=sort_key)
+                # Strict-cap faculty always preferred; flex is last resort
+                eligible = strict_eligible + flex_eligible
 
                 assigned_count = 0
                 for fid, cap in eligible:
@@ -344,7 +356,7 @@ def generate_schedule(
     weeks_hardest_first = sorted(weeks, key=_week_difficulty, reverse=True)
 
     # ── Multi-run: try N orderings and keep the one with the fewest gaps ──────
-    NUM_RUNS = 20
+    NUM_RUNS = 40
 
     best_assignments = None
     best_issues = None
