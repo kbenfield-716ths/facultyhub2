@@ -61,7 +61,7 @@ function renderFacultyTable() {
   const tbody = document.getElementById('facultyTableBody');
 
   if (allFaculty.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="13" class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No Faculty Members</div><div class="empty-state-description">Add your first faculty member using the form above</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="14" class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No Faculty Members</div><div class="empty-state-description">Add your first faculty member using the form above</div></td></tr>';
     return;
   }
 
@@ -75,14 +75,16 @@ function renderFacultyTable() {
     const appIcuActual = (faculty.service_weeks && faculty.service_weeks.APP_ICU) || 0;
     const proceduresActual = (faculty.service_weeks && faculty.service_weeks.Procedures) || 0;
     const consultsActual = (faculty.service_weeks && faculty.service_weeks.Consults) || 0;
-    const totalActual = micuActual + appIcuActual + proceduresActual + consultsActual;
+    const backupActual = (faculty.service_weeks && faculty.service_weeks.Backup) || 0;
+    const totalActual = micuActual + appIcuActual + proceduresActual + consultsActual + backupActual;
 
     // Get expected targets
     const micuTarget = faculty.micu_weeks || 0;
     const appIcuTarget = faculty.app_icu_weeks || 0;
     const proceduresTarget = faculty.procedure_weeks || 0;
     const consultsTarget = faculty.consult_weeks || 0;
-    const totalTarget = micuTarget + appIcuTarget + proceduresTarget + consultsTarget;
+    const backupTarget = faculty.backup_weeks || 0;
+    const totalTarget = micuTarget + appIcuTarget + proceduresTarget + consultsTarget + backupTarget;
 
     // Helper function to format actual/target with color coding
     function formatActualTarget(actual, target) {
@@ -123,6 +125,7 @@ function renderFacultyTable() {
                     '<td style="text-align: center;">' + formatActualTarget(appIcuActual, appIcuTarget) + '</td>' +
                     '<td style="text-align: center;">' + formatActualTarget(proceduresActual, proceduresTarget) + '</td>' +
                     '<td style="text-align: center;">' + formatActualTarget(consultsActual, consultsTarget) + '</td>' +
+                    '<td style="text-align: center;">' + formatActualTarget(backupActual, backupTarget) + '</td>' +
                     '<td style="text-align: center; font-weight: 700;">' + formatActualTarget(totalActual, totalTarget) + '</td>' +
                     '<td>' + statusBadge + '</td>' +
                     '<td><div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">' +
@@ -228,6 +231,7 @@ function openEditFaculty(facultyId) {
   document.getElementById('editFacultyAppIcuWeeks').value = faculty.app_icu_weeks || 0;
   document.getElementById('editFacultyProcedureWeeks').value = faculty.procedure_weeks || 0;
   document.getElementById('editFacultyConsultWeeks').value = faculty.consult_weeks || 0;
+  document.getElementById('editFacultyBackupWeeks').value = faculty.backup_weeks || 0;
 
   document.getElementById('editFacultyModal').classList.add('show');
 }
@@ -258,7 +262,8 @@ async function submitEditFaculty(event) {
     micu_weeks: parseInt(document.getElementById('editFacultyMicuWeeks').value) || 0,
     app_icu_weeks: parseInt(document.getElementById('editFacultyAppIcuWeeks').value) || 0,
     procedure_weeks: parseInt(document.getElementById('editFacultyProcedureWeeks').value) || 0,
-    consult_weeks: parseInt(document.getElementById('editFacultyConsultWeeks').value) || 0
+    consult_weeks: parseInt(document.getElementById('editFacultyConsultWeeks').value) || 0,
+    backup_weeks: parseInt(document.getElementById('editFacultyBackupWeeks').value) || 0
   };
 
   // Strip null values — the backend uses exclude_unset, so omitting a field

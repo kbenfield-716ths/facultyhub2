@@ -227,14 +227,15 @@ async def get_service_capacity_summary(
         "MICU": sum(f.micu_weeks for f in faculty_list),
         "APP-ICU": sum(f.app_icu_weeks for f in faculty_list),
         "Procedures": sum(f.procedure_weeks for f in faculty_list),
-        "Consults": sum(f.consult_weeks for f in faculty_list)
+        "Consults": sum(f.consult_weeks for f in faculty_list),
+        "Backup": sum(getattr(f, "backup_weeks", None) or 0 for f in faculty_list),
     }
-    
+
     # Count actual assignments by service type for this year
     from sqlalchemy import and_
-    
-    actual = {"MICU": 0, "APP-ICU": 0, "Procedures": 0, "Consults": 0}
-    
+
+    actual = {"MICU": 0, "APP-ICU": 0, "Procedures": 0, "Consults": 0, "Backup": 0}
+
     for service_type in actual.keys():
         count = db.query(func.count(ServiceWeekAssignment.id)).join(
             ServiceWeek, ServiceWeekAssignment.week_id == ServiceWeek.id
@@ -251,7 +252,7 @@ async def get_service_capacity_summary(
     
     # Calculate capacity status for each service
     result = []
-    for service_type in ["MICU", "APP-ICU", "Procedures", "Consults"]:
+    for service_type in ["MICU", "APP-ICU", "Procedures", "Consults", "Backup"]:
         expected_weeks = expected[service_type]
         assigned_weeks = actual[service_type]
         remaining = expected_weeks - assigned_weeks
@@ -296,6 +297,164 @@ async def get_service_capacity_summary(
         },
         "active_faculty_count": len(faculty_list)
     }
+# ===== SCHEDULE SUMMARY ENDPOINT =====
+
+@router.get("/schedule-summary")
+async def get_schedule_summary(
+    year: int = 2026,
+    db: Session = Depends(get_db),
+    current_user: Faculty = Depends(require_admin)
+):
+    """
+    Generate a summary report for the service schedule:
+    - Fill rates per service type
+    - Unavailability request honored percentage
+    - Volunteer request honored percentage
+    - Holiday coverage (Thanksgiving, Christmas, Spring Break)
+    """
+    from sqlalchemy import and_
+    from backend.schedule_generator import SERVICE_REQUIREMENTS
+
+    weeks = db.query(ServiceWeek).filter(ServiceWeek.year == year).all()
+    if not weeks:
+        return {"year": year, "error": f"No weeks found for year {year}"}
+
+    week_ids = [w.id for w in weeks]
+    total_weeks = len(weeks)
+
+    # ── 1. Fill rates ─────────────────────────────────────────────────────────
+    fill_rates = []
+    for service_type, required_per_week in SERVICE_REQUIREMENTS.items():
+        slots = total_weeks * required_per_week
+        filled = db.query(func.count(ServiceWeekAssignment.id)).filter(
+            ServiceWeekAssignment.week_id.in_(week_ids),
+            ServiceWeekAssignment.service_type == service_type
+        ).scalar() or 0
+        pct = round(filled / slots * 100, 1) if slots > 0 else 0.0
+        fill_rates.append({
+            "service_type": service_type,
+            "required_per_week": required_per_week,
+            "slots": slots,
+            "filled": filled,
+            "unfilled": slots - filled,
+            "pct": pct,
+        })
+
+    # ── 2. Build assignment lookup: week_id -> set of faculty_ids ─────────────
+    assignments_by_week = {}
+    for a in db.query(ServiceWeekAssignment).filter(
+        ServiceWeekAssignment.week_id.in_(week_ids)
+    ).all():
+        assignments_by_week.setdefault(a.week_id, set()).add(a.faculty_id)
+
+    # ── 3. Unavailability requests honored ────────────────────────────────────
+    # Also check DraftWeekRequest for unavailable requests
+    unavail_submitted = 0
+    unavail_honored = 0
+
+    for req in db.query(UnavailabilityRequest).filter(
+        UnavailabilityRequest.week_id.in_(week_ids),
+        UnavailabilityRequest.status == "unavailable"
+    ).all():
+        unavail_submitted += 1
+        if req.faculty_id not in assignments_by_week.get(req.week_id, set()):
+            unavail_honored += 1
+
+    for req in db.query(DraftWeekRequest).filter(
+        DraftWeekRequest.week_id.in_(week_ids),
+        DraftWeekRequest.request_type == "unavailable"
+    ).all():
+        unavail_submitted += 1
+        if req.faculty_id not in assignments_by_week.get(req.week_id, set()):
+            unavail_honored += 1
+
+    unavail_pct = round(unavail_honored / unavail_submitted * 100, 1) if unavail_submitted > 0 else None
+
+    # ── 4. Volunteer requests honored ─────────────────────────────────────────
+    volunteer_submitted = 0
+    volunteer_honored = 0
+
+    for req in db.query(UnavailabilityRequest).filter(
+        UnavailabilityRequest.week_id.in_(week_ids),
+        UnavailabilityRequest.status == "available"
+    ).all():
+        volunteer_submitted += 1
+        if req.faculty_id in assignments_by_week.get(req.week_id, set()):
+            volunteer_honored += 1
+
+    for req in db.query(DraftWeekRequest).filter(
+        DraftWeekRequest.week_id.in_(week_ids),
+        DraftWeekRequest.request_type == "volunteer"
+    ).all():
+        volunteer_submitted += 1
+        if req.faculty_id in assignments_by_week.get(req.week_id, set()):
+            volunteer_honored += 1
+
+    volunteer_pct = round(volunteer_honored / volunteer_submitted * 100, 1) if volunteer_submitted > 0 else None
+
+    # ── 5. Holiday coverage ───────────────────────────────────────────────────
+    holiday_types = ["thanksgiving", "christmas", "spring_break"]
+    holiday_weeks = db.query(ServiceWeek).filter(
+        ServiceWeek.year == year,
+        ServiceWeek.week_type.in_(holiday_types)
+    ).order_by(ServiceWeek.week_number).all()
+
+    # Build faculty name lookup
+    faculty_lookup = {f.id: f.name for f in db.query(Faculty).all()}
+
+    # Get assignments for holiday weeks
+    holiday_week_ids = [w.id for w in holiday_weeks]
+    holiday_assignments = db.query(ServiceWeekAssignment).filter(
+        ServiceWeekAssignment.week_id.in_(holiday_week_ids)
+    ).all() if holiday_week_ids else []
+
+    # Group assignments by week
+    holiday_assign_map = {}
+    for a in holiday_assignments:
+        holiday_assign_map.setdefault(a.week_id, []).append({
+            "faculty_id": a.faculty_id,
+            "faculty_name": faculty_lookup.get(a.faculty_id, a.faculty_id),
+            "service_type": a.service_type,
+        })
+
+    holiday_coverage = {}
+    for ht in holiday_types:
+        holiday_coverage[ht] = []
+
+    for week in holiday_weeks:
+        entry = {
+            "week_id": week.id,
+            "week_label": week.label,
+            "week_number": week.week_number,
+            "assignments": holiday_assign_map.get(week.id, []),
+        }
+        holiday_coverage.setdefault(week.week_type, []).append(entry)
+
+    # ── 6. Overall stats ──────────────────────────────────────────────────────
+    total_slots = sum(r["slots"] for r in fill_rates)
+    total_filled = sum(r["filled"] for r in fill_rates)
+    overall_pct = round(total_filled / total_slots * 100, 1) if total_slots > 0 else 0.0
+
+    return {
+        "year": year,
+        "overall_fill_pct": overall_pct,
+        "total_slots": total_slots,
+        "total_filled": total_filled,
+        "fill_rates": fill_rates,
+        "unavailability_requests": {
+            "submitted": unavail_submitted,
+            "honored": unavail_honored,
+            "pct": unavail_pct,
+        },
+        "volunteer_requests": {
+            "submitted": volunteer_submitted,
+            "honored": volunteer_honored,
+            "pct": volunteer_pct,
+        },
+        "holiday_coverage": holiday_coverage,
+    }
+
+
 # ===== CSV IMPORT ENDPOINT =====
 
 @router.post("/import-historic-assignments")

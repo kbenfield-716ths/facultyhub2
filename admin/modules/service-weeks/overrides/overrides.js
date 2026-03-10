@@ -199,16 +199,42 @@ async function submitAssignment(e) {
   };
 
   try {
-    const response = await fetch('/api/admin/service-weeks/create-assignment', {
+    const response = await fetch('/api/admin/service-weeks/create-manual-assignment', {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
-    if (!response.ok) throw new Error('Failed to create assignment');
+    if (!response.ok) {
+      let errorMsg = 'Failed to create assignment';
+      try {
+        const errData = await response.json();
+        if (errData.detail) errorMsg = errData.detail;
+      } catch (_) {}
+      throw new Error(errorMsg);
+    }
 
-    showOverrideAlert('Assignment created successfully', 'success');
+    const data = await response.json();
+
+    // Show bumped assignments first — these were auto-removed to make room
+    if (data.bumped && data.bumped.length > 0) {
+      const bumpedNames = data.bumped.join(', ');
+      showOverrideAlert(
+        '🔄 Auto-removed to balance slot count: ' + bumpedNames,
+        'warning'
+      );
+    }
+
+    // Show any conflict warnings (e.g. unavailability override)
+    if (data.warnings && data.warnings.length > 0) {
+      data.warnings.forEach(function(warning) {
+        showOverrideAlert('⚠️ ' + warning, 'warning');
+      });
+    }
+
+    showOverrideAlert('✅ Manual assignment created successfully', 'success');
+
     closeCreateAssignmentModal();
     await loadManualAssignments();
   } catch (error) {

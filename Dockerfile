@@ -17,6 +17,13 @@ COPY migrations /app/migrations
 # Copy faculty.csv so the app can seed providers
 COPY backend/seed_data/faculty.csv /app/faculty.csv
 
+# Copy admin/utility scripts
+COPY import_sleep_schedule.py /app/import_sleep_schedule.py
+COPY sleep.csv /app/sleep.csv
+COPY block_katie_waybill.py /app/block_katie_waybill.py
+COPY import_allocations.py /app/import_allocations.py
+COPY block_new_faculty.py /app/block_new_faculty.py
+
 # Copy all static files for the frontend
 # Copy HTML files (both .html and .Html extensions)
 COPY . /tmp/build/

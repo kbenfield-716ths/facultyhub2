@@ -39,6 +39,7 @@ class FacultyCreate(BaseModel):
     app_icu_weeks: int = 0
     procedure_weeks: int = 0
     consult_weeks: int = 0
+    backup_weeks: int = 0
 
 
 class FacultyUpdate(BaseModel):
@@ -58,6 +59,7 @@ class FacultyUpdate(BaseModel):
     app_icu_weeks: Optional[int] = None
     procedure_weeks: Optional[int] = None
     consult_weeks: Optional[int] = None
+    backup_weeks: Optional[int] = None
 
 
 class ServiceAssignmentSummary(BaseModel):
@@ -66,6 +68,7 @@ class ServiceAssignmentSummary(BaseModel):
     APP_ICU: int = 0
     Procedures: int = 0
     Consults: int = 0
+    Backup: int = 0
     total: int = 0
 
 
@@ -90,6 +93,7 @@ class FacultyResponse(BaseModel):
     app_icu_weeks: int
     procedure_weeks: int
     consult_weeks: int
+    backup_weeks: int = 0
     service_weeks: ServiceAssignmentSummary
 
 
@@ -115,6 +119,12 @@ class ServiceWeekAssignmentRequest(BaseModel):
     service_type: str
     notes: Optional[str] = None
     override_points: Optional[int] = None
+
+
+class FacultyStatusUpdate(BaseModel):
+    """Body for toggling active / is_active status"""
+    active: Optional[bool] = None
+    is_active: Optional[bool] = None
 
 
 class ServiceWeekReassignRequest(BaseModel):
@@ -169,6 +179,8 @@ def list_faculty(
                 service_weeks.Procedures = count
             elif service_type == "Consults":
                 service_weeks.Consults = count
+            elif service_type == "Backup":
+                service_weeks.Backup = count
 
         service_weeks.total = total
 
@@ -192,6 +204,7 @@ def list_faculty(
             app_icu_weeks=faculty.app_icu_weeks,
             procedure_weeks=faculty.procedure_weeks,
             consult_weeks=faculty.consult_weeks,
+            backup_weeks=getattr(faculty, "backup_weeks", None) or 0,
             service_weeks=service_weeks
         ))
 
@@ -258,6 +271,7 @@ def get_faculty(
         app_icu_weeks=faculty.app_icu_weeks,
         procedure_weeks=faculty.procedure_weeks,
         consult_weeks=faculty.consult_weeks,
+        backup_weeks=getattr(faculty, "backup_weeks", None) or 0,
         service_weeks=service_weeks
     )
 
@@ -314,6 +328,7 @@ def create_faculty(
         app_icu_weeks=faculty_data.app_icu_weeks,
         procedure_weeks=faculty_data.procedure_weeks,
         consult_weeks=faculty_data.consult_weeks,
+        backup_weeks=faculty_data.backup_weeks,
         password_hash=hashed_password,
         password_changed=False,
         registered=False
@@ -343,6 +358,7 @@ def create_faculty(
         app_icu_weeks=new_faculty.app_icu_weeks,
         procedure_weeks=new_faculty.procedure_weeks,
         consult_weeks=new_faculty.consult_weeks,
+        backup_weeks=getattr(new_faculty, "backup_weeks", None) or 0,
         service_weeks=ServiceAssignmentSummary()
     )
 
@@ -422,12 +438,53 @@ def update_faculty(
         registered=faculty.registered,
         moonlighter=faculty.moonlighter,
         draft_exempt=faculty.draft_exempt or False,
+        moonlighting_priority=getattr(faculty, "moonlighting_priority", None) or 2,
         micu_weeks=faculty.micu_weeks,
         app_icu_weeks=faculty.app_icu_weeks,
         procedure_weeks=faculty.procedure_weeks,
         consult_weeks=faculty.consult_weeks,
+        backup_weeks=getattr(faculty, "backup_weeks", None) or 0,
         service_weeks=service_weeks
     )
+
+
+@router.put("/faculty/{faculty_id}/status")
+def update_faculty_status(
+    faculty_id: str,
+    payload: FacultyStatusUpdate,
+    admin_user: Faculty = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Toggle the active status of a faculty member.
+    Expects JSON body: { "active": true | false }
+    """
+    faculty = db.query(Faculty).filter_by(id=faculty_id).first()
+    if not faculty:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Faculty not found"
+        )
+
+    # Accept either 'active' or 'is_active' to be tolerant of both callers
+    if payload.active is not None:
+        new_active = bool(payload.active)
+    elif payload.is_active is not None:
+        new_active = bool(payload.is_active)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request body must include 'active' or 'is_active' field"
+        )
+
+    faculty.active = new_active
+    db.commit()
+
+    return {
+        "id": faculty.id,
+        "name": faculty.name,
+        "active": faculty.active
+    }
 
 
 @router.delete("/faculty/{faculty_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -545,10 +602,12 @@ def toggle_admin_status(
         registered=faculty.registered,
         moonlighter=faculty.moonlighter,
         draft_exempt=faculty.draft_exempt or False,
+        moonlighting_priority=getattr(faculty, "moonlighting_priority", None) or 2,
         micu_weeks=faculty.micu_weeks,
         app_icu_weeks=faculty.app_icu_weeks,
         procedure_weeks=faculty.procedure_weeks,
         consult_weeks=faculty.consult_weeks,
+        backup_weeks=getattr(faculty, "backup_weeks", None) or 0,
         service_weeks=service_weeks
     )
 
@@ -612,10 +671,12 @@ def toggle_draft_exempt(
         registered=faculty.registered,
         moonlighter=faculty.moonlighter,
         draft_exempt=faculty.draft_exempt or False,
+        moonlighting_priority=getattr(faculty, "moonlighting_priority", None) or 2,
         micu_weeks=faculty.micu_weeks,
         app_icu_weeks=faculty.app_icu_weeks,
         procedure_weeks=faculty.procedure_weeks,
         consult_weeks=faculty.consult_weeks,
+        backup_weeks=getattr(faculty, "backup_weeks", None) or 0,
         service_weeks=service_weeks
     )
 

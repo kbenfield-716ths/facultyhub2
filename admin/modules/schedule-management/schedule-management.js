@@ -36,6 +36,8 @@ function showScheduleTab(tabId) {
     loadHeatmap(scheduleCurrentYear);
   } else if (tabId === 'weeks') {
     loadWeeks();
+  } else if (tabId === 'assignments') {
+    loadAssignments();
   }
 }
 
@@ -317,6 +319,7 @@ window.clearAllWeeks = clearAllWeeks;
 window.loadWeeks = loadWeeks;
 window.openEditWeek = openEditWeek;
 window.closeEditWeekModal = closeEditWeekModal;
+window.cleanupUnavailabilityViolations = cleanupUnavailabilityViolations;
 
 // ==================== MODAL CLOSE FUNCTIONALITY ====================
 
@@ -362,3 +365,430 @@ document.addEventListener('keydown', function(event) {
     }
   }
 });
+
+
+// ============================================================
+// ASSIGNMENTS TAB — Faculty Service Schedule
+// ============================================================
+
+/**
+ * Load and display current faculty assignments from the DB.
+ */
+async function loadAssignments() {
+  const year = parseInt(document.getElementById('assignmentsYearSelect').value);
+
+  // Show loading, hide everything else
+  document.getElementById('assignmentsLoading').style.display = 'block';
+  document.getElementById('assignmentsContent').style.display = 'none';
+  document.getElementById('assignmentsEmpty').style.display = 'none';
+  document.getElementById('assignmentStats').style.display = 'none';
+  document.getElementById('generateResultPanel').style.display = 'none';
+
+  try {
+    const resp = await fetch('/api/admin/service-schedule?year=' + year, { credentials: 'same-origin' });
+    if (!resp.ok) throw new Error('Failed to load schedule');
+    const data = await resp.json();
+
+    document.getElementById('assignmentsLoading').style.display = 'none';
+
+    if (!data.success || data.total_assignments === 0) {
+      document.getElementById('assignmentsEmpty').style.display = 'block';
+      return;
+    }
+
+    // Populate stats
+    const incomplete = data.total_weeks - data.complete_weeks;
+    document.getElementById('statTotalWeeks').textContent = data.total_weeks;
+    document.getElementById('statCompleteWeeks').textContent = data.complete_weeks;
+    document.getElementById('statTotalAssignments').textContent = data.total_assignments;
+    document.getElementById('statIncomplete').textContent = incomplete;
+    document.getElementById('statIncomplete').style.color = incomplete > 0 ? '#ef4444' : '#10b981';
+    document.getElementById('assignmentStats').style.display = 'block';
+
+    // Render table
+    renderAssignmentTable(data.schedule);
+    document.getElementById('assignmentsContent').style.display = 'block';
+
+  } catch (err) {
+    document.getElementById('assignmentsLoading').style.display = 'none';
+    document.getElementById('assignmentsEmpty').style.display = 'block';
+    console.error('Error loading assignments:', err);
+  }
+}
+
+/**
+ * Render the week-by-week assignment table.
+ */
+function renderAssignmentTable(schedule) {
+  const tbody = document.getElementById('assignmentsTableBody');
+
+  tbody.innerHTML = schedule.map(function(week) {
+    const complete = week.is_complete;
+    const rowClass = complete ? 'week-complete' : 'week-understaffed';
+
+    const startDate = new Date(week.start_date + 'T00:00:00');
+    const endDate = new Date(week.end_date + 'T00:00:00');
+    const dateStr = formatShortDate(startDate) + ' – ' + formatShortDate(endDate);
+
+    function chipsHtml(list) {
+      if (!list || list.length === 0) return '<span style="color:#ef4444; font-size:12px;">⚠ Unassigned</span>';
+      return list.map(function(f) {
+        return '<span class="faculty-chip">' + escapeHtml(f.faculty_name) + '</span>';
+      }).join('');
+    }
+
+    const statusBadge = complete
+      ? '<span class="status-badge ok">✓ Full</span>'
+      : '<span class="status-badge warn">⚠ Short</span>';
+
+    return '<tr class="' + rowClass + '">' +
+      '<td style="font-weight:600; color:#6b7280;">' + week.week_number + '</td>' +
+      '<td style="font-size:12px; color:#374151;">' + dateStr + '</td>' +
+      '<td>' + chipsHtml(week.assignments.MICU) + '</td>' +
+      '<td>' + chipsHtml(week.assignments['APP-ICU']) + '</td>' +
+      '<td>' + chipsHtml(week.assignments.Procedures) + '</td>' +
+      '<td>' + chipsHtml(week.assignments.Consults) + '</td>' +
+      '<td>' + chipsHtml(week.assignments.Backup) + '</td>' +
+      '<td style="text-align:center;">' + statusBadge + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+/**
+ * Show a confirmation dialog before generating assignments.
+ */
+function confirmGenerateAssignments() {
+  const year = parseInt(document.getElementById('assignmentsYearSelect').value);
+  const yearLabel = year + '–' + (year + 1);
+
+  if (!confirm(
+    'Generate faculty assignments for ' + yearLabel + '?\n\n' +
+    'This will:\n' +
+    '  • Clear any existing auto-generated assignments\n' +
+    '  • Assign faculty to MICU, APP-ICU, Procedures, and Consults\n' +
+    '  • Respect all unavailability requests\n' +
+    '  • Enforce no back-to-back week constraints\n\n' +
+    'Manual overrides will be preserved. Continue?'
+  )) return;
+
+  runGenerateAssignments(year, true);
+}
+
+/**
+ * Show a confirmation dialog before clearing assignments.
+ */
+async function confirmClearAutoOnly() {
+  const year = parseInt(document.getElementById('assignmentsYearSelect').value);
+  const yearLabel = year + '–' + (year + 1);
+
+  if (!confirm(
+    'Clear ONLY auto-generated assignments for ' + yearLabel + '?\n\n' +
+    'Manual assignments and imported CSV assignments will be preserved.\n\n' +
+    'Use this to see a clean baseline before re-running the generator.'
+  )) return;
+
+  try {
+    const resp = await fetch('/api/admin/service-schedule/auto-only?year=' + year, {
+      method: 'DELETE',
+      credentials: 'same-origin'
+    });
+    const data = await resp.json();
+    if (data.success) {
+      showScheduleAlert('🧼 Cleared ' + data.assignments_deleted + ' auto-generated assignment(s). Manual and imported assignments preserved.', 'success');
+      await loadAssignments();
+    } else {
+      showScheduleAlert('Failed to clear auto-generated assignments.', 'error');
+    }
+  } catch (err) {
+    showScheduleAlert('Error: ' + err.message, 'error');
+  }
+}
+window.confirmClearAutoOnly = confirmClearAutoOnly;
+
+function confirmClearAssignments() {
+  const year = parseInt(document.getElementById('assignmentsYearSelect').value);
+  const yearLabel = year + '–' + (year + 1);
+
+  if (!confirm(
+    'Clear ALL assignments for ' + yearLabel + ' and rebuild from scratch?\n\n' +
+    'This cannot be undone. Continue?'
+  )) return;
+
+  runGenerateAssignments(year, true);
+}
+
+/**
+ * Call the backend to generate the schedule.
+ */
+async function runGenerateAssignments(year, clearExisting) {
+  // Disable all action buttons during run
+  const buttons = document.querySelectorAll('#schedule-assignments button');
+  buttons.forEach(function(b) { b.disabled = true; });
+
+  document.getElementById('assignmentsLoading').style.display = 'block';
+  document.getElementById('assignmentsContent').style.display = 'none';
+  document.getElementById('assignmentsEmpty').style.display = 'none';
+  document.getElementById('assignmentStats').style.display = 'none';
+  document.getElementById('generateResultPanel').style.display = 'none';
+
+  try {
+    const resp = await fetch('/api/admin/generate-service-schedule', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ year: year, clear_existing: clearExisting })
+    });
+
+    const result = await resp.json();
+    document.getElementById('assignmentsLoading').style.display = 'none';
+
+    if (!resp.ok || !result.success) {
+      document.getElementById('generateResultPanel').innerHTML =
+        '<div class="issue-panel error"><h4>❌ Generation Failed</h4><p>' +
+        escapeHtml(result.error || result.detail || 'Unknown error') + '</p></div>';
+      document.getElementById('generateResultPanel').style.display = 'block';
+      return;
+    }
+
+    // Render result summary
+    renderGenerateResult(result);
+
+    // Reload the assignment table
+    await loadAssignments();
+
+  } catch (err) {
+    document.getElementById('assignmentsLoading').style.display = 'none';
+    document.getElementById('generateResultPanel').innerHTML =
+      '<div class="issue-panel error"><h4>❌ Network Error</h4><p>' + escapeHtml(err.message) + '</p></div>';
+    document.getElementById('generateResultPanel').style.display = 'block';
+    console.error('Error generating assignments:', err);
+  } finally {
+    buttons.forEach(function(b) { b.disabled = false; });
+  }
+}
+
+/**
+ * Render the result panel after generation.
+ */
+function renderGenerateResult(result) {
+  let html = '';
+
+  // Success summary
+  html += '<div class="issue-panel success">' +
+    '<h4>✅ Schedule Generated — ' + result.assignments_created + ' assignments across ' + result.total_weeks + ' weeks</h4>' +
+    '<ul>' +
+    '<li>MICU: ' + result.summary.MICU + ' assignments</li>' +
+    '<li>APP-ICU: ' + result.summary['APP-ICU'] + ' assignments</li>' +
+    '<li>Procedures: ' + result.summary.Procedures + ' assignments</li>' +
+    '<li>Consults: ' + result.summary.Consults + ' assignments</li>' +
+    '<li>Backup: ' + (result.summary.Backup || 0) + ' assignments</li>' +
+    '<li>Back-to-back conflicts prevented: ' + result.back_to_back_prevented + '</li>' +
+    '</ul></div>';
+
+  // Staffing issues (understaffed weeks)
+  if (result.staffing_issues && result.staffing_issues.length > 0) {
+    html += '<div class="issue-panel error">' +
+      '<h4>⚠️ Understaffed Weeks (' + result.staffing_issues.length + ')</h4>' +
+      '<ul>' +
+      result.staffing_issues.map(function(issue) {
+        return '<li>Week ' + issue.week + ' (' + escapeHtml(issue.week_label) + ') — ' +
+          escapeHtml(issue.service) + ': ' + issue.assigned + '/' + issue.required + ' filled</li>';
+      }).join('') +
+      '</ul></div>';
+  }
+
+  // Capacity issues (faculty significantly over/under target)
+  if (result.capacity_issues && result.capacity_issues.length > 0) {
+    html += '<div class="issue-panel warning">' +
+      '<h4>📊 Capacity Variances (' + result.capacity_issues.length + ')</h4>' +
+      '<ul>' +
+      result.capacity_issues.map(function(issue) {
+        const sign = issue.variance > 0 ? '+' : '';
+        return '<li>' + escapeHtml(issue.faculty_name) + ' — ' + escapeHtml(issue.service) + ': ' +
+          issue.assigned + ' assigned vs ' + issue.target + ' target (' + sign + issue.variance + ')</li>';
+      }).join('') +
+      '</ul></div>';
+  }
+
+  document.getElementById('generateResultPanel').innerHTML = html;
+  document.getElementById('generateResultPanel').style.display = 'block';
+}
+
+/**
+ * Format a date as "Jul 7" style.
+ */
+function formatShortDate(date) {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/**
+ * Escape HTML for safe rendering.
+ */
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Download the full schedule as a CSV file directly from the server.
+ */
+function exportScheduleCSV() {
+  const year = parseInt(document.getElementById('assignmentsYearSelect').value);
+  // Let the browser handle the download via a plain link — the server returns
+  // Content-Disposition: attachment so the browser saves it automatically.
+  const a = document.createElement('a');
+  a.href = '/api/admin/service-schedule/export?year=' + year;
+  a.download = 'schedule-' + year + '-' + (year + 1) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function exportScheduleInputs() {
+  const year = parseInt(document.getElementById('assignmentsYearSelect').value);
+  // Downloads a ZIP containing unavailability CSV + volunteer CSV
+  const a = document.createElement('a');
+  a.href = '/api/admin/service-schedule/export-inputs?year=' + year;
+  a.download = 'schedule-inputs-' + year + '-' + (year + 1) + '.zip';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+window.exportScheduleInputs = exportScheduleInputs;
+
+/**
+ * Find and remove auto-generated assignments that violate a FacultyBlock.
+ * Shows a dry-run preview first, then asks the user to confirm removal.
+ */
+async function cleanupBlockViolations() {
+  const year = parseInt(document.getElementById('assignmentsYearSelect').value);
+
+  try {
+    // Dry-run first to get the list
+    const dryResp = await fetch(
+      '/api/admin/service-schedule/cleanup-blocks?year=' + year + '&dry_run=true',
+      { method: 'POST', credentials: 'same-origin' }
+    );
+    if (!dryResp.ok) throw new Error('Dry-run failed');
+    const dryData = await dryResp.json();
+
+    if (dryData.removed === 0) {
+      showScheduleAlert('✅ No block violations found — schedule is clean.', 'success');
+      return;
+    }
+
+    // Build a readable list for the confirm dialog
+    const lines = dryData.violations.map(function(v) {
+      return '  • ' + v.faculty_name + ' → ' + v.week_label + ' (' + v.service_type + ')';
+    });
+    const msg =
+      dryData.removed + ' assignment(s) violate FacultyBlocks and should be removed:\n\n' +
+      lines.join('\n') +
+      '\n\nRemove these now?';
+
+    if (!confirm(msg)) return;
+
+    // Actually delete
+    const resp = await fetch(
+      '/api/admin/service-schedule/cleanup-blocks?year=' + year + '&dry_run=false',
+      { method: 'POST', credentials: 'same-origin' }
+    );
+    if (!resp.ok) throw new Error('Cleanup failed');
+    const data = await resp.json();
+
+    showScheduleAlert(
+      '🧹 Removed ' + data.removed + ' block-violating assignment(s). Reloading...',
+      'success'
+    );
+    await loadAssignments();
+
+  } catch (err) {
+    console.error('Block cleanup error:', err);
+    showScheduleAlert('Error during block cleanup: ' + err.message, 'error');
+  }
+}
+
+/**
+ * Find and remove auto-generated assignments that violate an unavailability
+ * request.  Unavailability is a HARD STOP — 100% must be honored.
+ * Shows a dry-run preview first, then asks the user to confirm removal.
+ * Manual and imported assignments are NOT removed (admin is responsible).
+ */
+async function cleanupUnavailabilityViolations() {
+  const year = parseInt(document.getElementById('assignmentsYearSelect').value);
+
+  try {
+    // Dry-run first to preview
+    const dryResp = await fetch(
+      '/api/admin/service-schedule/cleanup-unavailability?year=' + year + '&dry_run=true',
+      { method: 'POST', credentials: 'same-origin' }
+    );
+    if (!dryResp.ok) throw new Error('Dry-run failed');
+    const dryData = await dryResp.json();
+
+    if (dryData.removed === 0) {
+      let msg = '✅ No auto-generated unavailability violations found.';
+      if (dryData.manual_imported_violations > 0) {
+        msg += '\n\n⚠️ Note: ' + dryData.manual_imported_violations +
+          ' manual/imported assignment(s) still conflict with unavailability requests — ' +
+          'review those in the Overrides panel.';
+        alert(msg);
+      } else {
+        showScheduleAlert(msg, 'success');
+      }
+      return;
+    }
+
+    // Build readable list
+    const lines = dryData.violations.map(function(v) {
+      return '  • ' + v.faculty_name + ' → ' + v.week_label + ' (' + v.service_type + ')';
+    });
+    let msg =
+      dryData.removed + ' auto-generated assignment(s) violate unavailability requests:\n\n' +
+      lines.join('\n') +
+      '\n\nRemove these now?';
+    if (dryData.manual_imported_violations > 0) {
+      msg += '\n\n⚠️ Note: ' + dryData.manual_imported_violations +
+        ' manual/imported conflict(s) will remain — handle those manually.';
+    }
+
+    if (!confirm(msg)) return;
+
+    // Actually delete
+    const resp = await fetch(
+      '/api/admin/service-schedule/cleanup-unavailability?year=' + year + '&dry_run=false',
+      { method: 'POST', credentials: 'same-origin' }
+    );
+    if (!resp.ok) throw new Error('Cleanup failed');
+    const data = await resp.json();
+
+    let successMsg = '🚫 Removed ' + data.removed + ' unavailability-violating assignment(s). Reloading...';
+    if (data.manual_imported_violations > 0) {
+      successMsg += ' (' + data.manual_imported_violations + ' manual/imported conflict(s) remain — check Overrides.)';
+    }
+    showScheduleAlert(successMsg, 'success');
+    await loadAssignments();
+
+  } catch (err) {
+    console.error('Unavailability cleanup error:', err);
+    showScheduleAlert('Error during unavailability cleanup: ' + err.message, 'error');
+  }
+}
+
+/**
+ * Show an alert on the schedule page.
+ */
+function showScheduleAlert(message, type) {
+  const el = document.getElementById('scheduleAlert');
+  if (!el) return;
+  el.textContent = message;
+  el.className = 'alert alert-' + type;
+  el.style.display = 'block';
+  if (type === 'success') {
+    setTimeout(function() { el.style.display = 'none'; }, 4000);
+  }
+}

@@ -238,6 +238,7 @@ class Faculty(Base):
     app_icu_weeks = Column(Integer, default=0)
     procedure_weeks = Column(Integer, default=0)
     consult_weeks = Column(Integer, default=0)
+    backup_weeks = Column(Integer, default=0)
     
     # Relationships
     unavailability_requests = relationship("UnavailabilityRequest", back_populates="faculty")

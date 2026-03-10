@@ -175,6 +175,9 @@
     <button class="nav-tab" onclick="showModule('database-viewer')" data-module="database-viewer">
       🗄️ Database
     </button>
+    <button class="nav-tab" onclick="showModule('schedule-summary')" data-module="schedule-summary">
+      📊 Schedule Report
+    </button>
   </nav>
 
   <!-- Admin Content -->
@@ -211,6 +214,9 @@
 
     <!-- Database Viewer Module -->
     <div id="module-database-viewer" class="module-view"></div>
+
+    <!-- Schedule Summary Module -->
+    <div id="module-schedule-summary" class="module-view"></div>
   </main>
 
   <!-- Admin Footer -->
@@ -281,6 +287,11 @@
         name: 'Database Viewer',
         htmlPath: '/admin/modules/database-viewer/database-viewer.html',
         jsPath: '/admin/modules/database-viewer/database-viewer.js'
+      },
+      'schedule-summary': {
+        name: 'Schedule Summary Report',
+        htmlPath: '/admin/modules/schedule-summary/schedule-summary.html',
+        jsPath: '/admin/modules/schedule-summary/schedule-summary.js'
       }
     };
 

@@ -17,6 +17,9 @@ function initUserManagement() {
       if (e.key === 'Enter') searchUsers();
     });
   }
+
+  // Auto-load all users on open
+  searchUsers();
 }
 
 // Tab switching
@@ -147,16 +150,27 @@ async function searchUsers() {
         badges += '<span class="badge badge-warning">🌙 Moonlighter</span>';
       }
 
+      const totalPoints = (user.base_points || 0) + (user.bonus_points || 0);
+
       card.innerHTML = `
         <div class="user-card-header">
-          <div class="user-card-id">${user.id || 'N/A'}</div>
-          <div class="user-card-badges">${badges}</div>
+          <div>
+            <div class="user-card-id">${user.name || 'No name set'}</div>
+            <div class="user-card-name" style="font-size: 12px; color: #9ca3af; margin-top: 2px; font-family: monospace;">${user.id || 'N/A'}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="user-card-badges">${badges}</div>
+            <button class="btn-primary btn-sm" onclick="event.stopPropagation(); editUserFromHere('${user.id}')" style="white-space: nowrap;">✏️ Edit</button>
+          </div>
         </div>
-        <div class="user-card-name">${user.name || 'No name set'}</div>
-        <div class="user-card-details">
+        <div class="user-card-details" style="margin-top: 8px; flex-wrap: wrap; gap: 8px;">
           <span>📧 ${user.email || 'No email'}</span>
-          <span>🏥 MICU: ${user.micu_weeks || 0} | APP-ICU: ${user.app_icu_weeks || 0}</span>
-          <span>📊 Points: ${user.bonus_points || 0}</span>
+          <span title="Base + Bonus points">📊 Points: ${totalPoints}</span>
+          <span>MICU: ${user.micu_weeks || 0}</span>
+          <span>APP-ICU: ${user.app_icu_weeks || 0}</span>
+          <span>Procedures: ${user.procedure_weeks || 0}</span>
+          <span>Consults: ${user.consult_weeks || 0}</span>
+          <span>Backup: ${user.backup_weeks || 0}</span>
         </div>
       `;
 
@@ -514,6 +528,20 @@ function clearQuery() {
   showUserMgmtAlert('umQueryAlert', '', 'clear');
 }
 
+// Navigate to Faculty Management tab and open the edit modal for this user
+async function editUserFromHere(facultyId) {
+  // Switch to the faculty-management module (loads its JS + HTML)
+  if (typeof showModule === 'function') {
+    await showModule('faculty-management');
+  }
+  // Wait a tick for the module to finish loading, then open the modal
+  setTimeout(function() {
+    if (typeof openEditFaculty === 'function') {
+      openEditFaculty(facultyId);
+    }
+  }, 300);
+}
+
 // ==================== GLOBAL FUNCTION EXPORTS ====================
 // Make functions globally accessible for inline onclick handlers
 
@@ -527,6 +555,7 @@ window.changeUsername = changeUsername;
 window.executeQuery = executeQuery;
 window.clearQuery = clearQuery;
 window.initUserManagement = initUserManagement;
+window.editUserFromHere = editUserFromHere;
 
 // Close modal on background click
 window.addEventListener('click', function(event) {
