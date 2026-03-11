@@ -100,9 +100,14 @@ async def get_service_weeks(
             request_count += draft_unavail
             volunteer_count += draft_vol
 
-        # Include admin override blocks as unavailable
+        # Include admin override blocks as unavailable.
+        # Exclude sleep schedule and new faculty orientation/onboarding blocks —
+        # those represent clinical scheduling, not true unavailability, so they
+        # should not count against the week's unavailable capacity.
         block_count = db.query(func.count(FacultyBlock.id)).filter(
-            FacultyBlock.week_id == week.id
+            FacultyBlock.week_id == week.id,
+            ~FacultyBlock.reason.ilike('%sleep%'),
+            ~FacultyBlock.reason.ilike('%onboarding%')
         ).scalar() or 0
         request_count += block_count
 
