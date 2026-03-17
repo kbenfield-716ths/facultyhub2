@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     # Admin Password Generation
     ADMIN_PASSWORD_MIN_LENGTH: int = 12
     ADMIN_DEFAULT_PASSWORD: str = ""
+
+    # Admin contact and application URL (used in emails and notifications)
+    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@example.com")
+    APP_BASE_URL: str = os.getenv("APP_BASE_URL", "http://localhost:8000")
     
     class Config:
         env_file = ".env"

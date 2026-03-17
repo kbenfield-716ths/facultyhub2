@@ -5,7 +5,7 @@ Allows any authenticated faculty to view available weeks with dynamic pricing.
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from typing import List
 from pydantic import BaseModel
 
@@ -70,19 +70,26 @@ async def get_service_weeks(
         ).order_by(DraftWaveConfig.year.desc()).first()
     draft_config_id = draft_config.id if draft_config else None
 
+    # Faculty IDs that should never count toward unavailable/volunteer totals.
+    # HOSP represents providers from another division who fill shifts externally
+    # and should not affect this group's capacity counts.
+    EXCLUDED_FACULTY_IDS = ['HOSP']
+
     # Get request counts for each week
     result = []
     for week in weeks:
         # Count unavailable requests from traditional system
         request_count = db.query(func.count(UnavailabilityRequest.id)).filter(
             UnavailabilityRequest.week_id == week.id,
-            UnavailabilityRequest.status == "unavailable"
+            UnavailabilityRequest.status == "unavailable",
+            ~UnavailabilityRequest.faculty_id.in_(EXCLUDED_FACULTY_IDS)
         ).scalar() or 0
 
         # Count volunteer requests from traditional system
         volunteer_count = db.query(func.count(UnavailabilityRequest.id)).filter(
             UnavailabilityRequest.week_id == week.id,
-            UnavailabilityRequest.status == "available"
+            UnavailabilityRequest.status == "available",
+            ~UnavailabilityRequest.faculty_id.in_(EXCLUDED_FACULTY_IDS)
         ).scalar() or 0
 
         # Include wave draft submissions (DraftWeekRequest records)
@@ -90,12 +97,14 @@ async def get_service_weeks(
             draft_unavail = db.query(func.count(DraftWeekRequest.id)).filter(
                 DraftWeekRequest.week_id == week.id,
                 DraftWeekRequest.config_id == draft_config_id,
-                DraftWeekRequest.request_type == 'unavailable'
+                DraftWeekRequest.request_type == 'unavailable',
+                ~DraftWeekRequest.faculty_id.in_(EXCLUDED_FACULTY_IDS)
             ).scalar() or 0
             draft_vol = db.query(func.count(DraftWeekRequest.id)).filter(
                 DraftWeekRequest.week_id == week.id,
                 DraftWeekRequest.config_id == draft_config_id,
-                DraftWeekRequest.request_type == 'volunteer'
+                DraftWeekRequest.request_type == 'volunteer',
+                ~DraftWeekRequest.faculty_id.in_(EXCLUDED_FACULTY_IDS)
             ).scalar() or 0
             request_count += draft_unavail
             volunteer_count += draft_vol
@@ -104,10 +113,19 @@ async def get_service_weeks(
         # Exclude sleep schedule and new faculty orientation/onboarding blocks —
         # those represent clinical scheduling, not true unavailability, so they
         # should not count against the week's unavailable capacity.
+        # Also exclude blocks for external providers (e.g. HOSP) from other divisions.
+        # NULL-safe: blocks with no reason set are treated as regular blocks (included).
         block_count = db.query(func.count(FacultyBlock.id)).filter(
             FacultyBlock.week_id == week.id,
-            ~FacultyBlock.reason.ilike('%sleep%'),
-            ~FacultyBlock.reason.ilike('%onboarding%')
+            ~FacultyBlock.faculty_id.in_(EXCLUDED_FACULTY_IDS),
+            or_(
+                FacultyBlock.reason.is_(None),
+                ~FacultyBlock.reason.ilike('%sleep%')
+            ),
+            or_(
+                FacultyBlock.reason.is_(None),
+                ~FacultyBlock.reason.ilike('%onboarding%')
+            )
         ).scalar() or 0
         request_count += block_count
 

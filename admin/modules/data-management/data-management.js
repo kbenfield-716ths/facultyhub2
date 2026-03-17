@@ -223,11 +223,11 @@ async function loadMoonlightingData() {
     showDataAlert('Loading moonlighting signups...', 'info');
 
     const monthFilter = document.getElementById('moonlightMonthFilter')?.value || 'all';
-    const providerFilter = document.getElementById('moonlightProviderFilter')?.value || 'all';
+    const facultyFilter = document.getElementById('moonlightProviderFilter')?.value || 'all';
 
     const response = await fetch(`/api/admin/data-management/moonlighting-signups?` + new URLSearchParams({
       month: monthFilter,
-      provider: providerFilter
+      faculty_filter: facultyFilter
     }), {
       credentials: 'same-origin'
     });
@@ -272,8 +272,8 @@ function renderMoonlightingTable() {
             ${isSelected ? 'checked' : ''}
             onchange="toggleMoonlightSelection(${signup.id})">
         </td>
-        <td>${signup.provider_id}</td>
-        <td>${signup.provider_name || 'N/A'}</td>
+        <td>${signup.faculty_id}</td>
+        <td>${signup.faculty_name || 'N/A'}</td>
         <td>${signup.month_label}</td>
         <td>${signup.desired_nights}</td>
         <td>${signup.locked_dates_count || 0}</td>
@@ -316,11 +316,11 @@ function deselectAllMoonlight() {
 }
 
 function updateMoonlightStats() {
-  const providers = new Set(moonlightingData.map(s => s.provider_id)).size;
+  const facultyCount = new Set(moonlightingData.map(s => s.faculty_id)).size;
 
   document.getElementById('moonlightTotalCount').textContent = moonlightingData.length;
   document.getElementById('moonlightSelectedSum').textContent = selectedMoonlight.size;
-  document.getElementById('moonlightProvidersCount').textContent = providers;
+  document.getElementById('moonlightProvidersCount').textContent = facultyCount;
   document.getElementById('moonlightSelectedCount').textContent = selectedMoonlight.size;
 
   // Enable/disable delete button
@@ -378,7 +378,7 @@ function exportMoonlightData() {
 
   const selectedData = moonlightingData.filter(signup => selectedMoonlight.has(signup.id));
   const csv = convertToCSV(selectedData, [
-    'id', 'provider_id', 'provider_name', 'month_id', 'month_label',
+    'id', 'faculty_id', 'faculty_name', 'month_id', 'month_label',
     'desired_nights', 'locked_dates_count', 'created_at'
   ]);
 
@@ -399,10 +399,10 @@ async function loadFacultyFilters() {
 
 async function loadProviderFilters() {
   const select = document.getElementById('moonlightProviderFilter');
-  const providers = [...new Set(moonlightingData.map(s => s.provider_id))].sort();
+  const facultyIds = [...new Set(moonlightingData.map(s => s.faculty_id))].sort();
 
   select.innerHTML = '<option value="all">All Providers</option>' +
-    providers.map(id => `<option value="${id}">${id}</option>`).join('');
+    facultyIds.map(id => `<option value="${id}">${id}</option>`).join('');
 }
 
 async function loadMonthFilters() {

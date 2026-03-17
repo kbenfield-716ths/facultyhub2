@@ -4,70 +4,144 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FacultyHub Admin Panel</title>
-  <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/admin/modules/common/styles.css">
   <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #f3f4f6;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
     }
 
+    /* ── Top header ─────────────────────────────────── */
     .admin-header {
-      background: white;
-      border-bottom: 2px solid #e5e7eb;
-      padding: 16px 24px;
+      background: #1e293b;
+      color: white;
+      padding: 0 24px;
+      height: 56px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 100;
     }
 
     .admin-header h1 {
       margin: 0;
-      font-size: 24px;
-      color: #1f2937;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
     }
 
-    .admin-header .user-info {
-      font-size: 14px;
-      color: #6b7280;
-    }
-
-    .admin-nav {
-      background: white;
-      border-bottom: 2px solid #e5e7eb;
-      padding: 0 24px;
+    .header-right {
       display: flex;
-      gap: 4px;
+      gap: 16px;
+      align-items: center;
     }
 
-    .nav-tab {
-      padding: 16px 24px;
-      background: none;
-      border: none;
-      border-bottom: 3px solid transparent;
+    .user-info {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .back-button {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 6px 14px;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 15px;
+      font-size: 13px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .back-button:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* ── Body: sidebar + content ─────────────────────── */
+    .admin-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────── */
+    .admin-sidebar {
+      width: 220px;
+      background: white;
+      border-right: 1px solid #e5e7eb;
+      flex-shrink: 0;
+      overflow-y: auto;
+      padding: 16px 0 24px;
+    }
+
+    .nav-section {
+      margin-bottom: 4px;
+    }
+
+    .nav-section-label {
+      padding: 8px 16px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 16px;
+      cursor: pointer;
+      font-size: 14px;
       font-weight: 500;
-      color: #6b7280;
-      transition: all 0.2s;
-      margin-bottom: -2px;
+      color: #374151;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      border-left: 3px solid transparent;
+      transition: background 0.12s, color 0.12s;
+      line-height: 1.4;
     }
 
-    .nav-tab:hover {
-      color: #3b82f6;
+    .nav-item:hover {
       background: #f9fafb;
+      color: #111827;
     }
 
-    .nav-tab.active {
-      color: #3b82f6;
-      border-bottom-color: #3b82f6;
-      background: #f9fafb;
+    .nav-item.active {
+      background: #eff6ff;
+      color: #2563eb;
+      border-left-color: #2563eb;
     }
 
+    .nav-item .icon {
+      font-size: 15px;
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .nav-divider {
+      height: 1px;
+      background: #f3f4f6;
+      margin: 8px 0;
+    }
+
+    /* ── Content area ────────────────────────────────── */
     .admin-content {
-      min-height: calc(100vh - 140px);
+      flex: 1;
+      overflow-y: auto;
+      background: #f3f4f6;
     }
 
     .module-view {
@@ -78,411 +152,341 @@
       display: block;
     }
 
-    .admin-footer {
-      background: white;
-      border-top: 2px solid #e5e7eb;
-      padding: 16px 24px;
-      text-align: center;
-      color: #9ca3af;
-      font-size: 13px;
-    }
-
+    /* ── Loading overlay ─────────────────────────────── */
     .loading-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.9);
-      display: flex;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255,255,255,0.85);
+      display: none;
       align-items: center;
       justify-content: center;
       z-index: 9999;
+      backdrop-filter: blur(2px);
     }
 
     .loading-spinner {
-      font-size: 24px;
-      color: #3b82f6;
-    }
-
-    .back-button {
-      background: #6b7280;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: #6b7280;
       font-size: 14px;
-      text-decoration: none;
-      display: inline-block;
     }
 
-    .back-button:hover {
-      background: #4b5563;
+    .spinner-ring {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive: collapse sidebar on small screens ─ */
+    @media (max-width: 768px) {
+      .admin-sidebar {
+        width: 48px;
+        overflow: visible;
+      }
+      .nav-item span:not(.icon) { display: none; }
+      .nav-section-label { display: none; }
+      .nav-divider { display: none; }
+      .nav-item { padding: 10px; justify-content: center; }
     }
   </style>
 </head>
 <body>
+
   <!-- Loading Overlay -->
-  <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-    <div class="loading-spinner">⏳ Loading module...</div>
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner">
+      <div class="spinner-ring"></div>
+      <span>Loading module...</span>
+    </div>
   </div>
 
-  <!-- Admin Header -->
+  <!-- Top Header -->
   <header class="admin-header">
-    <div>
-      <h1>🔧 FacultyHub Admin Panel</h1>
-      <p style="margin-top: 4px; font-size: 13px; color: #6b7280;">Modular architecture with 11 management modules</p>
-    </div>
-    <div style="display: flex; gap: 16px; align-items: center;">
+    <h1>FacultyHub Admin</h1>
+    <div class="header-right">
       <span class="user-info" id="userInfo">Loading...</span>
       <a href="/" class="back-button">← Back to App</a>
     </div>
   </header>
 
-  <!-- Admin Navigation -->
-  <nav class="admin-nav">
-    <button class="nav-tab active" onclick="showModule('faculty-management')" data-module="faculty-management">
-      👥 Faculty
-    </button>
-    <button class="nav-tab" onclick="showModule('user-management')" data-module="user-management">
-      👤 Users
-    </button>
-    <button class="nav-tab" onclick="showModule('schedule-management')" data-module="schedule-management">
-      📅 Schedule
-    </button>
-    <button class="nav-tab" onclick="showModule('draft-system')" data-module="draft-system">
-      📋 Draft (Old)
-    </button>
-    <button class="nav-tab" onclick="showModule('wave-draft')" data-module="wave-draft">
-      🌊 Wave Draft
-    </button>
-    <button class="nav-tab" onclick="showModule('moonlighting')" data-module="moonlighting">
-      🌙 Moonlighting
-    </button>
-    <button class="nav-tab" onclick="showModule('data-management')" data-module="data-management">
-      📊 Data
-    </button>
-    <button class="nav-tab" onclick="showModule('service-overrides')" data-module="service-overrides">
-      🛠️ Overrides
-    </button>
-    <button class="nav-tab" onclick="showModule('knowledge-base')" data-module="knowledge-base">
-      📚 Knowledge Base
-    </button>
-    <button class="nav-tab" onclick="showModule('testing')" data-module="testing">
-      🧪 Testing
-    </button>
-    <button class="nav-tab" onclick="showModule('database-viewer')" data-module="database-viewer">
-      🗄️ Database
-    </button>
-    <button class="nav-tab" onclick="showModule('schedule-summary')" data-module="schedule-summary">
-      📊 Schedule Report
-    </button>
-  </nav>
+  <!-- Body: sidebar + content -->
+  <div class="admin-body">
 
-  <!-- Admin Content -->
-  <main class="admin-content">
-    <!-- Faculty Management Module -->
-    <div id="module-faculty-management" class="module-view active"></div>
+    <!-- Sidebar Navigation -->
+    <nav class="admin-sidebar">
 
-    <!-- User Management Module -->
-    <div id="module-user-management" class="module-view"></div>
+      <div class="nav-section">
+        <div class="nav-section-label">People</div>
+        <button class="nav-item active" onclick="showModule('faculty-management')" data-module="faculty-management">
+          <span class="icon">👥</span><span>Faculty</span>
+        </button>
+        <button class="nav-item" onclick="showModule('user-management')" data-module="user-management">
+          <span class="icon">👤</span><span>Users</span>
+        </button>
+      </div>
 
-    <!-- Schedule Management Module -->
-    <div id="module-schedule-management" class="module-view"></div>
+      <div class="nav-divider"></div>
 
-    <!-- Draft System Module -->
-    <div id="module-draft-system" class="module-view"></div>
+      <div class="nav-section">
+        <div class="nav-section-label">Scheduling</div>
+        <button class="nav-item" onclick="showModule('schedule-management')" data-module="schedule-management">
+          <span class="icon">📅</span><span>Schedule</span>
+        </button>
+        <button class="nav-item" onclick="showModule('schedule-summary')" data-module="schedule-summary">
+          <span class="icon">📊</span><span>Reports</span>
+        </button>
+        <button class="nav-item" onclick="showModule('wave-draft')" data-module="wave-draft">
+          <span class="icon">🌊</span><span>Wave Draft</span>
+        </button>
+        <button class="nav-item" onclick="showModule('service-overrides')" data-module="service-overrides">
+          <span class="icon">🛠️</span><span>Overrides</span>
+        </button>
+        <button class="nav-item" onclick="showModule('grid-rebalancer')" data-module="grid-rebalancer">
+          <span class="icon">🔀</span><span>Grid Rebalancer</span>
+        </button>
+      </div>
 
-    <!-- Wave Draft Module -->
-    <div id="module-wave-draft" class="module-view"></div>
+      <div class="nav-divider"></div>
 
-    <!-- Moonlighting Module -->
-    <div id="module-moonlighting" class="module-view"></div>
+      <div class="nav-section">
+        <div class="nav-section-label">Moonlighting</div>
+        <button class="nav-item" onclick="showModule('moonlighting')" data-module="moonlighting">
+          <span class="icon">🌙</span><span>Signups & Optimizer</span>
+        </button>
+      </div>
 
-    <!-- Data Management Module -->
-    <div id="module-data-management" class="module-view"></div>
+      <div class="nav-divider"></div>
 
-    <!-- Service Week Overrides Module -->
-    <div id="module-service-overrides" class="module-view"></div>
+      <div class="nav-section">
+        <div class="nav-section-label">Data &amp; Tools</div>
+        <button class="nav-item" onclick="showModule('data-management')" data-module="data-management">
+          <span class="icon">📥</span><span>Data Management</span>
+        </button>
+        <button class="nav-item" onclick="showModule('database-viewer')" data-module="database-viewer">
+          <span class="icon">🗄️</span><span>Database Console</span>
+        </button>
+      </div>
 
-    <!-- Knowledge Base Module -->
-    <div id="module-knowledge-base" class="module-view"></div>
+      <div class="nav-divider"></div>
 
-    <!-- Testing Tools Module -->
-    <div id="module-testing" class="module-view"></div>
+      <div class="nav-section">
+        <div class="nav-section-label">Content</div>
+        <button class="nav-item" onclick="showModule('knowledge-base')" data-module="knowledge-base">
+          <span class="icon">📚</span><span>Knowledge Base</span>
+        </button>
+      </div>
 
-    <!-- Database Viewer Module -->
-    <div id="module-database-viewer" class="module-view"></div>
+    </nav>
 
-    <!-- Schedule Summary Module -->
-    <div id="module-schedule-summary" class="module-view"></div>
-  </main>
+    <!-- Content Area -->
+    <main class="admin-content">
+      <div id="module-faculty-management"  class="module-view active"></div>
+      <div id="module-user-management"     class="module-view"></div>
+      <div id="module-schedule-management" class="module-view"></div>
+      <div id="module-schedule-summary"    class="module-view"></div>
+      <div id="module-wave-draft"          class="module-view"></div>
+      <div id="module-service-overrides"   class="module-view"></div>
+      <div id="module-grid-rebalancer"     class="module-view"></div>
+      <div id="module-moonlighting"        class="module-view"></div>
+      <div id="module-data-management"     class="module-view"></div>
+      <div id="module-database-viewer"     class="module-view"></div>
+      <div id="module-knowledge-base"      class="module-view"></div>
+    </main>
 
-  <!-- Admin Footer -->
-  <footer class="admin-footer">
-    FacultyHub Admin Panel v1.0 | Modular Architecture |
-    <a href="/admin/MODULAR_ADMIN_IMPLEMENTATION.md" target="_blank" style="color: #3b82f6;">View Documentation</a>
-  </footer>
+  </div><!-- /.admin-body -->
 
-  <!-- Load Common Utilities -->
+  <!-- Common utilities -->
   <script src="/admin/modules/common/common.js"></script>
   <script src="/admin/modules/common/api.js"></script>
 
-  <!-- Module Loader Script -->
   <script>
-    // Module configuration
+    // ── Module registry ──────────────────────────────────────────────────────
     const modules = {
       'faculty-management': {
         name: 'Faculty Management',
         htmlPath: '/admin/modules/faculty-management/faculty-management.html',
-        jsPath: '/admin/modules/faculty-management/faculty-management.js'
+        jsPath:   '/admin/modules/faculty-management/faculty-management.js'
       },
       'user-management': {
         name: 'User Management',
         htmlPath: '/admin/modules/user-management/user-management.html',
-        jsPath: '/admin/modules/user-management/user-management.js'
+        jsPath:   '/admin/modules/user-management/user-management.js'
       },
       'schedule-management': {
-        name: 'Schedule Management',
+        name: 'Schedule',
         htmlPath: '/admin/modules/schedule-management/schedule-management.html',
-        jsPath: '/admin/modules/schedule-management/schedule-management.js'
+        jsPath:   '/admin/modules/schedule-management/schedule-management.js'
       },
-      'draft-system': {
-        name: 'Draft System',
-        htmlPath: '/admin/modules/draft-system/draft-system.html',
-        jsPath: '/admin/modules/draft-system/draft-system.js'
+      'schedule-summary': {
+        name: 'Schedule Reports',
+        htmlPath: '/admin/modules/schedule-summary/schedule-summary.html',
+        jsPath:   '/admin/modules/schedule-summary/schedule-summary.js'
       },
       'wave-draft': {
         name: 'Wave Draft System',
         htmlPath: '/admin/modules/wave-draft/wave-draft.html',
-        jsPath: '/admin/modules/wave-draft/wave-draft.js'
-      },
-      'moonlighting': {
-        name: 'Moonlighting Management',
-        htmlPath: '/admin/modules/moonlighting/moonlighting.html',
-        jsPath: '/admin/modules/moonlighting/moonlighting.js'
-      },
-      'data-management': {
-        name: 'Data Management',
-        htmlPath: '/admin/modules/data-management/data-management.html',
-        jsPath: '/admin/modules/data-management/data-management.js'
+        jsPath:   '/admin/modules/wave-draft/wave-draft.js'
       },
       'service-overrides': {
         name: 'Service Week Overrides',
         htmlPath: '/admin/modules/service-weeks/overrides/overrides.html',
-        jsPath: '/admin/modules/service-weeks/overrides/overrides.js'
+        jsPath:   '/admin/modules/service-weeks/overrides/overrides.js'
+      },
+      'grid-rebalancer': {
+        name: 'Grid Rebalancer',
+        htmlPath: '/admin/modules/grid-rebalancer/grid-rebalancer.html',
+        jsPath:   '/admin/modules/grid-rebalancer/grid-rebalancer.js'
+      },
+      'moonlighting': {
+        name: 'Moonlighting',
+        htmlPath: '/admin/modules/moonlighting/moonlighting.html',
+        jsPath:   '/admin/modules/moonlighting/moonlighting.js'
+      },
+      'data-management': {
+        name: 'Data Management',
+        htmlPath: '/admin/modules/data-management/data-management.html',
+        jsPath:   '/admin/modules/data-management/data-management.js'
+      },
+      'database-viewer': {
+        name: 'Database Console',
+        htmlPath: '/admin/modules/database-viewer/database-viewer.html',
+        jsPath:   '/admin/modules/database-viewer/database-viewer.js'
       },
       'knowledge-base': {
         name: 'Knowledge Base',
         htmlPath: '/admin/modules/knowledge-base/knowledge-base.html',
-        jsPath: '/admin/modules/knowledge-base/knowledge-base.js'
-      },
-      'testing': {
-        name: 'Testing Tools',
-        htmlPath: '/admin/modules/testing/testing.html',
-        jsPath: '/admin/modules/testing/testing.js'
-      },
-      'database-viewer': {
-        name: 'Database Viewer',
-        htmlPath: '/admin/modules/database-viewer/database-viewer.html',
-        jsPath: '/admin/modules/database-viewer/database-viewer.js'
-      },
-      'schedule-summary': {
-        name: 'Schedule Summary Report',
-        htmlPath: '/admin/modules/schedule-summary/schedule-summary.html',
-        jsPath: '/admin/modules/schedule-summary/schedule-summary.js'
+        jsPath:   '/admin/modules/knowledge-base/knowledge-base.js'
       }
     };
 
-    // Track loaded modules
     const loadedModules = new Set();
     let currentModule = 'faculty-management';
 
-    // Show module function
+    // ── Navigation ───────────────────────────────────────────────────────────
     async function showModule(moduleId) {
       if (!modules[moduleId]) {
         console.error('Unknown module:', moduleId);
         return;
       }
 
-      // Update navigation
-      document.querySelectorAll('.nav-tab').forEach(function(tab) {
-        tab.classList.remove('active');
-      });
-      document.querySelector('[data-module="' + moduleId + '"]').classList.add('active');
+      // Prevent double-clicking the active item from triggering a reload
+      if (moduleId === currentModule && loadedModules.has(moduleId)) return;
 
-      // Hide all module views
-      document.querySelectorAll('.module-view').forEach(function(view) {
-        view.classList.remove('active');
-      });
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      const btn = document.querySelector('[data-module="' + moduleId + '"]');
+      if (btn) btn.classList.add('active');
 
-      // Show loading overlay
+      document.querySelectorAll('.module-view').forEach(el => el.classList.remove('active'));
       document.getElementById('loadingOverlay').style.display = 'flex';
 
       try {
-        // Load module if not already loaded
         if (!loadedModules.has(moduleId)) {
+          // First visit: fetch HTML + inject JS (defines global functions)
           await loadModule(moduleId);
           loadedModules.add(moduleId);
+        } else {
+          // Subsequent visits: re-fetch HTML only so modal/form state is always clean.
+          // JS is already in global scope from first load — no need to re-inject.
+          await reloadModuleHTML(moduleId);
         }
-
-        // Show module view
         document.getElementById('module-' + moduleId).classList.add('active');
         currentModule = moduleId;
-
-      } catch (error) {
-        console.error('Failed to load module:', error);
-        alert('Failed to load module: ' + error.message);
+      } catch (err) {
+        console.error('Failed to load module:', err);
+        document.getElementById('module-' + moduleId).innerHTML =
+          '<div style="padding:40px;color:#ef4444;">Failed to load module: ' + err.message + '</div>';
+        document.getElementById('module-' + moduleId).classList.add('active');
       } finally {
-        // Hide loading overlay
         document.getElementById('loadingOverlay').style.display = 'none';
       }
     }
 
-    // Load module HTML and JS
+    // ── Module loader (first visit) ──────────────────────────────────────────
     async function loadModule(moduleId) {
-      const module = modules[moduleId];
-
-      // Load HTML
-      const htmlResponse = await fetch(module.htmlPath);
-      if (!htmlResponse.ok) {
-        throw new Error('Failed to load ' + module.name + ' HTML');
-      }
-      const html = await htmlResponse.text();
-      document.getElementById('module-' + moduleId).innerHTML = html;
-
-      // Load JS
-      await loadScript(module.jsPath);
-
-      // Trigger module initialization after DOM is updated
-      // Use requestAnimationFrame to ensure DOM is painted
-      requestAnimationFrame(function() {
-        setTimeout(function() {
-          triggerModuleInit(moduleId);
-        }, 200);
-      });
+      const mod = modules[moduleId];
+      const htmlRes = await fetch(mod.htmlPath);
+      if (!htmlRes.ok) throw new Error('Could not load HTML for ' + mod.name);
+      document.getElementById('module-' + moduleId).innerHTML = await htmlRes.text();
+      await loadScript(mod.jsPath);
+      requestAnimationFrame(() => setTimeout(() => triggerModuleInit(moduleId), 200));
     }
 
-    // Trigger module-specific initialization
-    function triggerModuleInit(moduleId) {
-      console.log('Initializing module:', moduleId);
-
-      // Call module-specific init functions if they exist
-      try {
-        if (moduleId === 'faculty-management') {
-          console.log('Faculty management - loadFaculty exists?', typeof loadFaculty);
-          if (typeof loadFaculty === 'function') {
-            console.log('Calling loadFaculty()');
-            loadFaculty();
-          }
-        } else if (moduleId === 'user-management') {
-          console.log('User management - initUserManagement exists?', typeof initUserManagement);
-          if (typeof initUserManagement === 'function') {
-            console.log('Calling initUserManagement()');
-            initUserManagement();
-          }
-        } else if (moduleId === 'schedule-management') {
-          console.log('Schedule management - loadHeatmap exists?', typeof loadHeatmap);
-          if (typeof loadHeatmap === 'function') {
-            console.log('Calling loadHeatmap(2026)');
-            loadHeatmap(2026);
-          }
-        } else if (moduleId === 'draft-system') {
-          console.log('Draft system - loadActiveDraft exists?', typeof loadActiveDraft);
-          if (typeof loadActiveDraft === 'function') {
-            console.log('Calling loadActiveDraft()');
-            loadActiveDraft();
-          }
-        } else if (moduleId === 'moonlighting') {
-          console.log('Moonlighting - loadProviders exists?', typeof loadProviders);
-          console.log('Moonlighting - loadSignups exists?', typeof loadSignups);
-          if (typeof loadProviders === 'function') {
-            console.log('Calling loadProviders()');
-            loadProviders();
-          }
-          if (typeof loadSignups === 'function') {
-            console.log('Calling loadSignups()');
-            loadSignups();
-          }
-        } else if (moduleId === 'data-management') {
-          // Data management is tab-based, no auto-load needed
-          console.log('Data management module loaded - use tabs to load data');
-        } else if (moduleId === 'service-overrides') {
-          console.log('Service overrides - loadBlocks exists?', typeof loadBlocks);
-          if (typeof loadBlocks === 'function') {
-            console.log('Calling loadBlocks()');
-            loadBlocks();
-          }
-        } else if (moduleId === 'knowledge-base') {
-          console.log('Knowledge Base - loadKBArticles exists?', typeof loadKBArticles);
-          if (typeof loadKBArticles === 'function') {
-            console.log('Calling loadKBArticles()');
-            loadKBArticles();
-          }
-        } else if (moduleId === 'wave-draft') {
-          console.log('Wave Draft - loadConfigs exists?', typeof loadConfigs);
-          console.log('Wave Draft - loadFacultyForWaves exists?', typeof loadFacultyForWaves);
-          if (typeof loadConfigs === 'function') {
-            console.log('Calling loadConfigs()');
-            loadConfigs();
-          }
-          if (typeof loadFacultyForWaves === 'function') {
-            console.log('Calling loadFacultyForWaves()');
-            loadFacultyForWaves();
-          }
-        } else if (moduleId === 'testing') {
-          // Testing module is tab-based, no auto-load needed
-          console.log('Testing module loaded - use tabs to interact');
-        }
-      } catch (error) {
-        console.error('Error initializing module ' + moduleId + ':', error);
-      }
+    // ── HTML-only reload (subsequent visits) ─────────────────────────────────
+    // Re-fetches the module's HTML so any open modals or mid-flight forms are
+    // reset to a clean initial state.  The JS stays in global scope unchanged.
+    async function reloadModuleHTML(moduleId) {
+      const mod = modules[moduleId];
+      const htmlRes = await fetch(mod.htmlPath);
+      if (!htmlRes.ok) throw new Error('Could not reload HTML for ' + mod.name);
+      document.getElementById('module-' + moduleId).innerHTML = await htmlRes.text();
+      requestAnimationFrame(() => setTimeout(() => triggerModuleInit(moduleId), 200));
     }
 
-    // Load JavaScript file dynamically
     function loadScript(src) {
-      return new Promise(function(resolve, reject) {
-        const script = document.createElement('script');
-        script.src = src;
-        script.onload = resolve;
-        script.onerror = function() {
-          reject(new Error('Failed to load script: ' + src));
-        };
-        document.body.appendChild(script);
+      if (!src) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('Failed to load script: ' + src));
+        document.body.appendChild(s);
       });
     }
 
-    // Load user info
+    // ── Module init hooks ────────────────────────────────────────────────────
+    function triggerModuleInit(moduleId) {
+      const inits = {
+        'faculty-management': () => typeof loadFaculty          === 'function' && loadFaculty(),
+        'user-management':    () => typeof initUserManagement   === 'function' && initUserManagement(),
+        'schedule-management':() => typeof loadHeatmap          === 'function' && loadHeatmap(new Date().getFullYear()),
+        'service-overrides':  () => typeof loadBlocks           === 'function' && loadBlocks(),
+        'knowledge-base':     () => typeof loadKBArticles       === 'function' && loadKBArticles(),
+        'wave-draft': () => {
+          if (typeof loadConfigs          === 'function') loadConfigs();
+          if (typeof loadFacultyForWaves  === 'function') loadFacultyForWaves();
+        },
+        'moonlighting': () => {
+          if (typeof loadProviders === 'function') loadProviders();
+          if (typeof loadSignups   === 'function') loadSignups();
+        },
+        'grid-rebalancer': () => { /* self-initialising IIFE */ }
+      };
+      try {
+        if (inits[moduleId]) inits[moduleId]();
+      } catch (err) {
+        console.error('Error initialising module ' + moduleId + ':', err);
+      }
+    }
+
+    // ── Auth / user info ─────────────────────────────────────────────────────
     async function loadUserInfo() {
       try {
-        const response = await fetch('/api/auth/me', {
-          credentials: 'same-origin'
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const faculty = data.faculty;
-          document.getElementById('userInfo').textContent = 'Logged in as: ' + faculty.faculty_name + (faculty.is_admin ? ' (Admin)' : '');
-        } else if (response.status === 401 || response.status === 403) {
-          // Not logged in or session expired — redirect to login
+        const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        if (res.ok) {
+          const { faculty } = await res.json();
+          document.getElementById('userInfo').textContent =
+            faculty.faculty_name + (faculty.is_admin ? ' · Admin' : '');
+        } else if (res.status === 401 || res.status === 403) {
           window.location.href = '/?session_expired=1';
-          return;
         } else {
           document.getElementById('userInfo').textContent = 'Not logged in';
         }
-      } catch (error) {
-        console.error('Failed to load user info:', error);
-        document.getElementById('userInfo').textContent = 'User info unavailable';
+      } catch {
+        document.getElementById('userInfo').textContent = '';
       }
     }
 
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', async function() {
-      // Load user info
+    // ── Boot ─────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
       await loadUserInfo();
-
-      // Load initial module (faculty-management)
       await showModule('faculty-management');
     });
   </script>

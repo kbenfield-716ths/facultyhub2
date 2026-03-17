@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faculty Schedule Admin — 2026–2027</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; overflow: hidden; }
+
+.app { display: flex; height: 100vh; flex-direction: column; }
+
+/* ── toolbar ── */
+.toolbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5282 100%);
+  color: white; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.toolbar h1 { font-size: 15px; font-weight: 700; white-space: nowrap; }
+.toolbar-spacer { flex: 1; }
+.legend { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; }
+.legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: rgba(255,255,255,0.9); white-space: nowrap; }
+.legend-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+
+/* ── buttons ── */
+.btn {
+  padding: 6px 12px; border-radius: 6px; border: none;
+  cursor: pointer; font-size: 12px; font-weight: 600;
+  white-space: nowrap; transition: all 0.15s;
+}
+.btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.2); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+.btn-primary { background: #3b82f6; color: white; }
+.btn-success { background: #10b981; color: white; }
+.btn-warning { background: #f59e0b; color: white; }
+.btn-ghost { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
+.btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.25); }
+
+/* ── change banner ── */
+.change-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 16px;
+  background: #fef3c7; border-bottom: 1px solid #fcd34d;
+  font-size: 11px; color: #92400e; flex-shrink: 0;
+}
+
+/* ── main layout ── */
+.main { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+
+/* ── grid ── */
+.grid-container { flex: 1; overflow: auto; position: relative; }
+
+table { border-collapse: collapse; font-size: 11px; }
+
+/* sticky column headers */
+thead tr th {
+  position: sticky; top: 0; z-index: 10;
+  background: #1e3a5f; color: white;
+  padding: 5px 3px; text-align: center;
+  border-right: 1px solid #2d5282; border-bottom: 2px solid #4a90d9;
+  white-space: nowrap;
+}
+thead tr th .fname { font-size: 10px; font-weight: 700; display: block; }
+thead tr th .lname { font-size: 9px; font-weight: 400; opacity: 0.75; display: block; }
+thead tr th:first-child {
+  position: sticky; left: 0; z-index: 20;
+  min-width: 105px; text-align: left; padding-left: 8px;
+}
+
+/* sticky row headers */
+tbody tr td:first-child {
+  position: sticky; left: 0; z-index: 5;
+  background: #2d4f7a; color: white;
+  padding: 3px 8px;
+  border-right: 2px solid #4a90d9; border-bottom: 1px solid #3d6494;
+  min-width: 105px; font-weight: 600;
+  line-height: 1.3;
+}
+tbody tr:hover td:first-child { background: #3d6494; }
+
+/* week type left-border accent */
+.wt-summer      td:first-child { border-left: 4px solid #f59e0b !important; }
+.wt-christmas   td:first-child { border-left: 4px solid #ef4444 !important; }
+.wt-thanksgiving td:first-child { border-left: 4px solid #f97316 !important; }
+.wt-regular     td:first-child { border-left: 4px solid #6b7280 !important; }
+.wt-chest_conference td:first-child,
+.wt-sccm_conference  td:first-child,
+.wt-ats_conference   td:first-child,
+.wt-conference  td:first-child { border-left: 4px solid #8b5cf6 !important; }
+.wt-spring_break td:first-child { border-left: 4px solid #10b981 !important; }
+
+/* assignment cells */
+.cell {
+  padding: 2px 3px; text-align: center;
+  border: 1px solid #e5e7eb;
+  min-width: 76px; height: 26px;
+  vertical-align: middle; font-weight: 600; font-size: 10px;
+  transition: transform 0.1s, box-shadow 0.1s;
+  position: relative;
+}
+.cell-inner {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; border-radius: 3px; padding: 1px 4px;
+}
+.cell.draggable { cursor: grab; }
+.cell.draggable:hover .cell-inner {
+  filter: brightness(0.93);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+}
+.cell.draggable:active { cursor: grabbing; }
+.cell.drag-source .cell-inner { opacity: 0.35; }
+.cell.drag-over .cell-inner {
+  outline: 2.5px solid #2563eb;
+  outline-offset: 0;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.25);
+}
+.cell.locked { cursor: not-allowed; }
+.cell.conflict .cell-inner { outline: 2px solid #ef4444; outline-offset: 0; }
+.cell.conflict::after {
+  content: '⚠'; position: absolute; top: 0; right: 1px;
+  font-size: 8px; color: #ef4444; line-height: 1;
+}
+
+/* ── sidebar ── */
+.sidebar {
+  width: 268px; background: white;
+  border-left: 1px solid #e5e7eb; overflow-y: auto; flex-shrink: 0;
+  display: flex; flex-direction: column;
+}
+.sidebar-header {
+  padding: 10px 14px; background: #1e3a5f; color: white;
+  font-weight: 700; font-size: 13px;
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; flex-shrink: 0;
+}
+.sidebar-subhead {
+  padding: 6px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+  display: flex; font-size: 10px; color: #64748b; font-weight: 600;
+  position: sticky; top: 36px; flex-shrink: 0; z-index: 2;
+}
+.faculty-row {
+  display: flex; align-items: flex-start; gap: 6px;
+  padding: 6px 12px; border-bottom: 1px solid #f1f5f9;
+}
+.faculty-row:hover { background: #f8fafc; }
+.faculty-name {
+  font-size: 11px; font-weight: 600; flex: 0 0 105px; color: #1e293b;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding-top: 2px;
+}
+.assign-chips { display: flex; gap: 3px; flex-wrap: wrap; }
+.chip {
+  font-size: 9px; padding: 2px 5px; border-radius: 10px; font-weight: 700;
+  white-space: nowrap;
+}
+.chip-total {
+  font-size: 9px; padding: 2px 5px; border-radius: 10px;
+  background: #f1f5f9; color: #64748b; font-weight: 600;
+  border: 1px solid #e2e8f0;
+}
+
+/* conflict highlights in sidebar */
+.faculty-row.has-conflict .faculty-name { color: #ef4444; }
+
+/* ── tooltip ── */
+.drag-hint {
+  position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.75); color: white; padding: 6px 14px;
+  border-radius: 20px; font-size: 11px; pointer-events: none;
+  z-index: 9999; white-space: nowrap;
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback, useMemo } = React;
+
+/* ─────────────────── colour palette ─────────────────── */
+const COLORS = {
+  'MICU':        { bg: '#dbeafe', text: '#1d4ed8', border: '#93c5fd' },
+  'APP-ICU':     { bg: '#ede9fe', text: '#6d28d9', border: '#c4b5fd' },
+  'Consults':    { bg: '#d1fae5', text: '#065f46', border: '#6ee7b7' },
+  'Procedures':  { bg: '#ffedd5', text: '#c2410c', border: '#fdba74' },
+  'Backup':      { bg: '#fef9c3', text: '#854d0e', border: '#fde047' },
+  'Open':        { bg: '#f9fafb', text: '#9ca3af', border: '#e5e7eb' },
+  'Blocked':     { bg: '#374151', text: '#ffffff', border: '#4b5563' },
+  'Unavailable': { bg: '#9ca3af', text: '#f9fafb', border: '#6b7280' },
+};
+const LOCKED       = new Set(['Blocked', 'Unavailable']);
+const ASSIGN_TYPES = ['MICU','APP-ICU','Consults','Procedures','Backup'];
+const COVERAGE     = new Set(['MICU','APP-ICU','Procedures']); // flag >1 per week
+
+/* ─────────────────── raw schedule data ─────────────────── */
+const FACULTY = [
+  'Dana Albon','Andrew Barros','Taison Bell','Cathy Bonham','Cole Burks',
+  'Kierra Cerda','Eric Davis','Kat Egressy','Kyle Enfield','Drew Harris',
+  'HOSP','Lauren Ivey','Alex Kadl','John Kim','Samual Konkol','Jamie MacLeod',
+  'Numaan Malik','Nelson Mandrell','Andrew Mihalek','Imre Noth','Heath Patel',
+  'Tessy Paul','Scott Schecter','Timothy Scialla','Lindsay Somerville',
+  'Jeff Sturek','Katie Waybill'
+];
+
+const RAW_WEEKS = [
+  [1,'6/30/26','7/6/26','summer','Blocked','Blocked','Open','Unavailable','Procedures','Blocked','Consults','Open','Open','Unavailable','Blocked','Blocked','Unavailable','Unavailable','Blocked','Open','Backup','APP-ICU','Unavailable','MICU','MICU','Unavailable','Blocked','Open','Unavailable','Unavailable','Blocked'],
+  [2,'7/7/26','7/13/26','summer','Consults','Open','Open','Unavailable','Open','Blocked','Open','Open','Open','Unavailable','Blocked','Blocked','APP-ICU','Unavailable','Blocked','MICU','Open','Open','Unavailable','Open','Open','Unavailable','Backup','Unavailable','Procedures','Unavailable','MICU'],
+  [3,'7/14/26','7/20/26','summer','Unavailable','Consults','Unavailable','Unavailable','Unavailable','Blocked','Open','Open','Unavailable','Unavailable','Blocked','Blocked','Open','Unavailable','Blocked','Open','MICU','APP-ICU','MICU','Backup','Open','Unavailable','Blocked','Unavailable','Open','Procedures','Open'],
+  [4,'7/21/26','7/27/26','summer','Unavailable','Open','Unavailable','Unavailable','Unavailable','Blocked','Open','MICU','Unavailable','Unavailable','Blocked','Blocked','MICU','Open','Blocked','Procedures','Open','Open','Open','Open','APP-ICU','Unavailable','Blocked','Consults','Backup','Unavailable','Open'],
+  [5,'7/28/26','8/3/26','summer','Open','Procedures','Unavailable','Unavailable','Unavailable','Open','Open','MICU','Open','Consults','Blocked','Blocked','Open','Open','Blocked','Open','Unavailable','Backup','MICU','Open','Open','Open','Blocked','Unavailable','Open','Unavailable','APP-ICU'],
+  [6,'8/4/26','8/10/26','summer','Backup','Open','Open','Unavailable','Unavailable','Blocked','Open','Open','Open','Unavailable','Blocked','Blocked','APP-ICU','Open','Blocked','Unavailable','Consults','Unavailable','Open','Open','MICU','Open','Unavailable','Unavailable','MICU','Procedures','Unavailable'],
+  [7,'8/11/26','8/17/26','summer','Open','Unavailable','MICU','Unavailable','Open','Unavailable','Open','Open','Open','Unavailable','Blocked','Blocked','Open','APP-ICU','Blocked','Unavailable','Open','Procedures','MICU','Backup','Unavailable','Consults','Blocked','Open','Open','Open','Unavailable'],
+  [8,'8/18/26','8/24/26','summer','Open','Unavailable','Open','MICU','Open','Backup','Open','Open','Open','Open','Blocked','Blocked','APP-ICU','Open','Blocked','Unavailable','Consults','Open','Open','Open','Unavailable','Open','Procedures','Open','MICU','Open','Unavailable'],
+  [9,'8/25/26','8/31/26','summer','Open','Open','Open','Open','Open','Blocked','Open','Open','MICU','Backup','Procedures','Blocked','Open','Open','Blocked','Open','Open','APP-ICU','MICU','Open','Unavailable','Open','Open','Consults','Open','Open','Open'],
+  [10,'9/1/26','9/7/26','regular','Consults','MICU','Open','Blocked','Open','Unavailable','Open','Open','Open','Unavailable','Open','Blocked','Procedures','APP-ICU','Blocked','Unavailable','Open','Backup','Open','Open','Unavailable','Unavailable','Blocked','Blocked','Open','MICU','Unavailable'],
+  [11,'9/8/26','9/14/26','regular','Open','Open','Open','Blocked','Open','Blocked','Open','Open','Open','Unavailable','Procedures','Consults','Open','Open','Unavailable','Unavailable','Open','APP-ICU','Blocked','Open','MICU','Backup','Open','Blocked','Open','Open','MICU'],
+  [12,'9/15/26','9/21/26','regular','Open','Procedures','Open','MICU','Open','Unavailable','Open','Open','MICU','Unavailable','Open','Blocked','Backup','Consults','Unavailable','APP-ICU','Open','Open','Blocked','Open','Unavailable','Open','Open','Unavailable','Unavailable','Open','Open'],
+  [13,'9/22/26','9/28/26','regular','Backup','Open','Open','Blocked','Open','Blocked','Open','Open','Open','Unavailable','Procedures','Open','Open','Open','APP-ICU','Open','Open','MICU','Blocked','Open','Unavailable','Open','MICU','Blocked','Unavailable','Unavailable','Consults'],
+  [14,'9/29/26','10/5/26','regular','Open','Open','Open','Blocked','Open','Unavailable','Open','APP-ICU','Open','Unavailable','Open','Unavailable','Procedures','Open','Open','MICU','Open','Backup','Unavailable','Open','MICU','Consults','Blocked','Blocked','Unavailable','Open','Open'],
+  [15,'10/6/26','10/12/26','regular','Unavailable','Open','Unavailable','Blocked','Procedures','Blocked','Open','Open','APP-ICU','Unavailable','Open','Unavailable','Open','Open','MICU','Open','Consults','Unavailable','Unavailable','Open','Unavailable','Open','MICU','Blocked','Unavailable','Unavailable','Backup'],
+  [16,'10/13/26','10/19/26','chest_conference','Consults','Open','MICU','Blocked','Unavailable','MICU','Open','Open','Blocked','Open','Open','Blocked','Open','Unavailable','Unavailable','Procedures','Unavailable','Unavailable','APP-ICU','Open','Backup','Unavailable','Open','Blocked','Open','Open','Blocked'],
+  [17,'10/20/26','10/26/26','chest_conference','Open','MICU','Unavailable','Blocked','Unavailable','Unavailable','Open','Open','Backup','Open','Open','Consults','Unavailable','Open','Unavailable','Open','Unavailable','Procedures','Open','Open','Open','Unavailable','Blocked','Blocked','APP-ICU','MICU','Blocked'],
+  [18,'10/27/26','11/2/26','regular','Open','Open','Open','MICU','Open','Blocked','Open','Open','Open','Unavailable','Open','Unavailable','MICU','Open','APP-ICU','Unavailable','Backup','Open','Unavailable','Open','Unavailable','Consults','Procedures','Unavailable','Open','Unavailable','Blocked'],
+  [19,'11/3/26','11/9/26','regular','Consults','Open','Open','Open','Open','Unavailable','Open','Open','Open','Unavailable','Procedures','MICU','Open','Open','Open','Backup','Open','MICU','APP-ICU','Open','Unavailable','Open','Blocked','Open','Open','Open','Blocked'],
+  [20,'11/10/26','11/16/26','regular','Open','Open','Open','MICU','Procedures','Unavailable','Open','Open','Open','Unavailable','Open','Blocked','Open','APP-ICU','Backup','Open','Open','Open','Open','Open','Unavailable','Consults','MICU','Open','Open','Open','Blocked'],
+  [21,'11/17/26','11/23/26','regular','Open','Unavailable','Open','Unavailable','Open','Blocked','Open','MICU','Open','Open','Procedures','APP-ICU','Open','Open','Open','Open','Open','MICU','Unavailable','Open','Unavailable','Open','Open','Consults','Unavailable','Backup','Blocked'],
+  [22,'11/24/26','11/30/26','thanksgiving','Open','Unavailable','Unavailable','Unavailable','Open','Open','Open','MICU','Backup','Open','Blocked','Blocked','APP-ICU','Open','Unavailable','Procedures','MICU','Open','Open','Open','Unavailable','Consults','Unavailable','Unavailable','Unavailable','Unavailable','Blocked'],
+  [23,'12/1/26','12/7/26','regular','Open','Open','Open','MICU','Open','Blocked','Open','Open','Open','Unavailable','Blocked','Backup','Open','Consults','Unavailable','Unavailable','Open','MICU','APP-ICU','Open','Unavailable','Open','Open','Unavailable','Procedures','Open','Blocked'],
+  [24,'12/8/26','12/14/26','regular','Open','Open','MICU','Open','Open','Unavailable','Open','Open','Open','Unavailable','Open','Blocked','Backup','Open','Procedures','MICU','Open','Open','Open','Open','Unavailable','Consults','Open','Unavailable','Open','APP-ICU','Blocked'],
+  [25,'12/15/26','12/21/26','regular','Open','Open','Open','Unavailable','Open','Unavailable','Open','Open','Backup','Open','Procedures','MICU','Open','Consults','Open','Unavailable','MICU','Open','APP-ICU','Open','Unavailable','Open','Open','Unavailable','Unavailable','Open','Blocked'],
+  [26,'12/22/26','12/28/26','christmas','Consults','MICU','Unavailable','Unavailable','Procedures','Blocked','Open','Open','Unavailable','Backup','Blocked','Unavailable','Unavailable','Open','Open','Unavailable','Open','MICU','Unavailable','Open','Unavailable','Open','APP-ICU','Unavailable','Unavailable','Unavailable','Blocked'],
+  [27,'12/29/26','1/4/27','christmas','Open','Backup','Open','Unavailable','Open','MICU','Open','Open','Open','Open','Blocked','Unavailable','Unavailable','Consults','Procedures','Unavailable','Unavailable','Unavailable','MICU','Open','Unavailable','Open','Unavailable','Unavailable','Unavailable','APP-ICU','Blocked'],
+  [28,'1/5/27','1/11/27','regular','Open','Open','Open','Backup','Open','Unavailable','Open','MICU','APP-ICU','Unavailable','Blocked','Open','Open','Open','Open','Open','Open','Procedures','Open','Open','MICU','Open','Blocked','Consults','Unavailable','Open','Blocked'],
+  [29,'1/12/27','1/18/27','regular','Open','MICU','Open','Open','Open','Blocked','Open','Open','Open','Unavailable','Blocked','Consults','Open','Open','Backup','APP-ICU','Open','Open','Procedures','Open','Open','Unavailable','MICU','Unavailable','Unavailable','Open','Blocked'],
+  [30,'1/19/27','1/25/27','regular','Open','Open','Open','MICU','Open','Unavailable','Open','Open','Open','Open','Blocked','Blocked','Procedures','Backup','Open','Open','Consults','Unavailable','Unavailable','Open','APP-ICU','Unavailable','Open','Unavailable','MICU','Open','Blocked'],
+  [31,'1/26/27','2/1/27','regular','Open','Procedures','Backup','Unavailable','Open','Unavailable','Open','Open','APP-ICU','Unavailable','Open','Unavailable','Open','Open','MICU','Unavailable','Open','Unavailable','MICU','Open','Open','Consults','Blocked','Open','Open','Open','Blocked'],
+  [32,'2/2/27','2/8/27','regular','Consults','Open','Open','APP-ICU','Open','Blocked','Open','Open','Open','Unavailable','Open','Unavailable','Open','Backup','Open','MICU','Open','MICU','Unavailable','Open','Open','Open','Procedures','Open','Open','Open','Blocked'],
+  [33,'2/9/27','2/15/27','regular','Open','Backup','Unavailable','Open','Procedures','MICU','Open','Open','Open','Unavailable','Blocked','Blocked','Open','Open','Open','Unavailable','Unavailable','Open','Unavailable','Open','Open','Consults','Open','Open','APP-ICU','MICU','Blocked'],
+  [34,'2/16/27','2/22/27','regular','Backup','Open','Open','Procedures','Open','Open','Open','Open','Open','Open','Open','Unavailable','Open','APP-ICU','Open','Unavailable','Unavailable','MICU','Unavailable','Open','MICU','Open','Blocked','Consults','Open','Open','Unavailable'],
+  [35,'2/23/27','3/1/27','regular','Open','Unavailable','Open','Open','Open','Blocked','Open','APP-ICU','Open','Unavailable','Open','Open','MICU','Open','Open','Open','Unavailable','Open','Procedures','Open','Open','Backup','Open','Unavailable','MICU','Open','Consults'],
+  [36,'3/2/27','3/8/27','regular','Unavailable','MICU','Unavailable','Consults','Unavailable','Unavailable','Open','Open','Open','Unavailable','Open','Blocked','Open','Open','Open','MICU','Unavailable','APP-ICU','Open','Open','Procedures','Open','Backup','Unavailable','Open','Open','Open'],
+  [37,'3/9/27','3/15/27','sccm_conference','Unavailable','Unavailable','Unavailable','Open','Unavailable','Unavailable','Open','Open','Open','Blocked','Open','APP-ICU','Procedures','Open','Open','Open','Unavailable','Unavailable','MICU','Open','Open','Consults','Blocked','Open','Backup','Open','MICU'],
+  [38,'3/16/27','3/22/27','sccm_conference','Open','Unavailable','MICU','Consults','Procedures','Blocked','Open','Open','Open','Backup','Open','Open','Open','Open','Open','APP-ICU','Blocked','Unavailable','Open','Open','MICU','Open','Open','Unavailable','Unavailable','Open','Open'],
+  [39,'3/23/27','3/29/27','regular','Consults','Open','Open','Open','Open','MICU','Open','Open','Backup','Open','Open','Blocked','Open','Open','Open','Open','Open','APP-ICU','Procedures','Open','Open','Open','MICU','Unavailable','Unavailable','Open','Unavailable'],
+  [40,'3/30/27','4/5/27','spring_break','Open','Unavailable','Unavailable','Procedures','Unavailable','Open','Open','Open','Unavailable','Blocked','Open','Backup','Open','Unavailable','MICU','Open','MICU','Open','Unavailable','Open','Open','Unavailable','Blocked','Consults','Unavailable','Unavailable','APP-ICU'],
+  [41,'4/6/27','4/12/27','spring_break','Open','Unavailable','Unavailable','Unavailable','Unavailable','Blocked','Open','MICU','Unavailable','Blocked','Blocked','Consults','Open','Unavailable','Open','Unavailable','Unavailable','APP-ICU','Unavailable','MICU','Procedures','Unavailable','Open','Backup','Open','Unavailable','Open'],
+  [42,'4/13/27','4/19/27','regular','Open','Open','Open','Unavailable','Open','Unavailable','Open','Open','Open','Unavailable','Procedures','Blocked','Open','Consults','Open','Open','MICU','Open','Backup','Open','Open','Unavailable','MICU','Open','APP-ICU','Unavailable','Open'],
+  [43,'4/20/27','4/26/27','regular','Open','Procedures','Open','Unavailable','Open','Unavailable','Open','Open','Open','Blocked','Open','MICU','Open','Open','Open','APP-ICU','Open','MICU','Open','Open','Open','Unavailable','Blocked','Consults','Open','Open','Backup'],
+  [44,'4/27/27','5/3/27','regular','Open','Open','Open','Consults','Procedures','Blocked','Open','Open','APP-ICU','Blocked','Open','Open','Open','Open','Open','Open','MICU','Open','Backup','Open','Open','Unavailable','Unavailable','Open','MICU','Open','Open'],
+  [45,'5/4/27','5/10/27','regular','Open','MICU','Open','Open','Open','Unavailable','Open','Open','Open','Blocked','Open','Blocked','Open','Open','Open','APP-ICU','Open','Procedures','Open','Open','Open','Consults','Open','Backup','Open','MICU','Open'],
+  [46,'5/11/27','5/17/27','ats_conference','Unavailable','Unavailable','MICU','Unavailable','Open','APP-ICU','Open','Open','Backup','Blocked','Open','Unavailable','MICU','Consults','Unavailable','Open','Unavailable','Unavailable','Unavailable','Open','Unavailable','Unavailable','Procedures','Open','Unavailable','Open','Unavailable'],
+  [47,'5/18/27','5/24/27','conference','Unavailable','Unavailable','Open','MICU','Procedures','Unavailable','Open','Open','Open','Blocked','Open','Unavailable','Open','Open','Unavailable','APP-ICU','Unavailable','Unavailable','Unavailable','Backup','Unavailable','Open','Blocked','Consults','MICU','Unavailable','Unavailable'],
+  [48,'5/25/27','5/31/27','regular','Open','MICU','Open','Unavailable','Open','Blocked','Open','MICU','Unavailable','Blocked','Open','Consults','Backup','Open','Open','Open','Open','APP-ICU','Open','Open','Procedures','Open','Open','Unavailable','Unavailable','Open','Unavailable'],
+  [49,'6/1/27','6/7/27','summer','Open','Open','Backup','APP-ICU','Open','Unavailable','Open','MICU','Unavailable','Blocked','Open','Blocked','Unavailable','Open','Unavailable','Unavailable','Open','Open','MICU','Open','Open','Consults','Open','Unavailable','Procedures','Open','Unavailable'],
+  [50,'6/8/27','6/14/27','summer','Open','Unavailable','Open','Unavailable','Open','Unavailable','Open','Open','Unavailable','Blocked','Open','Consults','Unavailable','Open','MICU','Unavailable','MICU','Procedures','Open','Open','Backup','Open','Blocked','Unavailable','Open','APP-ICU','Open'],
+  [51,'6/15/27','6/21/27','summer','Consults','Open','Open','Unavailable','Open','Blocked','Open','Open','Unavailable','Blocked','Procedures','Unavailable','Unavailable','Open','Open','Backup','Unavailable','Open','APP-ICU','Open','Open','Open','MICU','Unavailable','Open','Open','MICU'],
+  [52,'6/22/27','6/28/27','summer','Open','Open','Open','Unavailable','Open','APP-ICU','Open','Open','Unavailable','Blocked','Open','MICU','Unavailable','Open','Open','Open','Unavailable','Procedures','Open','Open','MICU','Consults','Open','Backup','Unavailable','Open','Open'],
+];
+
+function buildWeeks(raw) {
+  return raw.map(r => ({
+    weekNum:   r[0],
+    startDate: r[1],
+    endDate:   r[2],
+    weekType:  r[3],
+    assignments: r.slice(4).map(v => (v || 'Open')),
+  }));
+}
+
+/* ─────────────────── helpers ─────────────────── */
+function computeBalance(weeks) {
+  return FACULTY.map((_, fi) => {
+    const counts = Object.fromEntries(ASSIGN_TYPES.map(t => [t, 0]));
+    weeks.forEach(w => { if (ASSIGN_TYPES.includes(w.assignments[fi])) counts[w.assignments[fi]]++; });
+    return counts;
+  });
+}
+
+function detectConflicts(weeks) {
+  const out = new Set();
+  weeks.forEach((w, wi) => {
+    const byType = {};
+    w.assignments.forEach((a, fi) => {
+      if (COVERAGE.has(a)) { (byType[a] = byType[a] || []).push(fi); }
+    });
+    Object.values(byType).forEach(fis => {
+      if (fis.length > 1) fis.forEach(fi => out.add(`${wi}-${fi}`));
+    });
+  });
+  return out;
+}
+
+function splitName(name) {
+  const parts = name.split(' ');
+  if (parts.length === 1) return { first: name, last: '' };
+  return { first: parts[0], last: parts.slice(1).join(' ') };
+}
+
+/* ─────────────────── main component ─────────────────── */
+function App() {
+  const [weeks, setWeeks]         = useState(() => buildWeeks(RAW_WEEKS));
+  const [dragSrc, setDragSrc]     = useState(null);   // {wi, fi, val}
+  const [dragOver, setDragOver]   = useState(null);   // {wi, fi}
+  const [history, setHistory]     = useState([]);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [hasChanges, setHasChanges]   = useState(false);
+
+  const balance   = useMemo(() => computeBalance(weeks), [weeks]);
+  const conflicts = useMemo(() => detectConflicts(weeks), [weeks]);
+
+  /* drag handlers */
+  const onDragStart = useCallback((e, wi, fi) => {
+    const val = weeks[wi].assignments[fi];
+    if (LOCKED.has(val)) { e.preventDefault(); return; }
+    setDragSrc({ wi, fi, val });
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', val);
+  }, [weeks]);
+
+  const onDragOver = useCallback((e, wi, fi) => {
+    if (!dragSrc) return;
+    const target = weeks[wi].assignments[fi];
+    if (LOCKED.has(target)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOver({ wi, fi });
+  }, [weeks, dragSrc]);
+
+  const onDragLeave = useCallback(() => setDragOver(null), []);
+
+  const onDrop = useCallback((e, wi, fi) => {
+    e.preventDefault();
+    setDragOver(null);
+    if (!dragSrc) return;
+    const target = weeks[wi].assignments[fi];
+    if (LOCKED.has(target)) { setDragSrc(null); return; }
+    if (dragSrc.wi === wi && dragSrc.fi === fi) { setDragSrc(null); return; }
+
+    // snapshot for undo
+    setHistory(h => [
+      ...h.slice(-29),
+      weeks.map(w => ({ ...w, assignments: [...w.assignments] }))
+    ]);
+
+    setWeeks(prev => {
+      const next = prev.map(w => ({ ...w, assignments: [...w.assignments] }));
+      next[wi].assignments[fi] = dragSrc.val;        // target gets the assignment
+      next[dragSrc.wi].assignments[dragSrc.fi] = 'Open'; // source becomes Open
+      return next;
+    });
+    setDragSrc(null);
+    setHasChanges(true);
+  }, [dragSrc, weeks]);
+
+  const onDragEnd = useCallback(() => {
+    setDragSrc(null);
+    setDragOver(null);
+  }, []);
+
+  /* undo */
+  const undo = useCallback(() => {
+    if (!history.length) return;
+    setWeeks(history[history.length - 1]);
+    setHistory(h => h.slice(0, -1));
+    if (history.length <= 1) setHasChanges(false);
+  }, [history]);
+
+  /* export */
+  const exportCSV = useCallback(() => {
+    const header = ['Week #','Start Date','End Date','Week Type',...FACULTY];
+    const rows   = weeks.map(w => [w.weekNum, w.startDate, w.endDate, w.weekType, ...w.assignments]);
+    const csv    = [header, ...rows].map(r => r.join(',')).join('\n');
+    const url    = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'faculty-schedule-modified.csv'; a.click();
+    URL.revokeObjectURL(url);
+    setHasChanges(false);
+  }, [weeks]);
+
+  /* reset */
+  const reset = useCallback(() => {
+    if (!window.confirm('Reset all changes back to the original schedule?')) return;
+    setWeeks(buildWeeks(RAW_WEEKS));
+    setHistory([]);
+    setHasChanges(false);
+  }, []);
+
+  /* cell style */
+  const cellStyle = (val) => {
+    const c = COLORS[val] || COLORS['Open'];
+    return { background: c.bg, borderColor: c.border };
+  };
+  const innerStyle = (val) => {
+    const c = COLORS[val] || COLORS['Open'];
+    return { color: c.text };
+  };
+
+  /* conflict lookup per faculty for sidebar */
+  const facultyConflictWeeks = useMemo(() => {
+    const m = FACULTY.map(() => 0);
+    conflicts.forEach(key => {
+      const [, fi] = key.split('-').map(Number);
+      m[fi]++;
+    });
+    return m;
+  }, [conflicts]);
+
+  return (
+    <div className="app">
+
+      {/* ── toolbar ── */}
+      <div className="toolbar">
+        <h1>📅 Faculty Schedule Admin — 2026–2027</h1>
+
+        <div className="legend">
+          {ASSIGN_TYPES.map(t => (
+            <div key={t} className="legend-item">
+              <div className="legend-dot" style={{background: COLORS[t].bg, border:`1px solid ${COLORS[t].border}`}}/>
+              {t}
+            </div>
+          ))}
+          <div className="legend-item">
+            <div className="legend-dot" style={{background:'#374151',border:'1px solid #4b5563'}}/>
+            Blocked/Unavail.
+          </div>
+        </div>
+
+        <div className="toolbar-spacer"/>
+
+        <button className="btn btn-ghost" onClick={() => setShowSidebar(s => !s)}>
+          {showSidebar ? '⟩ Hide' : '⟨ Balance'}
+        </button>
+        <button className="btn btn-ghost" onClick={undo} disabled={!history.length}>
+          ↩ Undo ({history.length})
+        </button>
+        <button className="btn btn-warning" onClick={reset} disabled={!hasChanges}>
+          ↺ Reset
+        </button>
+        <button className="btn btn-success" onClick={exportCSV}>
+          ↓ Export CSV
+        </button>
+      </div>
+
+      {/* ── change banner ── */}
+      {hasChanges && (
+        <div className="change-banner">
+          <span>⚠ Unsaved changes — {history.length} move{history.length !== 1 ? 's' : ''} made</span>
+          <span>Export CSV to save · <b>⚠ red outline</b> = coverage conflict in week</span>
+        </div>
+      )}
+
+      <div className="main">
+
+        {/* ── schedule grid ── */}
+        <div className="grid-container">
+          <table>
+            <thead>
+              <tr>
+                <th><span className="fname">Week</span><span className="lname">Dates</span></th>
+                {FACULTY.map(name => {
+                  const { first, last } = splitName(name);
+                  return (
+                    <th key={name}>
+                      <span className="fname">{first}</span>
+                      <span className="lname">{last}</span>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {weeks.map((w, wi) => (
+                <tr key={wi} className={`wt-${w.weekType}`}>
+                  <td>
+                    <span style={{fontSize:'11px'}}>Wk {w.weekNum}</span><br/>
+                    <span style={{fontSize:'9px',fontWeight:400,opacity:0.8}}>{w.startDate}</span><br/>
+                    <span style={{fontSize:'8px',fontWeight:400,opacity:0.6,textTransform:'capitalize'}}>{w.weekType.replace('_',' ')}</span>
+                  </td>
+                  {w.assignments.map((val, fi) => {
+                    const locked    = LOCKED.has(val);
+                    const isSrc     = dragSrc?.wi === wi && dragSrc?.fi === fi;
+                    const isOver    = dragOver?.wi === wi && dragOver?.fi === fi;
+                    const isConflict = conflicts.has(`${wi}-${fi}`);
+                    return (
+                      <td
+                        key={fi}
+                        className={[
+                          'cell',
+                          locked ? 'locked' : 'draggable',
+                          isSrc  ? 'drag-source' : '',
+                          isOver && !locked ? 'drag-over' : '',
+                          isConflict ? 'conflict' : '',
+                        ].filter(Boolean).join(' ')}
+                        style={cellStyle(val)}
+                        draggable={!locked}
+                        onDragStart={e => onDragStart(e, wi, fi)}
+                        onDragOver={e  => onDragOver(e, wi, fi)}
+                        onDragLeave={onDragLeave}
+                        onDrop={e      => onDrop(e, wi, fi)}
+                        onDragEnd={onDragEnd}
+                        title={`${FACULTY[fi]}  ·  Wk ${w.weekNum} (${w.startDate}–${w.endDate})  ·  ${val}${locked ? '  🔒 locked' : '  ↕ drag to move'}`}
+                      >
+                        <div className="cell-inner" style={innerStyle(val)}>
+                          {val === 'Open' ? '' : val === 'Unavailable' ? '—' : val === 'Blocked' ? '■' : val}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── balance sidebar ── */}
+        {showSidebar && (
+          <div className="sidebar">
+            <div className="sidebar-header">
+              Assignment Balance
+              <span style={{fontSize:'10px',fontWeight:400,opacity:0.7}}>{weeks.length} wks</span>
+            </div>
+            <div className="sidebar-subhead">
+              <span style={{flex:'0 0 105px'}}>Faculty</span>
+              <span>MICU · APP · Con · Proc · Bkp</span>
+            </div>
+            {FACULTY.map((name, fi) => {
+              const b = balance[fi];
+              const hasConf = facultyConflictWeeks[fi] > 0;
+              const total = ASSIGN_TYPES.reduce((s, t) => s + b[t], 0);
+              return (
+                <div key={fi} className={`faculty-row${hasConf ? ' has-conflict' : ''}`}>
+                  <div className="faculty-name" title={name}>{name}</div>
+                  <div className="assign-chips">
+                    {ASSIGN_TYPES.map(t => (
+                      <div key={t} className="chip" style={{
+                        background: COLORS[t].bg,
+                        color: COLORS[t].text,
+                        border: `1px solid ${COLORS[t].border}`,
+                      }}>
+                        {b[t]}
+                      </div>
+                    ))}
+                    <div className="chip-total" title="Total assigned weeks">{total}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── drag hint tooltip ── */}
+      {dragSrc && (
+        <div className="drag-hint">
+          Moving <strong>{dragSrc.val}</strong> from {FACULTY[dragSrc.fi]} · Drop on any unlocked cell · Esc to cancel
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

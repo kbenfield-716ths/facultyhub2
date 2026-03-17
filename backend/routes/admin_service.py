@@ -7,7 +7,7 @@ are NOT available for regular inpatient service duties.
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from datetime import datetime, timedelta, date
 from typing import List, Optional, Dict
 from pydantic import BaseModel
@@ -127,6 +127,10 @@ async def get_service_weeks_heatmap(
 
     draft_config_id = draft_config.id if draft_config else None
 
+    # Faculty IDs whose records should never count toward unavailable totals.
+    # HOSP represents providers from another division filling shifts externally.
+    EXCLUDED_FACULTY_IDS = ['HOSP']
+
     for week in weeks:
         # Check if this is historic data (year < current year)
         # If historic_unavailable_count is set, use it; otherwise count actual requests
@@ -137,12 +141,14 @@ async def get_service_weeks_heatmap(
             # Count direct UnavailabilityRequests (traditional system)
             unavailable_count = db.query(func.count(UnavailabilityRequest.id)).filter(
                 UnavailabilityRequest.week_id == week.id,
-                UnavailabilityRequest.status == "unavailable"
+                UnavailabilityRequest.status == "unavailable",
+                ~UnavailabilityRequest.faculty_id.in_(EXCLUDED_FACULTY_IDS)
             ).scalar() or 0
 
         volunteer_count = db.query(func.count(UnavailabilityRequest.id)).filter(
             UnavailabilityRequest.week_id == week.id,
-            UnavailabilityRequest.status == "available"
+            UnavailabilityRequest.status == "available",
+            ~UnavailabilityRequest.faculty_id.in_(EXCLUDED_FACULTY_IDS)
         ).scalar() or 0
 
         # --- BUG FIX (Bug 2): Count wave draft submissions from DraftWeekRequest records ---
@@ -152,24 +158,34 @@ async def get_service_weeks_heatmap(
             draft_unavail = db.query(func.count(DraftWeekRequest.id)).filter(
                 DraftWeekRequest.week_id == week.id,
                 DraftWeekRequest.config_id == draft_config_id,
-                DraftWeekRequest.request_type == 'unavailable'
+                DraftWeekRequest.request_type == 'unavailable',
+                ~DraftWeekRequest.faculty_id.in_(EXCLUDED_FACULTY_IDS)
             ).scalar() or 0
 
             draft_volunteer = db.query(func.count(DraftWeekRequest.id)).filter(
                 DraftWeekRequest.week_id == week.id,
                 DraftWeekRequest.config_id == draft_config_id,
-                DraftWeekRequest.request_type == 'volunteer'
+                DraftWeekRequest.request_type == 'volunteer',
+                ~DraftWeekRequest.faculty_id.in_(EXCLUDED_FACULTY_IDS)
             ).scalar() or 0
 
             unavailable_count += draft_unavail
             volunteer_count += draft_volunteer
 
-        # --- BUG FIX (Bug 3): Count admin override blocks as unavailable ---
-        # FacultyBlocks prevent faculty from being assigned to weeks, which is
-        # functionally the same as being unavailable. Include them in the count
-        # so the heatmap accurately reflects staffing shortages.
+        # Count admin override blocks as unavailable, excluding blocks that represent
+        # clinical scheduling (sleep schedule, new faculty onboarding) and external
+        # providers (HOSP). NULL-safe: blocks with no reason are treated as regular.
         block_count = db.query(func.count(FacultyBlock.id)).filter(
-            FacultyBlock.week_id == week.id
+            FacultyBlock.week_id == week.id,
+            ~FacultyBlock.faculty_id.in_(EXCLUDED_FACULTY_IDS),
+            or_(
+                FacultyBlock.reason.is_(None),
+                ~FacultyBlock.reason.ilike('%sleep%')
+            ),
+            or_(
+                FacultyBlock.reason.is_(None),
+                ~FacultyBlock.reason.ilike('%onboarding%')
+            )
         ).scalar() or 0
         unavailable_count += block_count
 

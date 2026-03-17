@@ -5,7 +5,7 @@ Staggered-start, first-come-first-served availability selection
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, or_
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime, timedelta
@@ -771,10 +771,22 @@ def get_week_status(
     for ws in week_statuses:
         week = db.query(ServiceWeek).filter_by(id=ws.week_id).first()
         if week:
-            # Include admin override blocks in the unavailable count
-            # so capacity checks reflect true staffing availability
+            # Include admin override blocks in the unavailable count,
+            # excluding sleep schedule, new faculty onboarding, and external
+            # division providers (HOSP) — those are clinically scheduled,
+            # not truly unavailable. NULL-safe: no-reason blocks are included.
+            _EXCLUDED = ['HOSP']
             block_count = db.query(func.count(FacultyBlock.id)).filter(
-                FacultyBlock.week_id == ws.week_id
+                FacultyBlock.week_id == ws.week_id,
+                ~FacultyBlock.faculty_id.in_(_EXCLUDED),
+                or_(
+                    FacultyBlock.reason.is_(None),
+                    ~FacultyBlock.reason.ilike('%sleep%')
+                ),
+                or_(
+                    FacultyBlock.reason.is_(None),
+                    ~FacultyBlock.reason.ilike('%onboarding%')
+                )
             ).scalar() or 0
             total_unavailable = ws.unavailable_count + block_count
 

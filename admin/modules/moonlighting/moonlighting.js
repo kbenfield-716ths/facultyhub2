@@ -5,7 +5,7 @@
 
 let allSignups = [];
 let allAssignments = [];
-let allProviders = [];
+let allFacultyMoonlighters = [];
 let currentMoonlightingTab = 'signups';
 
 // Load on init
@@ -40,33 +40,33 @@ function showMoonlightingTab(tabId) {
   }
 }
 
-// Load providers for filters
+// Load faculty moonlighters for filters
 async function loadProviders() {
   try {
     const response = await fetch('/api/providers', { credentials: 'same-origin' });
     if (!response.ok) return;
 
     const data = await response.json();
-    allProviders = Array.isArray(data) ? data : (data.providers || []);
+    allFacultyMoonlighters = Array.isArray(data) ? data : (data.providers || []);
 
-    // Populate provider dropdowns
+    // Populate faculty dropdowns
     const signupsSelect = document.getElementById('signupsProvider');
     const assignmentsSelect = document.getElementById('assignmentsProvider');
 
-    allProviders.forEach(function(provider) {
+    allFacultyMoonlighters.forEach(function(facultyMember) {
       const option1 = document.createElement('option');
-      option1.value = provider.id;
-      option1.textContent = provider.name;
+      option1.value = facultyMember.id;
+      option1.textContent = facultyMember.name;
       signupsSelect.appendChild(option1);
 
       const option2 = document.createElement('option');
-      option2.value = provider.id;
-      option2.textContent = provider.name;
+      option2.value = facultyMember.id;
+      option2.textContent = facultyMember.name;
       assignmentsSelect.appendChild(option2);
     });
 
   } catch (error) {
-    console.error('Error loading providers:', error);
+    console.error('Error loading faculty moonlighters:', error);
   }
 }
 
@@ -76,12 +76,12 @@ async function loadSignups() {
     showAlert('moonlightingAlert', '', 'clear');
 
     const month = document.getElementById('signupsMonth').value;
-    const provider = document.getElementById('signupsProvider').value;
+    const facultyFilter = document.getElementById('signupsProvider').value;
     const status = document.getElementById('signupsStatus').value;
 
     const params = new URLSearchParams();
     if (month !== 'all') params.append('month', month);
-    if (provider !== 'all') params.append('provider_id', provider);
+    if (facultyFilter !== 'all') params.append('provider_id', facultyFilter);
 
     const response = await fetch('/api/admin/signups?' + params.toString(), { credentials: 'same-origin' });
     if (!response.ok) throw new Error('Failed to load signups');
@@ -131,8 +131,8 @@ function renderSignups(signups) {
       ? '<span class="badge badge-danger">Locked</span>'
       : '<span class="badge badge-success">Flexible</span>';
 
-    row.innerHTML = '<td>' + signup.provider_id + '</td>' +
-                    '<td>' + signup.provider_name + '</td>' +
+    row.innerHTML = '<td>' + signup.faculty_id + '</td>' +
+                    '<td>' + signup.faculty_name + '</td>' +
                     '<td>' + formatMonthYearString(signup.month) + '</td>' +
                     '<td>' + formatDate(signup.date) + '</td>' +
                     '<td>' + dayOfWeek + '</td>' +
@@ -145,12 +145,12 @@ function renderSignups(signups) {
 
 // Update signups stats
 function updateSignupsStats(signups) {
-  const uniqueProviderIds = new Set(signups.map(function(s) { return s.provider_id; }));
+  const uniqueFacultyIds = new Set(signups.map(function(s) { return s.faculty_id; }));
   const lockedCount = signups.filter(function(s) { return s.locked; }).length;
   const flexibleCount = signups.filter(function(s) { return !s.locked; }).length;
 
   document.getElementById('totalSignups').textContent = signups.length;
-  document.getElementById('uniqueProviders').textContent = uniqueProviderIds.size;
+  document.getElementById('uniqueProviders').textContent = uniqueFacultyIds.size;
   document.getElementById('lockedCount').textContent = lockedCount;
   document.getElementById('flexibleCount').textContent = flexibleCount;
 }
@@ -186,8 +186,8 @@ function exportSignupsCSV() {
     const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
 
     return {
-      'Provider ID': signup.provider_id,
-      'Provider Name': signup.provider_name,
+      'Faculty ID': signup.faculty_id,
+      'Faculty Name': signup.faculty_name,
       'Month': signup.month,
       'Date': signup.date,
       'Day of Week': dayOfWeek,
@@ -206,11 +206,11 @@ async function loadAssignments() {
     showAlert('moonlightingAlert', '', 'clear');
 
     const month = document.getElementById('assignmentsMonth').value;
-    const provider = document.getElementById('assignmentsProvider').value;
+    const facultyFilter = document.getElementById('assignmentsProvider').value;
 
     const params = new URLSearchParams();
     if (month !== 'all') params.append('month', month);
-    if (provider !== 'all') params.append('provider_id', provider);
+    if (facultyFilter !== 'all') params.append('provider_id', facultyFilter);
 
     const response = await fetch('/api/admin/assignments?' + params.toString(), { credentials: 'same-origin' });
     if (!response.ok) throw new Error('Failed to load assignments');
@@ -248,8 +248,8 @@ function renderAssignments(assignments) {
     const date = new Date(assignment.date);
     const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
 
-    row.innerHTML = '<td>' + assignment.provider_id + '</td>' +
-                    '<td>' + assignment.provider_name + '</td>' +
+    row.innerHTML = '<td>' + assignment.faculty_id + '</td>' +
+                    '<td>' + assignment.faculty_name + '</td>' +
                     '<td>' + assignment.shift_name + '</td>' +
                     '<td>' + formatDate(assignment.date) + '</td>' +
                     '<td>' + dayOfWeek + '</td>' +
@@ -261,7 +261,7 @@ function renderAssignments(assignments) {
 
 // Update assignments stats
 function updateAssignmentsStats(assignments) {
-  const uniqueProviderIds = new Set(assignments.map(function(a) { return a.provider_id; }));
+  const uniqueFacultyIds = new Set(assignments.map(function(a) { return a.faculty_id; }));
 
   // Calculate coverage - assuming 63 total shifts
   const coveragePercent = assignments.length > 0
@@ -269,7 +269,7 @@ function updateAssignmentsStats(assignments) {
     : 0;
 
   document.getElementById('totalAssignments').textContent = assignments.length;
-  document.getElementById('assignedProviders').textContent = uniqueProviderIds.size;
+  document.getElementById('assignedProviders').textContent = uniqueFacultyIds.size;
   document.getElementById('coveragePercent').textContent = coveragePercent + '%';
 }
 
@@ -291,8 +291,8 @@ function exportAssignmentsCSV() {
     const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
 
     return {
-      'Provider ID': assignment.provider_id,
-      'Provider Name': assignment.provider_name,
+      'Faculty ID': assignment.faculty_id,
+      'Faculty Name': assignment.faculty_name,
       'Shift Name': assignment.shift_name,
       'Date': assignment.date,
       'Day of Week': dayOfWeek,

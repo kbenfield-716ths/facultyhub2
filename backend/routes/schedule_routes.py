@@ -601,3 +601,194 @@ async def clear_service_schedule(
         "assignments_deleted": deleted,
         "year": year
     }
+
+
+# ===========================================================================================
+# GRID REBALANCER — JSON grid load + bulk apply
+# ===========================================================================================
+
+@router.get("/service-schedule/faculty-grid-json")
+async def get_faculty_grid_json(
+    year: int = 2026,
+    db: Session = Depends(get_db),
+    current_user: Faculty = Depends(require_admin)
+):
+    """
+    Return the faculty-week assignment grid as JSON, including real DB IDs so
+    the grid rebalancer UI can POST changes back without name-matching.
+
+    Response shape:
+      {
+        "faculty": [{"id": "...", "name": "..."}],          # sorted by last name
+        "weeks":   [{"id": "...", "week_number": 1,          # 52 weeks in order
+                     "start_date": "2026-06-30",
+                     "end_date":   "2026-07-06",
+                     "week_type":  "summer"}],
+        "grid":    {"<week_id>": {"<faculty_id>": "MICU"|"Open"|"Unavailable"|"Blocked"}}
+      }
+    """
+    from backend.models import ServiceWeek, ServiceWeekAssignment, UnavailabilityRequest, DraftWeekRequest, FacultyBlock
+
+    all_faculty = db.query(Faculty).filter(Faculty.active == True).all()
+    all_faculty_sorted = sorted(all_faculty, key=lambda f: (f.name.split()[-1].lower(), f.name.lower()))
+
+    weeks = db.query(ServiceWeek).filter(ServiceWeek.year == year).order_by(ServiceWeek.week_number).all()
+    if not weeks:
+        raise HTTPException(status_code=404, detail=f"No weeks found for year {year}")
+
+    week_ids = [w.id for w in weeks]
+
+    # Assignment map: (week_id, faculty_id) -> service_type
+    assign_map = {}
+    for a in db.query(ServiceWeekAssignment).filter(ServiceWeekAssignment.week_id.in_(week_ids)).all():
+        assign_map[(a.week_id, a.faculty_id)] = a.service_type
+
+    # Unavailability: (week_id, faculty_id)
+    unavail_set = set()
+    for req in db.query(UnavailabilityRequest).filter(UnavailabilityRequest.status == "unavailable").all():
+        if req.week_id in set(week_ids):
+            unavail_set.add((req.week_id, req.faculty_id))
+    for dr in db.query(DraftWeekRequest).filter(
+        DraftWeekRequest.week_id.in_(week_ids),
+        DraftWeekRequest.request_type == "unavailable"
+    ).all():
+        unavail_set.add((dr.week_id, dr.faculty_id))
+
+    # Block set: (week_id, faculty_id)
+    block_set = set()
+    for b in db.query(FacultyBlock).filter(FacultyBlock.week_id.in_(week_ids)).all():
+        block_set.add((b.week_id, b.faculty_id))
+
+    # Build grid
+    grid = {}
+    for week in weeks:
+        grid[week.id] = {}
+        for f in all_faculty_sorted:
+            key = (week.id, f.id)
+            if key in assign_map:
+                grid[week.id][f.id] = assign_map[key]
+            elif key in block_set:
+                grid[week.id][f.id] = "Blocked"
+            elif key in unavail_set:
+                grid[week.id][f.id] = "Unavailable"
+            else:
+                grid[week.id][f.id] = "Open"
+
+    return {
+        "faculty": [{"id": f.id, "name": f.name} for f in all_faculty_sorted],
+        "weeks": [
+            {
+                "id": w.id,
+                "week_number": w.week_number,
+                "start_date": w.start_date.isoformat() if hasattr(w.start_date, 'isoformat') else str(w.start_date),
+                "end_date":   w.end_date.isoformat()   if hasattr(w.end_date,   'isoformat') else str(w.end_date),
+                "week_type":  w.week_type,
+            }
+            for w in weeks
+        ],
+        "grid": grid,
+    }
+
+
+class GridChange(BaseModel):
+    week_id: str
+    faculty_id: str
+    new_assignment: str   # Service type string, or "Open" to remove
+
+
+class ApplyGridChangesRequest(BaseModel):
+    year: int = 2026
+    changes: list[GridChange]
+    reason: str = "Grid rebalancer"
+
+
+@router.post("/service-schedule/apply-grid-changes")
+async def apply_grid_changes(
+    request: ApplyGridChangesRequest,
+    db: Session = Depends(get_db),
+    current_user: Faculty = Depends(require_admin)
+):
+    """
+    Bulk-apply a set of assignment changes from the grid rebalancer UI.
+
+    For each change:
+      - "Open"      → delete any existing assignment for that (week, faculty) slot
+      - Service type → delete any existing assignment, then create a new manual one
+
+    Blocked and Unavailable cells are rejected server-side to protect hard constraints.
+    """
+    from backend.models import ServiceWeek, ServiceWeekAssignment, FacultyBlock, UnavailabilityRequest, DraftWeekRequest
+    import uuid as _uuid
+
+    VALID_SERVICE_TYPES = {"MICU", "APP-ICU", "Procedures", "Consults", "Backup"}
+
+    # Build lookup sets for locked cells so we can reject bad requests
+    weeks = db.query(ServiceWeek).filter(ServiceWeek.year == request.year).all()
+    week_ids_for_year = {w.id for w in weeks}
+
+    block_set = {(b.week_id, b.faculty_id) for b in db.query(FacultyBlock).filter(FacultyBlock.week_id.in_(list(week_ids_for_year))).all()}
+    unavail_set = set()
+    for req in db.query(UnavailabilityRequest).filter(UnavailabilityRequest.status == "unavailable").all():
+        if req.week_id in week_ids_for_year:
+            unavail_set.add((req.week_id, req.faculty_id))
+    for dr in db.query(DraftWeekRequest).filter(
+        DraftWeekRequest.week_id.in_(list(week_ids_for_year)),
+        DraftWeekRequest.request_type == "unavailable"
+    ).all():
+        unavail_set.add((dr.week_id, dr.faculty_id))
+
+    applied = 0
+    skipped = 0
+    errors = []
+
+    for change in request.changes:
+        key = (change.week_id, change.faculty_id)
+
+        # Reject attempts to modify locked cells
+        if key in block_set or key in unavail_set:
+            skipped += 1
+            continue
+
+        # Validate week belongs to the requested year
+        if change.week_id not in week_ids_for_year:
+            errors.append(f"Week {change.week_id} not found in year {request.year}")
+            skipped += 1
+            continue
+
+        # Validate new assignment value
+        if change.new_assignment not in VALID_SERVICE_TYPES and change.new_assignment != "Open":
+            errors.append(f"Invalid assignment value: {change.new_assignment}")
+            skipped += 1
+            continue
+
+        # Delete any existing assignment for this (week, faculty) slot
+        db.query(ServiceWeekAssignment).filter(
+            ServiceWeekAssignment.week_id == change.week_id,
+            ServiceWeekAssignment.faculty_id == change.faculty_id,
+        ).delete(synchronize_session=False)
+
+        # If not "Open", create a new manual assignment
+        if change.new_assignment in VALID_SERVICE_TYPES:
+            new_a = ServiceWeekAssignment(
+                id=str(_uuid.uuid4()),
+                week_id=change.week_id,
+                faculty_id=change.faculty_id,
+                service_type=change.new_assignment,
+                is_manual=True,
+                imported=False,
+                assigned_by=current_user.id,
+                notes=request.reason,
+            )
+            db.add(new_a)
+
+        applied += 1
+
+    db.commit()
+
+    return {
+        "success": True,
+        "applied": applied,
+        "skipped": skipped,
+        "errors": errors,
+        "message": f"Applied {applied} change(s) to the schedule."
+    }

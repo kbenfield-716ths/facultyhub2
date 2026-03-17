@@ -1,0 +1,7 @@
+{
+  "title": "Grid Rebalancer",
+  "icon": "🔀",
+  "description": "Drag-and-drop interface for manually rebalancing faculty service assignments across the 52-week schedule.",
+  "module": "grid-rebalancer",
+  "file": "grid-rebalancer.html"
+}

@@ -547,7 +547,7 @@ def send_feedback_email(
     Returns:
         bool: True if email sent successfully
     """
-    admin_email = "ke4z@uvahealth.org"
+    admin_email = os.getenv("ADMIN_EMAIL", "admin@example.com")
     
     # Format timestamp
     timestamp = datetime.now().strftime("%A, %B %d, %Y at %I:%M %p")
@@ -772,10 +772,8 @@ def send_password_reset_email(
     Returns:
         bool: True if email sent successfully
     """
-    # Construct reset URL (update with your actual domain)
-    reset_url = f"https://yourdomain.com/reset-password?token={reset_token}"
-    # For local testing:
-    # reset_url = f"http://localhost:8000/reset-password?token={reset_token}"
+    # Construct reset URL from environment variable
+    reset_url = f"{os.getenv('APP_BASE_URL', 'http://localhost:8000')}/reset-password?token={reset_token}"
     
     subject = "Password Reset Request - PCCM Faculty Hub"
     

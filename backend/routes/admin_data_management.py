@@ -130,7 +130,7 @@ async def delete_unavailability(
 @router.get("/moonlighting-signups")
 async def get_moonlighting_signups(
     month: str = "all",
-    provider: str = "all",
+    faculty_filter: str = "all",
     db: Session = Depends(get_db),
     current_user: Faculty = Depends(require_admin)
 ):
@@ -138,7 +138,7 @@ async def get_moonlighting_signups(
     query = db.query(
         Signup.id,
         Signup.provider_id,
-        Faculty.name.label('provider_name'),
+        Faculty.name.label('faculty_name'),
         Shift.month_id,
         Month.year,
         Month.month,
@@ -151,14 +151,14 @@ async def get_moonlighting_signups(
     # Apply filters
     if month != "all":
         query = query.filter(Month.id == int(month))
-    if provider != "all":
-        query = query.filter(Signup.provider_id == provider)
+    if faculty_filter != "all":
+        query = query.filter(Signup.provider_id == faculty_filter)
 
     results = query.all()
     return [{
         'id': r.id,
-        'provider_id': r.provider_id,
-        'provider_name': r.provider_name or 'Unknown',
+        'faculty_id': r.provider_id,
+        'faculty_name': r.faculty_name or 'Unknown',
         'month_id': r.month_id,
         'month_label': f"{r.year}-{r.month:02d}",
         'desired_nights': r.desired_nights,

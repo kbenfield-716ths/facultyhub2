@@ -132,16 +132,16 @@ if (STATIC_DIR / "admin").exists():
 
 # ---------- Pydantic Schemas ----------
 class SignupPayload(BaseModel):
-    provider_id: str
-    provider_name: str
+    faculty_id: str
+    faculty_name: str
     month: str
     desired_nights: int
     dates: List[date]
     locked_dates: List[date] = []
 
 class SignupOut(BaseModel):
-    provider_id: str
-    provider_name: str
+    faculty_id: str
+    faculty_name: str
     date: date
     month: str
     desired_nights: int
@@ -150,7 +150,7 @@ class SignupOut(BaseModel):
     class Config:
         from_attributes = True
 
-class ProviderOut(BaseModel):
+class FacultyOut(BaseModel):
     id: str
     name: str
     email: Optional[str] = None
@@ -158,18 +158,18 @@ class ProviderOut(BaseModel):
     class Config:
         from_attributes = True
 
-class ProviderCreate(BaseModel):
+class FacultyCreate(BaseModel):
     id: str
     name: str
     email: Optional[str] = None
 
-class ProviderUpdate(BaseModel):
+class FacultyUpdate(BaseModel):
     name: str
     email: Optional[str] = None
 
 class AssignmentOut(BaseModel):
-    provider_id: str
-    provider_name: str
+    faculty_id: str
+    faculty_name: str
     date: date
     month: str
 
@@ -218,18 +218,10 @@ def startup_event():
                 print("Admin user must change password on first login.")
                 print("=" * 80)
                 
-                # Optionally write to secure file
-                try:
-                    with open(".admin_initial_password", "w") as f:
-                        f.write(f"Username: ADMIN\nPassword: {admin_password}\nGenerated: {datetime.utcnow()}\n")
-                    print("[Startup] Password also saved to .admin_initial_password (delete after use)")
-                except Exception as e:
-                    print(f"[Startup] Could not save password to file: {e}")
-            
             admin = Faculty(
                 id="ADMIN",
                 name="Administrator",
-                email="admin@example.com",  # TODO: Change this
+                email=settings.ADMIN_EMAIL,
                 rank="full",
                 clinical_effort_pct=0,
                 base_points=0,
@@ -269,19 +261,20 @@ def startup_event():
 async def save_signup(
     request: Request,
     payload: SignupPayload,
+    current_user: Faculty = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Save moonlighting signup for a provider."""
+    """Save moonlighting signup for a faculty member."""
     await standard_limiter(request)
 
-    # Get faculty member (provider)
-    faculty = db.query(Faculty).filter(Faculty.id == payload.provider_id).first()
+    # Get faculty member
+    faculty = db.query(Faculty).filter(Faculty.id == payload.faculty_id).first()
     if not faculty:
-        raise HTTPException(404, f"Faculty member '{payload.provider_id}' not found")
+        raise HTTPException(404, f"Faculty member '{payload.faculty_id}' not found")
 
     # Update name if provided
-    if payload.provider_name and faculty.name != payload.provider_name:
-        faculty.name = payload.provider_name
+    if payload.faculty_name and faculty.name != payload.faculty_name:
+        faculty.name = payload.faculty_name
 
     # Ensure Month row exists
     year, month_num = map(int, payload.month.split("-"))
@@ -309,10 +302,10 @@ async def save_signup(
             db.flush()
             existing_shifts[d] = s
 
-    # Clear old signups for this provider in this month
+    # Clear old signups for this faculty member in this month
     shift_ids = [s.id for s in existing_shifts.values()]
     db.query(Signup).filter(
-        Signup.provider_id == payload.provider_id,
+        Signup.provider_id == payload.faculty_id,
         Signup.shift_id.in_(shift_ids)
     ).delete(synchronize_session=False)
 
@@ -320,7 +313,7 @@ async def save_signup(
     locked_set = set(payload.locked_dates)
     for d in payload.dates:
         su = Signup(
-            provider_id=payload.provider_id,
+            provider_id=payload.faculty_id,
             desired_nights=payload.desired_nights,
             locked=d in locked_set,
             shift_id=existing_shifts[d].id,
@@ -350,11 +343,14 @@ async def save_signup(
             )
             logger.info(f"IRPA confirmation email sent to {faculty.email}")
         else:
-            logger.warning(f"No email on file for faculty {faculty.name} ({payload.provider_id})")
+            logger.warning(f"No email on file for faculty {faculty.name} ({payload.faculty_id})")
     except Exception as e:
         logger.error(f"Failed to send IRPA confirmation email: {e}")
-    
+
     return {"status": "ok"}
+
+
+# Note: payload.faculty_id is now used above
 
 
 # ---------- Admin: List Signups ----------
@@ -362,7 +358,7 @@ async def save_signup(
 async def list_signups(
     request: Request,
     month: Optional[str] = None,
-    current_user: Faculty = Depends(optional_require_admin),
+    current_user: Faculty = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Return one row per provider-date signup."""
@@ -371,7 +367,7 @@ async def list_signups(
     q = (
         db.query(
             Signup.provider_id,
-            Faculty.name.label("provider_name"),
+            Faculty.name.label("faculty_name"),
             Shift.date.label("date"),
             Month.year.label("year"),
             Month.month.label("month_num"),
@@ -394,8 +390,8 @@ async def list_signups(
         month_str = f"{r.year:04d}-{r.month_num:02d}"
         result.append(
             SignupOut(
-                provider_id=r.provider_id,
-                provider_name=r.provider_name,
+                faculty_id=r.provider_id,
+                faculty_name=r.faculty_name,
                 date=r.date,
                 month=month_str,
                 desired_nights=r.desired_nights,
@@ -414,7 +410,7 @@ async def list_signups(
 async def list_assignments(
     request: Request,
     month: Optional[str] = None,
-    current_user: Faculty = Depends(optional_require_admin),
+    current_user: Faculty = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Return the generated schedule (assignments) for a month."""
@@ -423,7 +419,7 @@ async def list_assignments(
     q = (
         db.query(
             Assignment.provider_id,
-            Faculty.name.label("provider_name"),
+            Faculty.name.label("faculty_name"),
             Shift.date.label("date"),
             Month.year.label("year"),
             Month.month.label("month_num"),
@@ -444,8 +440,8 @@ async def list_assignments(
         month_str = f"{r.year:04d}-{r.month_num:02d}"
         result.append(
             AssignmentOut(
-                provider_id=r.provider_id,
-                provider_name=r.provider_name,
+                faculty_id=r.provider_id,
+                faculty_name=r.faculty_name,
                 date=r.date,
                 month=month_str,
             )
@@ -457,9 +453,9 @@ async def list_assignments(
     return result
 
 
-# ---------- Providers List ----------
-@app.get("/api/providers", response_model=List[ProviderOut])
-async def list_providers(request: Request, db: Session = Depends(get_db)):
+# ---------- Faculty Moonlighters List ----------
+@app.get("/api/providers", response_model=List[FacultyOut])
+async def list_faculty_moonlighters(request: Request, current_user: Faculty = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get all active faculty who are moonlighters."""
     await standard_limiter(request)
 
@@ -469,33 +465,33 @@ async def list_providers(request: Request, db: Session = Depends(get_db)):
     ).order_by(Faculty.name).all()
 
     return [
-        ProviderOut(id=f.id, name=f.name, email=f.email)
+        FacultyOut(id=f.id, name=f.name, email=f.email)
         for f in faculty
     ]
 
 
 @app.post("/api/admin/providers")
-async def create_provider(
+async def create_faculty_moonlighter(
     request: Request,
-    provider: ProviderCreate,
-    current_user: Faculty = Depends(optional_require_admin),
+    faculty_data: FacultyCreate,
+    current_user: Faculty = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """Add a new faculty member as a moonlighter."""
     await standard_limiter(request)
 
-    existing = db.query(Faculty).filter(Faculty.id == provider.id).first()
+    existing = db.query(Faculty).filter(Faculty.id == faculty_data.id).first()
     if existing:
         existing.moonlighter = True
-        if provider.email:
-            existing.email = provider.email
+        if faculty_data.email:
+            existing.email = faculty_data.email
         db.commit()
         return {"status": "updated", "id": existing.id}
 
     new_faculty = Faculty(
-        id=provider.id,
-        name=provider.name,
-        email=provider.email or "",
+        id=faculty_data.id,
+        name=faculty_data.name,
+        email=faculty_data.email or "",
         rank="assistant",
         clinical_effort_pct=100,
         base_points=0,
@@ -513,7 +509,7 @@ async def create_provider(
 async def clear_month_data(
     request: Request,
     month: str,
-    current_user: Faculty = Depends(optional_require_admin),
+    current_user: Faculty = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """Clear all signups and assignments for a specific month."""
@@ -631,7 +627,7 @@ async def run_optimizer_endpoint(
     month: str,
     strategy: str = "balanced",
     night_slots: int = 1,
-    current_user: Faculty = Depends(optional_require_admin),
+    current_user: Faculty = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Run the scheduling optimizer for a given month."""
@@ -654,10 +650,10 @@ async def run_optimizer_endpoint(
         # Clear existing assignments for this month
         shift_ids = [s.id for s in month_row.shifts]
         db.query(Assignment).filter(Assignment.shift_id.in_(shift_ids)).delete(synchronize_session=False)
-        
+
         # Save new assignments
-        for provider, shift in assignments:
-            assignment = Assignment(provider_id=provider.id, shift_id=shift.id)
+        for faculty_member, shift in assignments:
+            assignment = Assignment(provider_id=faculty_member.id, shift_id=shift.id)
             db.add(assignment)
         
         db.commit()
@@ -689,7 +685,7 @@ async def run_optimizer_endpoint(
 async def signups_csv(
     request: Request,
     month: str,
-    current_user: Faculty = Depends(optional_require_admin),
+    current_user: Faculty = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Export all signups for a given month as CSV."""
@@ -712,23 +708,23 @@ async def signups_csv(
     )
 
     rows = q.all()
-    
+
     from collections import defaultdict
-    providers_data = defaultdict(lambda: {"dates": [], "desired_nights": 0, "name": ""})
-    
+    faculty_data = defaultdict(lambda: {"dates": [], "desired_nights": 0, "name": ""})
+
     for r in rows:
-        providers_data[r.provider_id]["name"] = r.name
-        providers_data[r.provider_id]["dates"].append(r.date.isoformat())
-        providers_data[r.provider_id]["desired_nights"] = r.desired_nights
+        faculty_data[r.provider_id]["name"] = r.name
+        faculty_data[r.provider_id]["dates"].append(r.date.isoformat())
+        faculty_data[r.provider_id]["desired_nights"] = r.desired_nights
 
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["faculty_id", "name", "desired_nights", "requested_dates", "priority"])
 
-    for faculty_id, data in sorted(providers_data.items()):
+    for fid, data in sorted(faculty_data.items()):
         dates_str = ",".join(data["dates"])
         writer.writerow([
-            faculty_id,
+            fid,
             data["name"],
             data["desired_nights"],
             dates_str,

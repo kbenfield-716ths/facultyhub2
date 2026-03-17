@@ -25,8 +25,8 @@
       <!-- User display (no dropdown) -->
       <div style="margin-bottom:20px; padding:16px; background:#f0f4f8; border-radius:8px; border-left:4px solid #0052cc;">
         <p style="margin:0; font-size:1.1rem;">
-          <strong style="color:#232f3e;">Signing up as:</strong> 
-          <span id="providerName" style="color:#0052cc; font-weight:600;">Loading...</span>
+          <strong style="color:#232f3e;">Signing up as:</strong>
+          <span id="facultyName" style="color:#0052cc; font-weight:600;">Loading...</span>
         </p>
       </div>
 
@@ -79,18 +79,18 @@
       return `${y}-${m}`;
     }
 
-    // Read optional initial provider + month from URL
+    // Read optional initial faculty + month from URL
     const params = new URLSearchParams(window.location.search);
     const paramProviderId = params.get("provider_id") || "";
     const paramProviderName = params.get("provider_name") || "";
-    let provider_id = paramProviderId;
-    let provider_name = paramProviderName;
-    
+    let faculty_id = paramProviderId;
+    let faculty_name = paramProviderName;
+
     // Default to NEXT month unless specified in URL
     let monthStr = params.get("month") || nextMonthString();
 
     // DOM references
-    const providerNameEl = document.getElementById("providerName");
+    const facultyNameEl = document.getElementById("facultyName");
     const monthPickerEl = document.getElementById("monthPicker");
     const monthsToShowEl = document.getElementById("monthsToShow");
     const calendarEl = document.getElementById("calendar");
@@ -101,12 +101,12 @@
     const selectedDates = new Set();
 
     function updateProviderDisplay() {
-      if (provider_name) {
-        providerNameEl.textContent = provider_name;
-        providerNameEl.style.color = "#0052cc";
+      if (faculty_name) {
+        facultyNameEl.textContent = faculty_name;
+        facultyNameEl.style.color = "#0052cc";
       } else {
-        providerNameEl.textContent = "Please log in to sign up";
-        providerNameEl.style.color = "#d93025";
+        facultyNameEl.textContent = "Please log in to sign up";
+        facultyNameEl.style.color = "#d93025";
       }
     }
 
@@ -205,7 +205,7 @@
     });
 
     saveBtn.addEventListener("click", async () => {
-      if (!provider_id || !provider_name) {
+      if (!faculty_id || !faculty_name) {
         alert("You must be logged in to submit availability. Please log in first.");
         window.location.href = "/";
         return;
@@ -237,8 +237,8 @@
       try {
         for (const [mKey, dates] of monthToDates.entries()) {
           const payload = {
-            provider_id,
-            provider_name,
+            faculty_id,
+            faculty_name,
             month: mKey,
             desired_nights: desiredVal,
             dates: dates,
@@ -268,8 +268,8 @@
     function loadCurrentUser() {
       // Check URL params first
       if (paramProviderId && paramProviderName) {
-        provider_id = paramProviderId;
-        provider_name = paramProviderName;
+        faculty_id = paramProviderId;
+        faculty_name = paramProviderName;
         updateProviderDisplay();
         return;
       }
@@ -277,14 +277,14 @@
       // Check localStorage
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
       if (currentUser.faculty_id) {
-        provider_id = currentUser.faculty_id;
-        provider_name = currentUser.faculty_name;
-        console.log(`Loaded user from localStorage: ${provider_name} (${provider_id})`);
+        faculty_id = currentUser.faculty_id;
+        faculty_name = currentUser.faculty_name;
+        console.log(`Loaded user from localStorage: ${faculty_name} (${faculty_id})`);
         updateProviderDisplay();
       } else {
         // No user logged in
-        providerNameEl.textContent = "Not logged in";
-        providerNameEl.style.color = "#d93025";
+        facultyNameEl.textContent = "Not logged in";
+        facultyNameEl.style.color = "#d93025";
       }
     }
 
