@@ -30,14 +30,14 @@ class MigrationError(Exception):
 def get_db_path():
     """Get the database path"""
     # Check if running in Fly.io or local
-    if os.path.exists('/app/moonlighter.db'):
-        return '/app/moonlighter.db'
-    elif os.path.exists('moonlighter.db'):
-        return 'moonlighter.db'
-    elif os.path.exists('../moonlighter.db'):
-        return '../moonlighter.db'
+    if os.path.exists('/app/staff.db'):
+        return '/app/staff.db'
+    elif os.path.exists('staff.db'):
+        return 'staff.db'
+    elif os.path.exists('../staff.db'):
+        return '../staff.db'
     else:
-        raise MigrationError("Cannot find moonlighter.db")
+        raise MigrationError("Cannot find staff.db")
 
 
 def backup_database(db_path):

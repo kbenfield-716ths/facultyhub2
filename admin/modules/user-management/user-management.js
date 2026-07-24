@@ -355,7 +355,7 @@ async function resetUserPassword() {
   }
 
   try {
-    const response = await fetch('/api/admin/reset-password', {
+    const response = await fetch('/api/admin/users/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
@@ -390,7 +390,7 @@ async function unlockUserAccount() {
   }
 
   try {
-    const response = await fetch('/api/admin/unlock-account', {
+    const response = await fetch('/api/admin/users/unlock-account', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
@@ -426,7 +426,7 @@ async function changeUsername() {
   }
 
   try {
-    const response = await fetch('/api/admin/change-username', {
+    const response = await fetch('/api/admin/users/change-username', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
@@ -466,7 +466,7 @@ async function executeQuery() {
   resultsDiv.innerHTML = '<div class="loading">Executing query...</div>';
 
   try {
-    const response = await fetch('/api/admin/db-query', {
+    const response = await fetch('/api/admin/users/database-query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',

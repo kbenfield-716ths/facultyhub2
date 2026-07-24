@@ -41,15 +41,8 @@ class UserSearchResponse(BaseModel):
     last_login_at: Optional[str] = None
     last_login_ip: Optional[str] = None
     password_last_changed: Optional[str] = None
-    rank: str
-    clinical_effort_pct: int
-    base_points: int
-    bonus_points: int
     moonlighter: bool
-    micu_weeks: int
-    app_icu_weeks: int
-    procedure_weeks: int
-    consult_weeks: int
+    extra_config: dict = {}
 
 
 class ResetPasswordRequest(BaseModel):
@@ -506,15 +499,8 @@ def _faculty_to_response(faculty: Faculty) -> UserSearchResponse:
         last_login_at=faculty.last_login_at.isoformat() if faculty.last_login_at else None,
         last_login_ip=faculty.last_login_ip,
         password_last_changed=faculty.password_last_changed.isoformat() if faculty.password_last_changed else None,
-        rank=faculty.rank,
-        clinical_effort_pct=faculty.clinical_effort_pct,
-        base_points=faculty.base_points,
-        bonus_points=faculty.bonus_points or 0,
         moonlighter=faculty.moonlighter,
-        micu_weeks=faculty.micu_weeks or 0,
-        app_icu_weeks=faculty.app_icu_weeks or 0,
-        procedure_weeks=faculty.procedure_weeks or 0,
-        consult_weeks=faculty.consult_weeks or 0
+        extra_config=__import__("json").loads(faculty.extra_config or "{}"),
     )
 
 

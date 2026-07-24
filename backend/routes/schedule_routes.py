@@ -10,6 +10,7 @@ from typing import Optional
 from pydantic import BaseModel
 import csv
 import io
+import json
 
 from backend.models import get_db, Faculty
 from backend.auth import require_admin
@@ -675,7 +676,14 @@ async def get_faculty_grid_json(
                 grid[week.id][f.id] = "Open"
 
     return {
-        "faculty": [{"id": f.id, "name": f.name} for f in all_faculty_sorted],
+        "faculty": [
+            {
+                "id": f.id,
+                "name": f.name,
+                "targets": json.loads(f.extra_config or "{}"),
+            }
+            for f in all_faculty_sorted
+        ],
         "weeks": [
             {
                 "id": w.id,
@@ -776,8 +784,8 @@ async def apply_grid_changes(
                 service_type=change.new_assignment,
                 is_manual=True,
                 imported=False,
-                assigned_by=current_user.id,
-                notes=request.reason,
+                created_by=current_user.id,
+                reason=request.reason,
             )
             db.add(new_a)
 

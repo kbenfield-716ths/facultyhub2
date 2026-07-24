@@ -1,0 +1,162 @@
+<div class="module-container" style="max-width:720px;margin:0 auto;">
+
+  <!-- Progress bar -->
+  <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h2 style="margin:0;font-size:18px;font-weight:700;color:#1f2937;">⚙️ Instance Setup Wizard</h2>
+      <span id="setupStepLabel" style="font-size:13px;color:#6b7280;font-weight:500;">Step 1 of 5</span>
+    </div>
+    <div style="background:#f3f4f6;border-radius:999px;height:6px;overflow:hidden;">
+      <div id="setupProgressBar" style="background:#2563eb;height:100%;width:20%;border-radius:999px;transition:width 0.3s;"></div>
+    </div>
+  </div>
+
+  <!-- Step panels -->
+  <div class="card" id="setupStep1">
+    <h3 style="margin-bottom:8px;font-size:17px;font-weight:700;">Step 1 — Instance Identity</h3>
+    <p style="color:#6b7280;margin-bottom:24px;font-size:14px;">Give this deployment a name. These values appear in the header and emails.</p>
+    <div class="form-group">
+      <label>Group Name <span style="color:#ef4444">*</span></label>
+      <input type="text" id="setupGroupName" placeholder="UVA ICU APPs" required>
+      <small>Short name for the group using this instance (e.g. "MICU Apps", "PCCM Faculty")</small>
+    </div>
+    <div class="form-group">
+      <label>Organization Name</label>
+      <input type="text" id="setupOrgName" placeholder="University of Virginia Health">
+      <small>Parent organization (optional)</small>
+    </div>
+    <div class="form-group">
+      <label>App Name</label>
+      <input type="text" id="setupAppName" placeholder="Faculty Hub" value="Faculty Hub">
+      <small>Name shown in the header wordmark</small>
+    </div>
+    <div class="form-group">
+      <label>Org Label (shown in header)</label>
+      <input type="text" id="setupOrgLabel" placeholder="UVA MICU">
+      <small>Short label shown before the app name in the navigation bar</small>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:24px;">
+      <button class="btn-primary" onclick="setupNext(1)">Next →</button>
+    </div>
+  </div>
+
+  <div class="card" id="setupStep2" style="display:none;">
+    <h3 style="margin-bottom:8px;font-size:17px;font-weight:700;">Step 2 — Scheduling Model</h3>
+    <p style="color:#6b7280;margin-bottom:24px;font-size:14px;">Choose how shifts are structured for this group.</p>
+    <div class="form-group">
+      <label>Scheduling Model <span style="color:#ef4444">*</span></label>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+        <label style="display:flex;align-items:flex-start;gap:12px;padding:16px;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;" id="modelShiftLabel">
+          <input type="radio" name="schedulingModel" value="shift_based" id="modelShift" style="width:auto;margin-top:2px;" onchange="toggleShiftConfig()" checked>
+          <div>
+            <div style="font-weight:600;margin-bottom:4px;">🕒 Shift-based</div>
+            <div style="font-size:13px;color:#6b7280;">12-hour day/night shifts (e.g. ICU APPs). Providers are assigned to individual shifts on specific dates.</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:12px;padding:16px;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;" id="modelWeeklyLabel">
+          <input type="radio" name="schedulingModel" value="weekly_blocks" id="modelWeekly" style="width:auto;margin-top:2px;" onchange="toggleShiftConfig()">
+          <div>
+            <div style="font-weight:600;margin-bottom:4px;">📅 Weekly service blocks</div>
+            <div style="font-size:13px;color:#6b7280;">One assignment per week per service type (e.g. attending physicians). Uses the weekly availability system.</div>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div id="shiftConfigSection">
+      <h4 style="margin:20px 0 12px;font-size:15px;font-weight:600;border-top:1px solid #e5e7eb;padding-top:16px;">Shift Configuration</h4>
+      <div id="shiftsList">
+        <!-- Shifts rendered by JS -->
+      </div>
+      <button class="btn-secondary btn-sm" style="margin-top:8px;" onclick="addShift()">+ Add Shift Type</button>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:24px;">
+      <button class="btn-secondary" onclick="setupBack(2)">← Back</button>
+      <button class="btn-primary" onclick="setupNext(2)">Next →</button>
+    </div>
+  </div>
+
+  <div class="card" id="setupStep3" style="display:none;">
+    <h3 style="margin-bottom:8px;font-size:17px;font-weight:700;">Step 3 — Service / Rotation Types</h3>
+    <p style="color:#6b7280;margin-bottom:24px;font-size:14px;">Define the rotations or service types providers can be scheduled for. You can add more later.</p>
+    <div id="serviceTypesList">
+      <!-- Service types rendered by JS -->
+    </div>
+    <button class="btn-secondary btn-sm" style="margin-top:8px;" onclick="addServiceType()">+ Add Service Type</button>
+    <div style="display:flex;justify-content:space-between;margin-top:24px;">
+      <button class="btn-secondary" onclick="setupBack(3)">← Back</button>
+      <button class="btn-primary" onclick="setupNext(3)">Next →</button>
+    </div>
+  </div>
+
+  <div class="card" id="setupStep4" style="display:none;">
+    <h3 style="margin-bottom:8px;font-size:17px;font-weight:700;">Step 4 — Provider Attributes</h3>
+    <p style="color:#6b7280;margin-bottom:24px;font-size:14px;">Define custom fields for your providers beyond name and email. These appear as columns in the provider table.</p>
+    <div id="facultyAttrsList">
+      <!-- Attributes rendered by JS -->
+    </div>
+    <button class="btn-secondary btn-sm" style="margin-top:8px;" onclick="addFacultyAttr()">+ Add Attribute</button>
+    <div style="display:flex;justify-content:space-between;margin-top:24px;">
+      <button class="btn-secondary" onclick="setupBack(4)">← Back</button>
+      <button class="btn-primary" onclick="setupNext(4)">Next →</button>
+    </div>
+  </div>
+
+  <div class="card" id="setupStep5" style="display:none;">
+    <h3 style="margin-bottom:8px;font-size:17px;font-weight:700;">Step 5 — Features &amp; Review</h3>
+    <p style="color:#6b7280;margin-bottom:24px;font-size:14px;">Enable the features your group needs. You can change these later in Settings.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+      <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        <input type="checkbox" id="featMoonlighting" style="width:auto;">
+        <div><div style="font-weight:600;font-size:14px;">🌙 Moonlighting</div><div style="font-size:12px;color:#6b7280;">Voluntary shift signups + optimizer</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        <input type="checkbox" id="featServiceAvail" style="width:auto;" checked>
+        <div><div style="font-weight:600;font-size:14px;">🗓️ Service Availability</div><div style="font-size:12px;color:#6b7280;">Time-off requests &amp; volunteers</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        <input type="checkbox" id="featKnowledgeBase" style="width:auto;" checked>
+        <div><div style="font-weight:600;font-size:14px;">📚 Knowledge Base</div><div style="font-size:12px;color:#6b7280;">Shared FAQ &amp; resource library</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        <input type="checkbox" id="featMessages" style="width:auto;" checked>
+        <div><div style="font-weight:600;font-size:14px;">💬 Messages</div><div style="font-size:12px;color:#6b7280;">Faculty discussion boards</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        <input type="checkbox" id="featDraftSystem" style="width:auto;">
+        <div><div style="font-weight:600;font-size:14px;">🌊 Wave Draft</div><div style="font-size:12px;color:#6b7280;">Priority draft system for scheduling</div></div>
+      </label>
+    </div>
+
+    <div id="setupAlert" class="alert"></div>
+
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin-bottom:20px;">
+      <strong>⚠️ Note on service type keys:</strong>
+      <span style="font-size:14px;color:#374151;"> Once setup is complete, service type <em>keys</em> (not labels) are used as identifiers in the database and should not be changed. Labels can always be updated.</span>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;margin-top:24px;">
+      <button class="btn-secondary" onclick="setupBack(5)">← Back</button>
+      <button class="btn-primary" id="setupActivateBtn" onclick="activateInstance()" style="background:#059669;border-color:#059669;">
+        ✓ Activate Instance
+      </button>
+    </div>
+  </div>
+
+  <!-- Done screen -->
+  <div class="card" id="setupDone" style="display:none;text-align:center;padding:48px 24px;">
+    <div style="font-size:3rem;margin-bottom:16px;">🎉</div>
+    <h3 style="font-size:22px;font-weight:700;margin-bottom:12px;">Setup Complete!</h3>
+    <p style="color:#6b7280;margin-bottom:24px;max-width:480px;margin-left:auto;margin-right:auto;">
+      Your Faculty Hub instance is configured. You can now add providers, generate shift periods, and start scheduling.
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn-primary" onclick="window.location.reload()">Go to Admin Panel</button>
+      <button class="btn-secondary" onclick="showModule('faculty-management')">Manage Providers</button>
+    </div>
+  </div>
+
+</div>
+
+<style>
+.card { background:white;border:1px solid #e5e7eb;border-radius:12px;padding:28px;margin-bottom:16px; }
+</style>

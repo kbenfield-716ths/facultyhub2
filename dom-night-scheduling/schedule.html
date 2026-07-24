@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a1628">
+  <title>Night Schedule</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
+
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    :root {
+      --navy:    #0a1628;
+      --accent:  oklch(52% 0.18 245);
+      --accent-light: oklch(96% 0.04 245);
+      --accent-mid: oklch(76% 0.10 245);
+      --surface: #ffffff;
+      --surface-2: #f5f6f8;
+      --border:  #e2e5eb;
+      --text-primary: #0a1628;
+      --text-secondary: #5a6479;
+      --text-muted: #9aa0b0;
+      --radius-sm: 6px; --radius: 10px; --radius-lg: 14px;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--surface-2);
+      color: var(--text-primary);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header { background: var(--navy); position: sticky; top: 0; z-index: 100; }
+    .header-inner {
+      max-width: 900px; margin: 0 auto; padding: 0 24px;
+      height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .wordmark { display: flex; align-items: baseline; gap: 10px; text-decoration: none; flex-shrink: 0; color: #fff; font-size: 0.95rem; font-weight: 500; }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .header-btn { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.12); padding: 6px 14px; border-radius: var(--radius-sm); font-family: inherit; font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: background 0.15s, color 0.15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .header-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
+
+    main { max-width: 900px; margin: 0 auto; padding: 32px 24px 60px; }
+
+    .page-header { margin-bottom: 24px; }
+    .page-header-eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+    .page-header h2 { font-size: 1.5rem; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; }
+    .page-header p { margin-top: 6px; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
+
+    .quarter-bar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px 18px; margin-bottom: 20px;
+    }
+    .quarter-bar label { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); }
+    .quarter-bar select {
+      padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);
+      font-family: inherit; font-size: 0.9rem; background: #fff;
+    }
+
+    .status-pill { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
+    .status-pill.open { background: oklch(96% 0.04 150); color: oklch(45% 0.14 150); }
+    .status-pill.closed { background: var(--surface-2); color: var(--text-muted); }
+    .status-pill.published { background: oklch(97% 0.04 75); color: oklch(55% 0.14 75); }
+
+    .stats-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px 16px; text-align: center;
+    }
+    .stat-value { font-size: 1.4rem; font-weight: 600; color: var(--text-primary); }
+    .stat-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-top: 4px; }
+
+    .info-banner {
+      background: var(--accent-light); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px 18px; margin-bottom: 20px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;
+    }
+    .info-banner.warning { background: oklch(97% 0.04 75); }
+    .info-banner strong { color: var(--text-primary); }
+
+    .month-block { margin-bottom: 28px; }
+    .month-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 10px; color: var(--text-primary); }
+
+    #weekday-labels, #calendar { max-width: 100%; }
+
+    .empty-state {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 40px 24px; text-align: center; color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <a class="wordmark" href="/">← Night Schedule</a>
+      <div class="header-right">
+        <span class="user-info" id="userInfo" style="color:rgba(255,255,255,0.7); font-size:0.82rem;"></span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-header">
+      <div class="page-header-eyebrow">Self-Scheduling</div>
+      <h2>Night Schedule</h2>
+      <p>Click a night to mark it <strong>Preferred</strong>, click again for <strong>Can Work</strong>, and a third time to clear it. Nights blocked by your existing schedule can't be selected.</p>
+    </div>
+
+    <div id="quarterBar" class="quarter-bar" style="display:none;">
+      <label for="quarterSelect">Quarter</label>
+      <select id="quarterSelect" onchange="onQuarterChange()"></select>
+      <span id="statusPill" class="status-pill closed">—</span>
+      <span id="deadlineInfo" style="font-size:0.8rem;color:var(--text-muted);margin-left:auto;"></span>
+    </div>
+
+    <div id="noQuarters" class="empty-state" style="display:none;">
+      <h3 style="margin-bottom:8px;">No quarters available</h3>
+      <p>There isn't a quarter open for self-scheduling right now. Check back closer to the next quarter, or ask your administrator.</p>
+    </div>
+
+    <div id="scheduleContent" style="display:none;">
+      <div id="statsRow" class="stats-row"></div>
+      <div id="windowInfo" class="info-banner"></div>
+
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:#fafafa;"></span> Open</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#10b981;"></span> Preferred</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#bfdbfe;"></span> Can work</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#f3f4f6;border-style:dashed;"></span> Unavailable</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#f59e0b;"></span> Assigned</div>
+      </div>
+
+      <div id="weekday-labels"></div>
+      <div id="monthsContainer"></div>
+    </div>
+  </main>
+
+  <script>
+    const API = window.location.origin;
+    let quarters = [];
+    let currentQuarter = null;
+    let gridDays = {}; // date -> day object
+
+    // ── Auth ─────────────────────────────────────────────────────────────────
+    async function checkAuth() {
+      try {
+        const res = await fetch(API + '/api/auth/check', { credentials: 'include' });
+        const data = await res.json();
+        if (!data.authenticated) {
+          window.location.href = '/login.html';
+          return;
+        }
+        document.getElementById('userInfo').textContent = data.faculty_name || '';
+      } catch (e) {
+        window.location.href = '/login.html';
+      }
+    }
+
+    // ── Quarters ─────────────────────────────────────────────────────────────
+    async function loadQuarters() {
+      const res = await fetch(API + '/api/self-schedule/quarters', { credentials: 'include' });
+      quarters = await res.json();
+
+      if (!quarters.length) {
+        document.getElementById('noQuarters').style.display = 'block';
+        return;
+      }
+
+      const sel = document.getElementById('quarterSelect');
+      sel.innerHTML = '';
+      quarters.forEach(q => {
+        const opt = document.createElement('option');
+        opt.value = q.id;
+        opt.textContent = q.name + ' (' + q.start_date + ' – ' + q.end_date + ')';
+        sel.appendChild(opt);
+      });
+
+      document.getElementById('quarterBar').style.display = 'flex';
+      document.getElementById('scheduleContent').style.display = 'block';
+
+      // Prefer a quarter that's open for preferences, else the first one
+      const openQ = quarters.find(q => q.window_open) || quarters[0];
+      sel.value = openQ.id;
+      await loadQuarterData(openQ.id);
+    }
+
+    async function onQuarterChange() {
+      const id = document.getElementById('quarterSelect').value;
+      await loadQuarterData(id);
+    }
+
+    async function loadQuarterData(quarterId) {
+      currentQuarter = quarters.find(q => q.id === quarterId);
+
+      const [gridRes, summaryRes] = await Promise.all([
+        fetch(API + '/api/self-schedule/quarters/' + quarterId + '/grid', { credentials: 'include' }),
+        fetch(API + '/api/self-schedule/quarters/' + quarterId + '/summary', { credentials: 'include' }),
+      ]);
+      const grid = await gridRes.json();
+      const summary = await summaryRes.json();
+
+      currentQuarter.window_open = grid.window_open;
+      currentQuarter.status = grid.status;
+
+      gridDays = {};
+      grid.days.forEach(d => { gridDays[d.date] = d; });
+
+      renderStatusPill(grid);
+      renderStats(summary);
+      renderWindowInfo(grid, summary);
+      renderCalendar(grid);
+    }
+
+    function renderStatusPill(grid) {
+      const pill = document.getElementById('statusPill');
+      const deadline = document.getElementById('deadlineInfo');
+      if (grid.status === 'published') {
+        pill.textContent = 'Published';
+        pill.className = 'status-pill published';
+      } else if (grid.window_open) {
+        pill.textContent = 'Open for preferences';
+        pill.className = 'status-pill open';
+      } else {
+        pill.textContent = grid.status === 'open_for_preferences' ? 'Window closed' : grid.status.replace(/_/g, ' ');
+        pill.className = 'status-pill closed';
+      }
+
+      if (grid.preference_deadline) {
+        const d = new Date(grid.preference_deadline);
+        deadline.textContent = 'Deadline: ' + d.toLocaleString();
+      } else {
+        deadline.textContent = '';
+      }
+    }
+
+    function renderStats(summary) {
+      const row = document.getElementById('statsRow');
+      const cards = [
+        { label: 'Target Nights', value: summary.target_nights },
+        { label: 'Preferred', value: summary.preferred_count },
+        { label: 'Can Work', value: summary.can_work_count },
+        { label: 'Blocked', value: summary.blocked_count },
+        { label: 'Assigned', value: summary.assigned_count },
+      ];
+      row.innerHTML = cards.map(c =>
+        '<div class="stat-card"><div class="stat-value">' + c.value + '</div><div class="stat-label">' + c.label + '</div></div>'
+      ).join('');
+    }
+
+    function renderWindowInfo(grid, summary) {
+      const box = document.getElementById('windowInfo');
+      if (grid.status === 'published') {
+        box.className = 'info-banner';
+        box.innerHTML = '<strong>Schedule published.</strong> Your assigned nights are highlighted in orange below. Contact your administrator if you have questions about a specific assignment.';
+      } else if (grid.window_open) {
+        box.className = 'info-banner';
+        box.innerHTML = '<strong>Self-scheduling is open.</strong> You have ' + summary.assigned_count + ' of ' + summary.target_nights +
+          ' target nights assigned so far. Mark your preferred and can-work nights below before the deadline.';
+      } else {
+        box.className = 'info-banner warning';
+        box.innerHTML = '<strong>Self-scheduling is not currently open</strong> for this quarter. You can still review blocked nights and any previously submitted preferences below, but changes are disabled.';
+      }
+    }
+
+    // ── Calendar ─────────────────────────────────────────────────────────────
+    function renderCalendar(grid) {
+      const weekdayEl = document.getElementById('weekday-labels');
+      weekdayEl.innerHTML = '<div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>';
+
+      const container = document.getElementById('monthsContainer');
+      container.innerHTML = '';
+
+      const start = new Date(currentQuarter.start_date + 'T00:00:00');
+      const end = new Date(currentQuarter.end_date + 'T00:00:00');
+
+      // Iterate month by month from start to end
+      let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+      const last = new Date(end.getFullYear(), end.getMonth(), 1);
+
+      while (cursor <= last) {
+        const year = cursor.getFullYear();
+        const month = cursor.getMonth(); // 0-based
+        const firstDay = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+        const startWeekday = firstDay.getDay();
+
+        const block = document.createElement('div');
+        block.className = 'month-block';
+
+        const title = document.createElement('div');
+        title.className = 'month-title';
+        title.textContent = firstDay.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+        block.appendChild(title);
+
+        const calEl = document.createElement('div');
+        calEl.id = 'calendar';
+
+        for (let i = 0; i < startWeekday; i++) {
+          const empty = document.createElement('div');
+          empty.className = 'night-day-cell empty';
+          calEl.appendChild(empty);
+        }
+
+        for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
+          const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+          calEl.appendChild(buildDayCell(dateStr, day));
+        }
+
+        block.appendChild(calEl);
+        container.appendChild(block);
+
+        cursor = new Date(year, month + 1, 1);
+      }
+    }
+
+    function buildDayCell(dateStr, dayNum) {
+      const cell = document.createElement('div');
+      cell.className = 'night-day-cell';
+      cell.dataset.date = dateStr;
+
+      const numEl = document.createElement('div');
+      numEl.className = 'day-number';
+      numEl.textContent = dayNum;
+      cell.appendChild(numEl);
+
+      const tagEl = document.createElement('div');
+      tagEl.className = 'day-tag';
+      cell.appendChild(tagEl);
+
+      const day = gridDays[dateStr];
+
+      // Outside the quarter range entirely
+      if (!day) {
+        cell.classList.add('empty');
+        return cell;
+      }
+
+      applyDayState(cell, tagEl, day);
+
+      const clickable = currentQuarter.status !== 'published' && currentQuarter.window_open && !day.blocked;
+      if (clickable) {
+        cell.addEventListener('click', () => onDayClick(dateStr, cell, tagEl));
+      }
+
+      return cell;
+    }
+
+    function applyDayState(cell, tagEl, day) {
+      cell.classList.remove('blocked', 'preferred', 'can_work', 'assigned');
+      tagEl.textContent = '';
+
+      if (currentQuarter.status === 'published' && day.my_assignment) {
+        cell.classList.add('assigned');
+        tagEl.textContent = day.my_assignment === 'admitter' ? 'Admitter' : 'Nocturnist';
+        return;
+      }
+
+      if (day.blocked) {
+        cell.classList.add('blocked');
+        tagEl.textContent = 'Unavailable';
+        return;
+      }
+
+      if (day.my_preference === 'preferred') {
+        cell.classList.add('preferred');
+        tagEl.textContent = 'Preferred';
+      } else if (day.my_preference === 'can_work') {
+        cell.classList.add('can_work');
+        tagEl.textContent = 'Can work';
+      }
+    }
+
+    // ── Click → cycle preference: none -> preferred -> can_work -> none ───────
+    async function onDayClick(dateStr, cell, tagEl) {
+      const day = gridDays[dateStr];
+      const current = day.my_preference || null;
+      let next;
+      if (current === null) next = 'preferred';
+      else if (current === 'preferred') next = 'can_work';
+      else next = null;
+
+      cell.style.opacity = '0.5';
+      try {
+        if (next === null) {
+          const res = await fetch(API + '/api/self-schedule/quarters/' + currentQuarter.id + '/preferences/' + dateStr, {
+            method: 'DELETE', credentials: 'include',
+          });
+          if (!res.ok && res.status !== 204) throw new Error('Failed to clear preference');
+        } else {
+          const res = await fetch(API + '/api/self-schedule/quarters/' + currentQuarter.id + '/preferences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ night_date: dateStr, preference: next }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || 'Failed to save preference');
+          }
+        }
+        day.my_preference = next;
+        applyDayState(cell, tagEl, day);
+      } catch (e) {
+        alert(e.message || 'Something went wrong saving your preference.');
+      } finally {
+        cell.style.opacity = '1';
+      }
+    }
+
+    // ── Boot ─────────────────────────────────────────────────────────────────
+    (async () => {
+      await checkAuth();
+      await loadQuarters();
+    })();
+  </script>
+</body>
+</html>

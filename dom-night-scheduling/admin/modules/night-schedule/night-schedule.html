@@ -1,0 +1,225 @@
+<div class="module-container" id="nightScheduleRoot">
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+      <div>
+        <h2 class="card-title">🌙 Night Schedule</h2>
+        <p style="margin-top:8px;color:#6b7280;font-size:14px;">
+          Admitter / Nocturnist quarterly self-scheduling and builder
+        </p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <select id="nsQuarterSelect" onchange="nsOnQuarterChange()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:6px;min-width:220px;">
+          <option value="">Loading quarters...</option>
+        </select>
+        <button class="btn-primary btn-sm" onclick="nsToggleNewQuarterForm()">➕ New Quarter</button>
+      </div>
+    </div>
+
+    <div id="nsAlert" class="alert"></div>
+
+    <!-- New Quarter Form -->
+    <div id="nsNewQuarterForm" style="display:none;background:#f9fafb;padding:20px;border-radius:8px;margin-bottom:24px;">
+      <h3 style="margin-bottom:16px;color:#1f2937;font-size:16px;font-weight:600;">New Quarter</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Quarter Name <span style="color:#ef4444">*</span></label>
+          <input type="text" id="nsNewName" placeholder="2026 Q3">
+        </div>
+        <div class="form-group">
+          <label>Start Date <span style="color:#ef4444">*</span></label>
+          <input type="date" id="nsNewStart">
+        </div>
+        <div class="form-group">
+          <label>End Date <span style="color:#ef4444">*</span></label>
+          <input type="date" id="nsNewEnd">
+        </div>
+        <div class="form-group">
+          <label>Default Quota (nights/quarter)</label>
+          <input type="number" id="nsNewQuota" value="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Preference Deadline</label>
+          <input type="datetime-local" id="nsNewDeadline">
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button class="btn-primary" onclick="nsCreateQuarter()">Create Quarter</button>
+        <button class="btn-secondary" onclick="nsToggleNewQuarterForm()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Quarter summary stats -->
+    <div id="nsQuarterStats" class="stats-row"></div>
+
+    <!-- Sub-tabs -->
+    <div class="sub-tabs">
+      <button class="sub-tab-btn active" data-tab="setup" onclick="nsShowSubTab('setup')">Setup</button>
+      <button class="sub-tab-btn" data-tab="blocked" onclick="nsShowSubTab('blocked')">Blocked Nights</button>
+      <button class="sub-tab-btn" data-tab="quotas" onclick="nsShowSubTab('quotas')">Quotas</button>
+      <button class="sub-tab-btn" data-tab="prefs" onclick="nsShowSubTab('prefs')">Preferences Status</button>
+      <button class="sub-tab-btn" data-tab="builder" onclick="nsShowSubTab('builder')">Builder &amp; Schedule</button>
+    </div>
+
+    <!-- ── Setup tab ─────────────────────────────────────────────────────── -->
+    <div class="sub-tab-content active" id="nsTab-setup">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Quarter Name</label>
+          <input type="text" id="nsSetupName">
+        </div>
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" id="nsSetupStart">
+        </div>
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" id="nsSetupEnd">
+        </div>
+        <div class="form-group">
+          <label>Default Quota (nights/quarter)</label>
+          <input type="number" id="nsSetupQuota" min="0">
+        </div>
+        <div class="form-group">
+          <label>Preference Deadline</label>
+          <input type="datetime-local" id="nsSetupDeadline">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="nsSetupStatus">
+            <option value="draft">Draft</option>
+            <option value="open_for_preferences">Open for Preferences</option>
+            <option value="building">Building</option>
+            <option value="published">Published</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="nsSetupNotes" rows="2" style="width:100%;"></textarea>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="nsSaveQuarterSetup()">Save Quarter Settings</button>
+        <button class="btn-success" onclick="nsGeneratePeriods()">Generate / Sync Periods</button>
+      </div>
+      <div class="info-box info-box-info" style="margin-top:24px;">
+        <strong>Periods</strong>
+        <p id="nsPeriodInfo">—</p>
+      </div>
+      <div class="info-box info-box-warning">
+        <strong>Status flow</strong>
+        <p>draft → open_for_preferences (providers self-schedule) → building (admin runs builder) → published (final schedule visible to providers) → archived</p>
+      </div>
+    </div>
+
+    <!-- ── Blocked Nights tab ───────────────────────────────────────────── -->
+    <div class="sub-tab-content" id="nsTab-blocked">
+      <div class="info-box info-box-info">
+        <strong>Blocked Nights</strong>
+        <p>Nights a provider cannot work this quarter because of their existing (day) schedule. Blocked nights are not selectable by the provider in self-scheduling and are never assigned by the builder.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
+        <div>
+          <h3 style="margin-bottom:12px;font-size:15px;">Add Single Night</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Provider</label>
+              <select id="nsBlockProvider"></select>
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="nsBlockDate">
+            </div>
+          </div>
+          <button class="btn-primary btn-sm" onclick="nsAddBlockedNight()">Add Blocked Night</button>
+        </div>
+        <div>
+          <h3 style="margin-bottom:12px;font-size:15px;">CSV Import</h3>
+          <p style="font-size:13px;color:#6b7280;margin-bottom:8px;">
+            Columns: <code>provider_id</code> (or <code>email</code>) and <code>date</code> (YYYY-MM-DD). Header row required.
+          </p>
+          <textarea id="nsBlockCsv" rows="6" style="width:100%;font-family:monospace;font-size:13px;" placeholder="provider_id,date&#10;jsmith,2026-07-03&#10;jsmith,2026-07-04"></textarea>
+          <button class="btn-primary btn-sm" style="margin-top:8px;" onclick="nsImportBlockedNights()">Import CSV</button>
+          <div id="nsImportResult" style="margin-top:8px;font-size:13px;color:#374151;"></div>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>Filter by Provider</label>
+          <select id="nsBlockFilter" onchange="nsLoadBlockedTab()"></select>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Provider</th><th>Date</th><th>Source</th><th>Note</th><th style="width:80px;">Actions</th></tr>
+          </thead>
+          <tbody id="nsBlockedTableBody"><tr><td colspan="5" class="loading">Loading</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Quotas tab ───────────────────────────────────────────────────── -->
+    <div class="sub-tab-content" id="nsTab-quotas">
+      <div class="info-box info-box-info">
+        <strong>Quotas</strong>
+        <p>Target number of nights per provider for this quarter. The default quota (set in the Setup tab) applies unless a provider has an override below. The builder uses remaining quota (target minus nights already assigned) to prioritize who fills each open night.</p>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Provider</th><th>Target Nights</th><th>Status</th><th>Note</th><th style="width:170px;">Actions</th></tr>
+          </thead>
+          <tbody id="nsQuotasTableBody"><tr><td colspan="5" class="loading">Loading</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Preferences Status tab ───────────────────────────────────────── -->
+    <div class="sub-tab-content" id="nsTab-prefs">
+      <div class="info-box info-box-info">
+        <strong>Self-Scheduling Status</strong>
+        <p id="nsPrefsDeadlineInfo">—</p>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Provider</th><th>Target</th><th>Preferred</th><th>Can Work</th><th>Blocked</th><th>Submitted?</th></tr>
+          </thead>
+          <tbody id="nsPrefsTableBody"><tr><td colspan="6" class="loading">Loading</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Builder & Schedule tab ───────────────────────────────────────── -->
+    <div class="sub-tab-content" id="nsTab-builder">
+      <div class="info-box info-box-warning">
+        <strong>Builder</strong>
+        <p>Preview fills every open night using this priority: (1) fill every hole — first goal, (2) prefer providers who marked the night "preferred", (3) then "can work", (4) within a tier, prefer whoever is furthest below their quota. Manual schedule edits are always preserved. Preview makes no changes — run the builder to apply.</p>
+      </div>
+
+      <div class="action-panel" style="margin-bottom:16px;">
+        <button class="btn-secondary" onclick="nsPreviewBuild()">Preview</button>
+        <button class="btn-success" onclick="nsRunBuild()">Run Builder (Apply)</button>
+        <a class="btn-primary action-panel-right" id="nsExportLink" href="#" style="text-decoration:none;display:inline-block;">⬇ Export CSV</a>
+      </div>
+
+      <div id="nsPreviewStats" class="stats-row" style="display:none;"></div>
+      <div id="nsPreviewDetails" style="margin-bottom:24px;"></div>
+
+      <h3 style="margin-bottom:12px;font-size:15px;">Schedule Grid</h3>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th style="width:140px;">Date</th><th>Admitter</th><th>Nocturnist</th></tr>
+          </thead>
+          <tbody id="nsScheduleTableBody"><tr><td colspan="3" class="loading">Loading</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>

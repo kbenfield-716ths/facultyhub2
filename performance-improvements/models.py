@@ -8,7 +8,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 import os
 
 # Use persistent volume if available, fallback to local
-db_path = "/data/moonlighter.db" if os.path.exists("/data") else "./moonlighter.db"
+db_path = "/data/staff.db" if os.path.exists("/data") else "./staff.db"
 DATABASE_URL = f"sqlite:///{db_path}"
 
 Base = declarative_base()

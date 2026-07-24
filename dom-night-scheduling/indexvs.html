@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a1628">
+  <meta name="description" content="UVA PCCM Faculty Hub - Scheduling and Resources">
+  <title>UVA PCCM — Faculty Hub</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+
+  <style>
+    :root {
+      --navy:    #0a1628;
+      --navy-mid: #1a2e4a;
+      --accent:  oklch(52% 0.18 245);
+      --accent-light: oklch(96% 0.04 245);
+      --accent-mid: oklch(76% 0.10 245);
+      --surface: #ffffff;
+      --surface-2: #f5f6f8;
+      --border:  #e2e5eb;
+      --text-primary: #0a1628;
+      --text-secondary: #5a6479;
+      --text-muted: #9aa0b0;
+      --red: oklch(52% 0.18 22);
+      --red-light: oklch(96% 0.04 22);
+      --amber: oklch(68% 0.14 75);
+      --amber-light: oklch(97% 0.04 75);
+      --teal: oklch(52% 0.14 195);
+      --teal-light: oklch(96% 0.04 195);
+
+      --radius-sm: 6px;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 1px 3px rgba(10,22,40,0.06), 0 1px 2px rgba(10,22,40,0.04);
+      --shadow: 0 4px 12px rgba(10,22,40,0.08), 0 1px 3px rgba(10,22,40,0.05);
+      --shadow-lg: 0 12px 32px rgba(10,22,40,0.12), 0 4px 8px rgba(10,22,40,0.06);
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--surface-2);
+      color: var(--text-primary);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Offline banner ── */
+    .offline-banner {
+      display: none;
+      background: var(--amber);
+      color: #fff;
+      text-align: center;
+      padding: 8px 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+    .offline-banner.show { display: block; }
+
+    /* ── Header ── */
+    header {
+      background: var(--navy);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    /* Wordmark */
+    .wordmark {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .wordmark-org {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent-mid);
+    }
+
+    .wordmark-divider {
+      width: 1px;
+      height: 14px;
+      background: rgba(255,255,255,0.15);
+      align-self: center;
+    }
+
+    .wordmark-name {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #fff;
+      letter-spacing: 0.01em;
+    }
+
+    /* Header right */
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .user-chip {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 999px;
+      padding: 5px 12px 5px 8px;
+    }
+
+    .user-chip.show { display: flex; }
+
+    .user-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .user-name-text {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.9);
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    .header-btn {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.85);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .header-btn:hover {
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+    }
+
+    .header-btn.accent {
+      background: var(--accent);
+      border-color: transparent;
+      color: #fff;
+    }
+
+    .header-btn.accent:hover {
+      filter: brightness(1.1);
+    }
+
+    .install-btn { display: none; }
+    .install-btn.show { display: inline-flex; }
+
+    /* ── Main layout ── */
+    main {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 40px 24px 60px;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      margin-bottom: 36px;
+    }
+
+    .page-header-eyebrow {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .page-header h2 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .page-header p {
+      margin-top: 8px;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    /* ── Cards grid ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 16px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--card-accent, var(--accent));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+      border-color: transparent;
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .card.disabled:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: var(--border);
+    }
+
+    .card.disabled:hover::before { opacity: 0; }
+
+    /* Icon */
+    .card-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius);
+      background: var(--card-icon-bg, var(--accent-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .card-icon-wrap svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--card-icon-color, var(--accent));
+      stroke-width: 1.75;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+
+    .card-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: var(--accent-light);
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .card-badge.soon {
+      background: var(--surface-2);
+      color: var(--text-muted);
+    }
+
+    .card-badge.admin {
+      background: var(--red-light);
+      color: var(--red);
+    }
+
+    .card p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      font-weight: 300;
+    }
+
+    .card-arrow {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .card-arrow svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--text-muted);
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+    }
+
+    .card:not(.disabled):hover .card-arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* Card color variants */
+    .card[data-variant="scheduling"]  { --card-accent: var(--accent); --card-icon-bg: var(--accent-light); --card-icon-color: var(--accent); }
+    .card[data-variant="service"]     { --card-accent: var(--teal); --card-icon-bg: var(--teal-light); --card-icon-color: var(--teal); }
+    .card[data-variant="resources"]   { --card-accent: var(--amber); --card-icon-bg: var(--amber-light); --card-icon-color: var(--amber); }
+    .card[data-variant="admin"]       { --card-accent: var(--red); --card-icon-bg: var(--red-light); --card-icon-color: var(--red); }
+    .card[data-variant="messages"]    { --card-accent: var(--accent); --card-icon-bg: var(--accent-light); --card-icon-color: var(--accent); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 24px 20px 40px;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.01em;
+    }
+
+    footer span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    footer .dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .header-inner { padding: 0 16px; height: 54px; }
+      main { padding: 28px 16px 48px; }
+      .page-header h2 { font-size: 1.3rem; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .user-name-text { display: none; }
+    }
+
+    /* ── Skeleton loader ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--border) 25%, var(--surface-2) 50%, var(--border) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-sm);
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Animate cards in */
+    .card {
+      animation: cardIn 0.4s ease both;
+    }
+    .cards-grid .card:nth-child(1) { animation-delay: 0.05s; }
+    .cards-grid .card:nth-child(2) { animation-delay: 0.10s; }
+    .cards-grid .card:nth-child(3) { animation-delay: 0.15s; }
+    .cards-grid .card:nth-child(4) { animation-delay: 0.20s; }
+    .cards-grid .card:nth-child(5) { animation-delay: 0.25s; }
+    .cards-grid .card:nth-child(6) { animation-delay: 0.30s; }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tweaks panel */
+    #tweaks-panel {
+      display: none;
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 18px 20px;
+      width: 260px;
+      z-index: 9999;
+    }
+
+    #tweaks-panel.open { display: block; }
+
+    #tweaks-panel h4 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .tweak-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+
+    .tweak-label {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    .tweak-toggle {
+      width: 36px;
+      height: 20px;
+      border-radius: 999px;
+      background: var(--border);
+      border: none;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .tweak-toggle::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .tweak-toggle.on {
+      background: var(--accent);
+    }
+
+    .tweak-toggle.on::after {
+      transform: translateX(16px);
+    }
+
+    .tweak-select {
+      font-family: inherit;
+      font-size: 0.82rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 4px 8px;
+      color: var(--text-primary);
+      background: var(--surface);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="offline-banner" id="offlineBanner">
+    You're offline — some features may be unavailable
+  </div>
+
+  <header>
+    <div class="header-inner">
+      <a class="wordmark" href="/">
+        <span class="wordmark-org">UVA PCCM</span>
+        <span class="wordmark-divider"></span>
+        <span class="wordmark-name">Faculty Hub</span>
+      </a>
+
+      <div class="header-right">
+        <!-- User chip -->
+        <div class="user-chip" id="userChip">
+          <div class="user-avatar" id="userAvatar">–</div>
+          <span class="user-name-text" id="userName"></span>
+        </div>
+
+        <a href="/profile.html" class="header-btn" id="profileButton" style="display:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Profile
+        </a>
+        <a href="/login.html" class="header-btn accent" id="loginButton" style="display:none;">Sign in</a>
+        <button class="header-btn" id="logoutButton" style="display:none;">Sign out</button>
+        <button class="header-btn install-btn" id="installButton">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 11l5 5 5-5M5 19h14"/></svg>
+          Install
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-header">
+      <div class="page-header-eyebrow">Dashboard</div>
+      <h2 id="welcomeTitle">Good morning</h2>
+      <p>Select a tool below to get started.</p>
+    </div>
+
+    <div class="section-label">Tools &amp; Resources</div>
+
+    <div class="cards-grid" id="cardsGrid">
+
+      <!-- IRPA Moonlighting -->
+      <a href="Scheduling.html" class="card" data-variant="scheduling">
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20A10 10 0 0 1 12 2z"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div class="card-title-row">
+          <h3>IRPA Moonlighting</h3>
+          <span class="card-badge">Active</span>
+        </div>
+        <p>Submit availability for moonlighting shifts and view the generated schedule.</p>
+        <div class="card-arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </a>
+
+      <!-- Service Availability -->
+      <a href="service-availability.html" class="card" data-variant="service">
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        </div>
+        <div class="card-title-row">
+          <h3>Service Availability</h3>
+          <span class="card-badge" style="background:var(--teal-light);color:var(--teal);">Active</span>
+        </div>
+        <p>Request time off from inpatient service or volunteer for high-demand periods.</p>
+        <div class="card-arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </a>
+
+      <!-- Faculty Knowledge Base -->
+      <a href="resources.html" class="card" data-variant="resources">
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <div class="card-title-row">
+          <h3>Faculty Knowledge Base</h3>
+        </div>
+        <p>Access FAQs, policies, procedures, and helpful resources for faculty members.</p>
+        <div class="card-arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </a>
+
+      <!-- Message Boards -->
+      <a href="Messages.html" class="card" data-variant="messages" id="messageBoard" style="display:none;">
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="card-title-row">
+          <h3>Message Boards</h3>
+        </div>
+        <p>Faculty discussion boards and announcements.</p>
+        <div class="card-arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </a>
+
+      <!-- Admin Dashboard (hidden by default) -->
+      <a href="admin/index.html" class="card" data-variant="admin" id="adminCard" style="display:none;">
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <div class="card-title-row">
+          <h3>Admin Dashboard</h3>
+          <span class="card-badge admin">Admin</span>
+        </div>
+        <p>Manage faculty, view signups, run optimizer, and generate schedules.</p>
+        <div class="card-arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </a>
+
+      <!-- Reports (coming soon) -->
+      <div class="card disabled" data-variant="scheduling" onclick="void(0)">
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="card-title-row">
+          <h3>Reports &amp; Analytics</h3>
+          <span class="card-badge soon">Coming soon</span>
+        </div>
+        <p>Scheduling statistics and faculty insights.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <span>
+      UVA PCCM Faculty Hub
+      <span class="dot"></span>
+      A Platypus and Fox Project
+      <span class="dot"></span>
+      © 2026–2027
+    </span>
+  </footer>
+
+  <!-- Tweaks panel -->
+  <div id="tweaks-panel">
+    <h4>Tweaks</h4>
+    <div class="tweak-row">
+      <span class="tweak-label">Compact layout</span>
+      <button class="tweak-toggle" id="tweak-compact" onclick="toggleCompact()"></button>
+    </div>
+    <div class="tweak-row">
+      <span class="tweak-label">Dark header</span>
+      <button class="tweak-toggle on" id="tweak-dark-header" onclick="toggleDarkHeader()"></button>
+    </div>
+    <div class="tweak-row">
+      <span class="tweak-label">Card accent style</span>
+      <select class="tweak-select" id="tweak-accent" onchange="switchAccent(this.value)">
+        <option value="top-line">Top line</option>
+        <option value="left-border">Left border</option>
+        <option value="clean">Clean</option>
+      </select>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+
+    // ── Greeting ──
+    function greeting() {
+      const h = new Date().getHours();
+      if (h < 12) return 'Good morning';
+      if (h < 17) return 'Good afternoon';
+      return 'Good evening';
+    }
+
+    function getInitials(name) {
+      return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    }
+
+    // ── Auth ──
+    async function checkAuth() {
+      try {
+        const res = await fetch(`${API_URL}/api/auth/check`, { credentials: 'include' });
+        const data = await res.json();
+
+        if (data.authenticated) {
+          const name = data.faculty_name || '';
+          document.getElementById('welcomeTitle').textContent = `${greeting()}, ${name.split(' ')[0]}`;
+          document.getElementById('userName').textContent = name;
+          document.getElementById('userAvatar').textContent = getInitials(name);
+          document.getElementById('userChip').classList.add('show');
+          document.getElementById('profileButton').style.display = 'inline-flex';
+          document.getElementById('logoutButton').style.display = 'inline-flex';
+          document.getElementById('loginButton').style.display = 'none';
+
+          if (data.is_admin) document.getElementById('adminCard').style.display = 'block';
+          document.getElementById('messageBoard').style.display = 'block';
+        } else {
+          window.location.href = '/login.html';
+        }
+      } catch (e) {
+        // Auth endpoint unavailable (expected in preview / offline)
+        console.warn('Auth check unavailable — preview mode');
+        // In production this would redirect: window.location.href = '/login.html';
+      }
+    }
+
+    document.getElementById('logoutButton').addEventListener('click', async () => {
+      try {
+        await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch {}
+      localStorage.removeItem('currentUser');
+      window.location.href = '/login.html';
+    });
+
+    checkAuth();
+
+    // ── Service Worker ──
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const reg = await navigator.serviceWorker.register('/service-worker.js');
+          setInterval(() => reg.update(), 60 * 60 * 1000);
+        } catch (e) { console.error('SW registration failed:', e); }
+      });
+    }
+
+    // ── PWA Install ──
+    let deferredPrompt;
+    const installBtn = document.getElementById('installButton');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.classList.add('show');
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.classList.remove('show');
+    });
+
+    window.addEventListener('appinstalled', () => installBtn.classList.remove('show'));
+
+    // ── Offline ──
+    function syncOnline() {
+      document.getElementById('offlineBanner').classList.toggle('show', !navigator.onLine);
+    }
+    window.addEventListener('online', syncOnline);
+    window.addEventListener('offline', syncOnline);
+    syncOnline();
+
+    // ── Tweaks ──
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "compact": true,
+      "darkHeader": true,
+      "accentStyle": "clean"
+    }/*EDITMODE-END*/;
+    let tweaks = { ...TWEAK_DEFAULTS };
+
+    function applyTweaks() {
+      // Compact
+      document.querySelectorAll('.card').forEach(c => {
+        c.style.padding = tweaks.compact ? '16px' : '';
+      });
+      document.querySelector('.cards-grid').style.gap = tweaks.compact ? '10px' : '';
+      document.getElementById('tweak-compact').classList.toggle('on', tweaks.compact);
+
+      // Dark header
+      document.querySelector('header').style.background = tweaks.darkHeader ? '' : '#fff';
+      document.querySelectorAll('.wordmark-org, .wordmark-name, .header-btn').forEach(el => {
+        el.style.color = tweaks.darkHeader ? '' : '';
+      });
+      document.getElementById('tweak-dark-header').classList.toggle('on', tweaks.darkHeader);
+
+      // Accent style
+      document.querySelectorAll('.card:not(.disabled)').forEach(c => {
+        c.style.borderLeft = '';
+        c.style.borderTop = '';
+      });
+      if (tweaks.accentStyle === 'left-border') {
+        document.querySelectorAll('.card:not(.disabled)').forEach(c => {
+          c.addEventListener('mouseenter', function() {
+            this.style.borderLeft = '3px solid var(--card-accent, var(--accent))';
+          });
+          c.addEventListener('mouseleave', function() {
+            this.style.borderLeft = '';
+          });
+        });
+      }
+      document.getElementById('tweak-accent').value = tweaks.accentStyle;
+    }
+
+    function toggleCompact() {
+      tweaks.compact = !tweaks.compact;
+      applyTweaks();
+      window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { compact: tweaks.compact } }, '*');
+    }
+
+    function toggleDarkHeader() {
+      tweaks.darkHeader = !tweaks.darkHeader;
+      const header = document.querySelector('header');
+      if (tweaks.darkHeader) {
+        header.style.background = '';
+        header.style.borderBottom = '';
+        document.querySelector('.wordmark-org').style.color = '';
+        document.querySelector('.wordmark-name').style.color = '';
+      } else {
+        header.style.background = '#fff';
+        header.style.borderBottom = '1px solid var(--border)';
+        document.querySelector('.wordmark-org').style.color = 'var(--text-muted)';
+        document.querySelector('.wordmark-name').style.color = 'var(--text-primary)';
+        document.querySelectorAll('.header-btn').forEach(b => {
+          b.style.background = 'var(--surface-2)';
+          b.style.color = 'var(--text-secondary)';
+          b.style.borderColor = 'var(--border)';
+        });
+      }
+      applyTweaks();
+      window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { darkHeader: tweaks.darkHeader } }, '*');
+    }
+
+    function switchAccent(val) {
+      tweaks.accentStyle = val;
+      applyTweaks();
+      window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { accentStyle: val } }, '*');
+    }
+
+    applyTweaks();
+
+    // Tweaks toggle
+    window.addEventListener('message', (e) => {
+      if (e.data?.type === '__activate_edit_mode')   document.getElementById('tweaks-panel').classList.add('open');
+      if (e.data?.type === '__deactivate_edit_mode') document.getElementById('tweaks-panel').classList.remove('open');
+    });
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+  </script>
+  <script src="/feedback-button.js"></script>
+</body>
+</html>

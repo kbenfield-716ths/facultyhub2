@@ -15,7 +15,7 @@ from pathlib import Path
 # Add parent directory to path to import models
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-def run_migration(db_path: str = "/data/moonlighter.db"):
+def run_migration(db_path: str = "/data/staff.db"):
     """Run the migration to add faculty blocks and manual assignment tracking"""
 
     conn = sqlite3.connect(db_path)
@@ -134,8 +134,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description='Add faculty blocks and manual assignment tracking')
-    parser.add_argument('--db', default='/data/moonlighter.db',
-                       help='Path to SQLite database (default: /data/moonlighter.db)')
+    parser.add_argument('--db', default='/data/staff.db',
+                       help='Path to SQLite database (default: /data/staff.db)')
     parser.add_argument('--dry-run', action='store_true',
                        help='Check if migration is needed without applying it')
 

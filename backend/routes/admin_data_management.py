@@ -3,13 +3,17 @@ from sqlalchemy.orm import Session
 from typing import List
 from pydantic import BaseModel
 
-from backend.models import get_db, Faculty, UnavailabilityRequest, ServiceWeek, Signup, Shift, Month, DraftWeekRequest, DraftWaveConfig
+from backend.models import get_db, Faculty, UnavailabilityRequest, ServiceWeek, ServiceWeekAssignment, Signup, Shift, Month, DraftWeekRequest, DraftWaveConfig
 from backend.auth import require_admin
 
 router = APIRouter(prefix="/api/admin/data-management", tags=["data-management"])
 
 class DeleteRequestsPayload(BaseModel):
     request_ids: List[str]
+    sources: dict = {}   # optional map of id -> 'Direct' | 'Wave Draft'
+
+class DeleteAssignmentsPayload(BaseModel):
+    assignment_ids: List[str]
 
 class DeleteSignupsPayload(BaseModel):
     signup_ids: List[int]
@@ -119,13 +123,88 @@ async def delete_unavailability(
     db: Session = Depends(get_db),
     current_user: Faculty = Depends(require_admin)
 ):
-    """Delete unavailability requests"""
-    deleted = db.query(UnavailabilityRequest).filter(
-        UnavailabilityRequest.id.in_(payload.request_ids)
+    """Delete unavailability requests — handles both Direct (UnavailabilityRequest)
+    and Wave Draft (DraftWeekRequest) records."""
+
+    # Split IDs by source if the caller supplied the map; otherwise try both tables
+    wave_draft_ids = [id for id, src in payload.sources.items() if src == 'Wave Draft']
+    direct_ids     = [id for id, src in payload.sources.items() if src == 'Direct']
+
+    # If no sources map provided, attempt deletion from both tables for every ID
+    if not payload.sources:
+        wave_draft_ids = payload.request_ids
+        direct_ids     = payload.request_ids
+
+    deleted_direct = db.query(UnavailabilityRequest).filter(
+        UnavailabilityRequest.id.in_(direct_ids)
+    ).delete(synchronize_session=False) if direct_ids else 0
+
+    deleted_wave = db.query(DraftWeekRequest).filter(
+        DraftWeekRequest.id.in_(wave_draft_ids)
+    ).delete(synchronize_session=False) if wave_draft_ids else 0
+
+    db.commit()
+    return {"deleted_count": deleted_direct + deleted_wave}
+
+@router.get("/service-assignments")
+async def get_service_assignments(
+    year: str = "all",
+    faculty: str = "all",
+    service_type: str = "all",
+    db: Session = Depends(get_db),
+    current_user: Faculty = Depends(require_admin)
+):
+    """Get service week assignments (actual schedule blocks)"""
+    query = db.query(
+        ServiceWeekAssignment.id,
+        ServiceWeekAssignment.faculty_id,
+        Faculty.name.label('faculty_name'),
+        ServiceWeekAssignment.week_id,
+        ServiceWeek.label.label('week_label'),
+        ServiceWeek.week_number,
+        ServiceWeekAssignment.service_type,
+        ServiceWeekAssignment.is_manual,
+        ServiceWeekAssignment.imported,
+        ServiceWeekAssignment.created_at
+    ).join(Faculty, ServiceWeekAssignment.faculty_id == Faculty.id
+    ).join(ServiceWeek, ServiceWeekAssignment.week_id == ServiceWeek.id)
+
+    if year != "all":
+        query = query.filter(ServiceWeek.year == int(year))
+    if faculty != "all":
+        query = query.filter(Faculty.name == faculty)
+    if service_type != "all":
+        query = query.filter(ServiceWeekAssignment.service_type == service_type)
+
+    results = query.order_by(ServiceWeek.week_number, Faculty.name).all()
+    return [{
+        'id': r.id,
+        'faculty_id': r.faculty_id,
+        'faculty_name': r.faculty_name,
+        'week_id': r.week_id,
+        'week_label': r.week_label,
+        'week_number': r.week_number,
+        'service_type': r.service_type,
+        'is_manual': r.is_manual or False,
+        'imported': r.imported or False,
+        'created_at': r.created_at.isoformat() if r.created_at else None
+    } for r in results]
+
+
+@router.post("/delete-assignments")
+async def delete_assignments(
+    payload: DeleteAssignmentsPayload,
+    db: Session = Depends(get_db),
+    current_user: Faculty = Depends(require_admin)
+):
+    """Delete service week assignments"""
+    deleted = db.query(ServiceWeekAssignment).filter(
+        ServiceWeekAssignment.id.in_(payload.assignment_ids)
     ).delete(synchronize_session=False)
 
     db.commit()
     return {"deleted_count": deleted}
+
 
 @router.get("/moonlighting-signups")
 async def get_moonlighting_signups(

@@ -5,7 +5,7 @@ Add reminder_sent_at column to existing wave_faculty_assignments table
 import sqlite3
 import sys
 
-def add_reminder_column(db_path="/data/moonlighter.db"):
+def add_reminder_column(db_path="/data/staff.db"):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -37,6 +37,6 @@ def add_reminder_column(db_path="/data/moonlighter.db"):
 
 
 if __name__ == "__main__":
-    db_path = sys.argv[1] if len(sys.argv) > 1 else "/data/moonlighter.db"
+    db_path = sys.argv[1] if len(sys.argv) > 1 else "/data/staff.db"
     print(f"Database: {db_path}\n")
     add_reminder_column(db_path)

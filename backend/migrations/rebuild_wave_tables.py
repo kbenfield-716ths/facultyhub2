@@ -6,7 +6,7 @@ Run this when tables need to be recreated (e.g. schema mismatch after failed mig
 import sqlite3
 import sys
 
-def rebuild_tables(db_path="/data/moonlighter.db"):
+def rebuild_tables(db_path="/data/staff.db"):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -134,7 +134,7 @@ def rebuild_tables(db_path="/data/moonlighter.db"):
 
 
 if __name__ == "__main__":
-    db_path = sys.argv[1] if len(sys.argv) > 1 else "/data/moonlighter.db"
+    db_path = sys.argv[1] if len(sys.argv) > 1 else "/data/staff.db"
 
     print("⚠️  WARNING: This will delete any existing wave draft data!")
     print(f"Database: {db_path}")

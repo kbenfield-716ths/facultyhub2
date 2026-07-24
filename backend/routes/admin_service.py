@@ -240,11 +240,8 @@ async def get_service_capacity_summary(
     
     # Calculate expected capacity by service type
     expected = {
-        "MICU": sum(f.micu_weeks for f in faculty_list),
-        "APP-ICU": sum(f.app_icu_weeks for f in faculty_list),
-        "Procedures": sum(f.procedure_weeks for f in faculty_list),
-        "Consults": sum(f.consult_weeks for f in faculty_list),
-        "Backup": sum(getattr(f, "backup_weeks", None) or 0 for f in faculty_list),
+        # service_type totals are now config-driven — aggregate from assignments
+        **{st: sum(1 for a in db.query(__import__("backend.models", fromlist=["ServiceWeekAssignment"]).ServiceWeekAssignment).filter_by(service_type=st).all()) for st in [row[0] for row in db.query(__import__("backend.models", fromlist=["ServiceWeekAssignment"]).ServiceWeekAssignment.service_type).distinct().all()]},
     }
 
     # Count actual assignments by service type for this year

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FacultyHub Admin Panel</title>
+  <title>Admin Panel</title>
   <link rel="stylesheet" href="/admin/modules/common/styles.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -18,7 +18,7 @@
       overflow: hidden;
     }
 
-    /* ── Top header ─────────────────────────────────── */
+    /* ── Top header ── */
     .admin-header {
       background: #1e293b;
       color: white;
@@ -31,11 +31,28 @@
       z-index: 100;
     }
 
-    .admin-header h1 {
-      margin: 0;
-      font-size: 18px;
+    .admin-wordmark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .admin-wordmark-org {
+      font-size: 11px;
       font-weight: 600;
-      letter-spacing: -0.01em;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+
+    .admin-wordmark-sep {
+      color: #334155;
+    }
+
+    .admin-wordmark-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: white;
     }
 
     .header-right {
@@ -44,12 +61,9 @@
       align-items: center;
     }
 
-    .user-info {
-      font-size: 13px;
-      color: #94a3b8;
-    }
+    .user-info { font-size: 13px; color: #94a3b8; }
 
-    .back-button {
+    .header-btn {
       background: rgba(255,255,255,0.1);
       color: white;
       border: 1px solid rgba(255,255,255,0.15);
@@ -60,19 +74,27 @@
       text-decoration: none;
       transition: background 0.15s;
     }
+    .header-btn:hover { background: rgba(255,255,255,0.2); }
 
-    .back-button:hover {
-      background: rgba(255,255,255,0.2);
+    /* ── Setup banner ── */
+    #setupBanner {
+      display: none;
+      background: #f59e0b;
+      color: #1c1917;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: center;
+      cursor: pointer;
+      flex-shrink: 0;
     }
+    #setupBanner:hover { background: #d97706; color: white; }
+    #setupBanner.show { display: block; }
 
-    /* ── Body: sidebar + content ─────────────────────── */
-    .admin-body {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
+    /* ── Body ── */
+    .admin-body { display: flex; flex: 1; overflow: hidden; }
 
-    /* ── Sidebar ─────────────────────────────────────── */
+    /* ── Sidebar ── */
     .admin-sidebar {
       width: 220px;
       background: white;
@@ -82,151 +104,80 @@
       padding: 16px 0 24px;
     }
 
-    .nav-section {
-      margin-bottom: 4px;
-    }
-
-    .nav-section-label {
-      padding: 8px 16px 4px;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #9ca3af;
-    }
+    .nav-section { margin-bottom: 4px; }
+    .nav-section-label { padding: 8px 16px 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9ca3af; }
 
     .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 16px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      color: #374151;
-      border: none;
-      background: none;
-      width: 100%;
-      text-align: left;
-      border-left: 3px solid transparent;
-      transition: background 0.12s, color 0.12s;
-      line-height: 1.4;
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 16px; cursor: pointer; font-size: 14px; font-weight: 500;
+      color: #374151; border: none; background: none; width: 100%; text-align: left;
+      border-left: 3px solid transparent; transition: background 0.12s, color 0.12s; line-height: 1.4;
     }
+    .nav-item:hover { background: #f9fafb; color: #111827; }
+    .nav-item.active { background: #eff6ff; color: #2563eb; border-left-color: #2563eb; }
+    .nav-item .icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
 
-    .nav-item:hover {
-      background: #f9fafb;
-      color: #111827;
-    }
+    .nav-divider { height: 1px; background: #f3f4f6; margin: 8px 0; }
 
-    .nav-item.active {
-      background: #eff6ff;
-      color: #2563eb;
-      border-left-color: #2563eb;
-    }
+    /* ── Content ── */
+    .admin-content { flex: 1; overflow-y: auto; background: #f3f4f6; }
+    .module-view { display: none; }
+    .module-view.active { display: block; }
 
-    .nav-item .icon {
-      font-size: 15px;
-      width: 20px;
-      text-align: center;
-      flex-shrink: 0;
-    }
-
-    .nav-divider {
-      height: 1px;
-      background: #f3f4f6;
-      margin: 8px 0;
-    }
-
-    /* ── Content area ────────────────────────────────── */
-    .admin-content {
-      flex: 1;
-      overflow-y: auto;
-      background: #f3f4f6;
-    }
-
-    .module-view {
-      display: none;
-    }
-
-    .module-view.active {
-      display: block;
-    }
-
-    /* ── Loading overlay ─────────────────────────────── */
+    /* ── Loading overlay ── */
     .loading-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(255,255,255,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      backdrop-filter: blur(2px);
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255,255,255,0.85); display: none; align-items: center;
+      justify-content: center; z-index: 9999; backdrop-filter: blur(2px);
     }
-
-    .loading-spinner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      color: #6b7280;
-      font-size: 14px;
-    }
-
-    .spinner-ring {
-      width: 36px;
-      height: 36px;
-      border: 3px solid #e5e7eb;
-      border-top-color: #2563eb;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-
+    .loading-spinner { display: flex; flex-direction: column; align-items: center; gap: 12px; color: #6b7280; font-size: 14px; }
+    .spinner-ring { width: 36px; height: 36px; border: 3px solid #e5e7eb; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Responsive: collapse sidebar on small screens ─ */
     @media (max-width: 768px) {
-      .admin-sidebar {
-        width: 48px;
-        overflow: visible;
-      }
+      .admin-sidebar { width: 48px; overflow: visible; }
       .nav-item span:not(.icon) { display: none; }
-      .nav-section-label { display: none; }
-      .nav-divider { display: none; }
+      .nav-section-label, .nav-divider { display: none; }
       .nav-item { padding: 10px; justify-content: center; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Loading Overlay -->
   <div id="loadingOverlay" class="loading-overlay">
     <div class="loading-spinner">
       <div class="spinner-ring"></div>
-      <span>Loading module...</span>
+      <span>Loading...</span>
     </div>
+  </div>
+
+  <!-- Setup banner (shown when setup_complete = false) -->
+  <div id="setupBanner" onclick="showModule('instance-setup')">
+    ⚙️ This instance hasn't been configured yet. Click here to run the setup wizard →
   </div>
 
   <!-- Top Header -->
   <header class="admin-header">
-    <h1>FacultyHub Admin</h1>
+    <div class="admin-wordmark">
+      <span class="admin-wordmark-org" id="headerOrg"></span>
+      <span class="admin-wordmark-sep" id="headerSep" style="display:none;">·</span>
+      <span class="admin-wordmark-name" id="headerName">Admin Panel</span>
+    </div>
     <div class="header-right">
       <span class="user-info" id="userInfo">Loading...</span>
-      <a href="/" class="back-button">← Back to App</a>
+      <a href="/" class="header-btn">← App</a>
     </div>
   </header>
 
-  <!-- Body: sidebar + content -->
+  <!-- Sidebar + content -->
   <div class="admin-body">
 
-    <!-- Sidebar Navigation -->
     <nav class="admin-sidebar">
 
       <div class="nav-section">
         <div class="nav-section-label">People</div>
         <button class="nav-item active" onclick="showModule('faculty-management')" data-module="faculty-management">
-          <span class="icon">👥</span><span>Faculty</span>
+          <span class="icon">👥</span><span>Providers</span>
         </button>
         <button class="nav-item" onclick="showModule('user-management')" data-module="user-management">
           <span class="icon">👤</span><span>Users</span>
@@ -259,7 +210,7 @@
       <div class="nav-section">
         <div class="nav-section-label">Moonlighting</div>
         <button class="nav-item" onclick="showModule('moonlighting')" data-module="moonlighting">
-          <span class="icon">🌙</span><span>Signups & Optimizer</span>
+          <span class="icon">🌙</span><span>Signups &amp; Optimizer</span>
         </button>
       </div>
 
@@ -284,9 +235,17 @@
         </button>
       </div>
 
+      <div class="nav-divider"></div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Instance</div>
+        <button class="nav-item" onclick="showModule('instance-setup')" data-module="instance-setup">
+          <span class="icon">⚙️</span><span>Setup &amp; Config</span>
+        </button>
+      </div>
+
     </nav>
 
-    <!-- Content Area -->
     <main class="admin-content">
       <div id="module-faculty-management"  class="module-view active"></div>
       <div id="module-user-management"     class="module-view"></div>
@@ -299,85 +258,56 @@
       <div id="module-data-management"     class="module-view"></div>
       <div id="module-database-viewer"     class="module-view"></div>
       <div id="module-knowledge-base"      class="module-view"></div>
+      <div id="module-instance-setup"      class="module-view"></div>
     </main>
 
-  </div><!-- /.admin-body -->
+  </div>
 
-  <!-- Common utilities -->
   <script src="/admin/modules/common/common.js"></script>
   <script src="/admin/modules/common/api.js"></script>
 
   <script>
     // ── Module registry ──────────────────────────────────────────────────────
     const modules = {
-      'faculty-management': {
-        name: 'Faculty Management',
-        htmlPath: '/admin/modules/faculty-management/faculty-management.html',
-        jsPath:   '/admin/modules/faculty-management/faculty-management.js'
-      },
-      'user-management': {
-        name: 'User Management',
-        htmlPath: '/admin/modules/user-management/user-management.html',
-        jsPath:   '/admin/modules/user-management/user-management.js'
-      },
-      'schedule-management': {
-        name: 'Schedule',
-        htmlPath: '/admin/modules/schedule-management/schedule-management.html',
-        jsPath:   '/admin/modules/schedule-management/schedule-management.js'
-      },
-      'schedule-summary': {
-        name: 'Schedule Reports',
-        htmlPath: '/admin/modules/schedule-summary/schedule-summary.html',
-        jsPath:   '/admin/modules/schedule-summary/schedule-summary.js'
-      },
-      'wave-draft': {
-        name: 'Wave Draft System',
-        htmlPath: '/admin/modules/wave-draft/wave-draft.html',
-        jsPath:   '/admin/modules/wave-draft/wave-draft.js'
-      },
-      'service-overrides': {
-        name: 'Service Week Overrides',
-        htmlPath: '/admin/modules/service-weeks/overrides/overrides.html',
-        jsPath:   '/admin/modules/service-weeks/overrides/overrides.js'
-      },
-      'grid-rebalancer': {
-        name: 'Grid Rebalancer',
-        htmlPath: '/admin/modules/grid-rebalancer/grid-rebalancer.html',
-        jsPath:   '/admin/modules/grid-rebalancer/grid-rebalancer.js'
-      },
-      'moonlighting': {
-        name: 'Moonlighting',
-        htmlPath: '/admin/modules/moonlighting/moonlighting.html',
-        jsPath:   '/admin/modules/moonlighting/moonlighting.js'
-      },
-      'data-management': {
-        name: 'Data Management',
-        htmlPath: '/admin/modules/data-management/data-management.html',
-        jsPath:   '/admin/modules/data-management/data-management.js'
-      },
-      'database-viewer': {
-        name: 'Database Console',
-        htmlPath: '/admin/modules/database-viewer/database-viewer.html',
-        jsPath:   '/admin/modules/database-viewer/database-viewer.js'
-      },
-      'knowledge-base': {
-        name: 'Knowledge Base',
-        htmlPath: '/admin/modules/knowledge-base/knowledge-base.html',
-        jsPath:   '/admin/modules/knowledge-base/knowledge-base.js'
-      }
+      'faculty-management':  { name: 'Providers',              htmlPath: '/admin/modules/faculty-management/faculty-management.html',  jsPath: '/admin/modules/faculty-management/faculty-management.js' },
+      'user-management':     { name: 'Users',                  htmlPath: '/admin/modules/user-management/user-management.html',         jsPath: '/admin/modules/user-management/user-management.js' },
+      'schedule-management': { name: 'Schedule',               htmlPath: '/admin/modules/schedule-management/schedule-management.html', jsPath: '/admin/modules/schedule-management/schedule-management.js' },
+      'schedule-summary':    { name: 'Reports',                htmlPath: '/admin/modules/schedule-summary/schedule-summary.html',       jsPath: '/admin/modules/schedule-summary/schedule-summary.js' },
+      'wave-draft':          { name: 'Wave Draft',             htmlPath: '/admin/modules/wave-draft/wave-draft.html',                   jsPath: '/admin/modules/wave-draft/wave-draft.js' },
+      'service-overrides':   { name: 'Overrides',              htmlPath: '/admin/modules/service-weeks/overrides/overrides.html',       jsPath: '/admin/modules/service-weeks/overrides/overrides.js' },
+      'grid-rebalancer':     { name: 'Grid Rebalancer',        htmlPath: '/admin/modules/grid-rebalancer/grid-rebalancer.html',         jsPath: '/admin/modules/grid-rebalancer/grid-rebalancer.js' },
+      'moonlighting':        { name: 'Moonlighting',           htmlPath: '/admin/modules/moonlighting/moonlighting.html',               jsPath: '/admin/modules/moonlighting/moonlighting.js' },
+      'data-management':     { name: 'Data Management',        htmlPath: '/admin/modules/data-management/data-management.html',         jsPath: '/admin/modules/data-management/data-management.js' },
+      'database-viewer':     { name: 'Database Console',       htmlPath: '/admin/modules/database-viewer/database-viewer.html',         jsPath: '/admin/modules/database-viewer/database-viewer.js' },
+      'knowledge-base':      { name: 'Knowledge Base',         htmlPath: '/admin/modules/knowledge-base/knowledge-base.html',           jsPath: '/admin/modules/knowledge-base/knowledge-base.js' },
+      'instance-setup':      { name: 'Setup & Config',         htmlPath: '/admin/modules/instance-setup/instance-setup.html',           jsPath: '/admin/modules/instance-setup/instance-setup.js' },
     };
 
     const loadedModules = new Set();
     let currentModule = 'faculty-management';
 
+    // ── Apply config to header ───────────────────────────────────────────────
+    function applyConfigToHeader(cfg) {
+      const org    = cfg.branding && cfg.branding.org_label ? cfg.branding.org_label : '';
+      const name   = cfg.app_name || 'Faculty Hub';
+      const headerOrg  = document.getElementById('headerOrg');
+      const headerSep  = document.getElementById('headerSep');
+      const headerName = document.getElementById('headerName');
+      if (org) {
+        headerOrg.textContent  = org;
+        headerSep.style.display = '';
+        headerName.textContent = name + ' — Admin';
+      } else {
+        headerOrg.textContent  = '';
+        headerSep.style.display = 'none';
+        headerName.textContent = (name || 'Faculty Hub') + ' — Admin';
+      }
+      document.title = (org ? org + ' · ' : '') + 'Admin Panel';
+    }
+
     // ── Navigation ───────────────────────────────────────────────────────────
     async function showModule(moduleId) {
-      if (!modules[moduleId]) {
-        console.error('Unknown module:', moduleId);
-        return;
-      }
-
-      // Prevent double-clicking the active item from triggering a reload
+      if (!modules[moduleId]) { console.error('Unknown module:', moduleId); return; }
       if (moduleId === currentModule && loadedModules.has(moduleId)) return;
 
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -389,12 +319,9 @@
 
       try {
         if (!loadedModules.has(moduleId)) {
-          // First visit: fetch HTML + inject JS (defines global functions)
           await loadModule(moduleId);
           loadedModules.add(moduleId);
         } else {
-          // Subsequent visits: re-fetch HTML only so modal/form state is always clean.
-          // JS is already in global scope from first load — no need to re-inject.
           await reloadModuleHTML(moduleId);
         }
         document.getElementById('module-' + moduleId).classList.add('active');
@@ -409,7 +336,6 @@
       }
     }
 
-    // ── Module loader (first visit) ──────────────────────────────────────────
     async function loadModule(moduleId) {
       const mod = modules[moduleId];
       const htmlRes = await fetch(mod.htmlPath);
@@ -419,9 +345,6 @@
       requestAnimationFrame(() => setTimeout(() => triggerModuleInit(moduleId), 200));
     }
 
-    // ── HTML-only reload (subsequent visits) ─────────────────────────────────
-    // Re-fetches the module's HTML so any open modals or mid-flight forms are
-    // reset to a clean initial state.  The JS stays in global scope unchanged.
     async function reloadModuleHTML(moduleId) {
       const mod = modules[moduleId];
       const htmlRes = await fetch(mod.htmlPath);
@@ -434,9 +357,9 @@
       if (!src) return Promise.resolve();
       return new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = src;
+        s.src = src + '?v=' + Date.now();  // bust cache on reload
         s.onload = resolve;
-        s.onerror = () => reject(new Error('Failed to load script: ' + src));
+        s.onerror = () => reject(new Error('Failed to load: ' + src));
         document.body.appendChild(s);
       });
     }
@@ -444,20 +367,22 @@
     // ── Module init hooks ────────────────────────────────────────────────────
     function triggerModuleInit(moduleId) {
       const inits = {
-        'faculty-management': () => typeof loadFaculty          === 'function' && loadFaculty(),
-        'user-management':    () => typeof initUserManagement   === 'function' && initUserManagement(),
-        'schedule-management':() => typeof loadHeatmap          === 'function' && loadHeatmap(new Date().getFullYear()),
-        'service-overrides':  () => typeof loadBlocks           === 'function' && loadBlocks(),
-        'knowledge-base':     () => typeof loadKBArticles       === 'function' && loadKBArticles(),
+        'faculty-management':  () => typeof loadFaculty          === 'function' && loadFaculty(),
+        'user-management':     () => typeof initUserManagement   === 'function' && initUserManagement(),
+        'schedule-management': () => typeof loadHeatmap          === 'function' && loadHeatmap(new Date().getFullYear()),
+        'service-overrides':   () => typeof loadBlocks           === 'function' && loadBlocks(),
+        'knowledge-base':      () => typeof loadKBArticles       === 'function' && loadKBArticles(),
+        'instance-setup':      () => typeof initInstanceSetup    === 'function' && initInstanceSetup(),
         'wave-draft': () => {
-          if (typeof loadConfigs          === 'function') loadConfigs();
-          if (typeof loadFacultyForWaves  === 'function') loadFacultyForWaves();
+          if (typeof loadConfigs         === 'function') loadConfigs();
+          if (typeof loadFacultyForWaves === 'function') loadFacultyForWaves();
         },
         'moonlighting': () => {
           if (typeof loadProviders === 'function') loadProviders();
           if (typeof loadSignups   === 'function') loadSignups();
         },
-        'grid-rebalancer': () => { /* self-initialising IIFE */ }
+        'grid-rebalancer':  () => { /* self-initialising IIFE */ },
+        'data-management':  () => typeof initDataManagement === 'function' && initDataManagement(),
       };
       try {
         if (inits[moduleId]) inits[moduleId]();
@@ -466,7 +391,7 @@
       }
     }
 
-    // ── Auth / user info ─────────────────────────────────────────────────────
+    // ── Auth ─────────────────────────────────────────────────────────────────
     async function loadUserInfo() {
       try {
         const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
@@ -477,7 +402,7 @@
         } else if (res.status === 401 || res.status === 403) {
           window.location.href = '/?session_expired=1';
         } else {
-          document.getElementById('userInfo').textContent = 'Not logged in';
+          document.getElementById('userInfo').textContent = '';
         }
       } catch {
         document.getElementById('userInfo').textContent = '';
@@ -487,7 +412,24 @@
     // ── Boot ─────────────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
       await loadUserInfo();
-      await showModule('faculty-management');
+
+      // Load and cache instance config
+      const cfg = await loadInstanceConfig();
+      applyConfigToHeader(cfg);
+
+      // Show setup banner if not configured
+      if (!cfg.setup_complete) {
+        document.getElementById('setupBanner').classList.add('show');
+      }
+
+      // Check URL for ?module= param
+      const params = new URLSearchParams(window.location.search);
+      const requestedModule = params.get('module');
+      const startModule = requestedModule && modules[requestedModule]
+        ? requestedModule
+        : (!cfg.setup_complete ? 'instance-setup' : 'faculty-management');
+
+      await showModule(startModule);
     });
   </script>
 </body>

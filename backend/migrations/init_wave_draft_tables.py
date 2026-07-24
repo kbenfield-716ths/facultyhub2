@@ -126,7 +126,7 @@ def init_wave_draft_tables(db_path="facultyhub.db"):
 
 
 if __name__ == "__main__":
-    db_path = sys.argv[1] if len(sys.argv) > 1 else "/data/moonlighter.db"
+    db_path = sys.argv[1] if len(sys.argv) > 1 else "/data/staff.db"
     print(f"Database: {db_path}")
     print()
     init_wave_draft_tables(db_path)

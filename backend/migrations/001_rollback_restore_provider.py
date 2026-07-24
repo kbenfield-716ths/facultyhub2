@@ -5,8 +5,8 @@ This script can recreate the Provider table from Faculty data
 if the migration needs to be rolled back.
 
 SAFER OPTION: Just restore from the backup file created before migration:
-    mv moonlighter.db moonlighter_failed.db
-    cp moonlighter.db.backup_before_001_TIMESTAMP moonlighter.db
+    mv staff.db moonlighter_failed.db
+    cp staff.db.backup_before_001_TIMESTAMP staff.db
 
 This script is provided as an alternative rollback method.
 """
@@ -22,14 +22,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 def get_db_path():
     """Get the database path"""
-    if os.path.exists('/app/moonlighter.db'):
-        return '/app/moonlighter.db'
-    elif os.path.exists('moonlighter.db'):
-        return 'moonlighter.db'
-    elif os.path.exists('../moonlighter.db'):
-        return '../moonlighter.db'
+    if os.path.exists('/app/staff.db'):
+        return '/app/staff.db'
+    elif os.path.exists('staff.db'):
+        return 'staff.db'
+    elif os.path.exists('../staff.db'):
+        return '../staff.db'
     else:
-        raise Exception("Cannot find moonlighter.db")
+        raise Exception("Cannot find staff.db")
 
 
 def backup_database(db_path):
@@ -219,7 +219,7 @@ if __name__ == "__main__":
 
     print("\n⚠️  WARNING: This will recreate the Provider table!")
     print("   Alternative: Restore from backup file instead")
-    print("   Backup files: moonlighter.db.backup_before_001_*")
+    print("   Backup files: staff.db.backup_before_001_*")
     print()
 
     response = input("Continue with rollback? (yes/no): ")

@@ -5,7 +5,7 @@ Check the actual structure of wave_faculty_assignments table
 import sqlite3
 import sys
 
-def check_table(db_path="/data/moonlighter.db"):
+def check_table(db_path="/data/staff.db"):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -34,5 +34,5 @@ def check_table(db_path="/data/moonlighter.db"):
     conn.close()
 
 if __name__ == "__main__":
-    db_path = sys.argv[1] if len(sys.argv) > 1 else "/data/moonlighter.db"
+    db_path = sys.argv[1] if len(sys.argv) > 1 else "/data/staff.db"
     check_table(db_path)

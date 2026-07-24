@@ -2,14 +2,15 @@
 from datetime import datetime, date
 from sqlalchemy import (
     Column, Integer, String, Boolean, Date, DateTime, Float,
-    ForeignKey, create_engine, text, Text, Index
+    ForeignKey, create_engine, text, Text, Index, UniqueConstraint
 )
+import json
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 import os
 import uuid
 
 # Use persistent volume if available, fallback to local
-db_path = "/data/moonlighter.db" if os.path.exists("/data") else "./moonlighter.db"
+db_path = "/data/staff.db" if os.path.exists("/data") else "./staff.db"
 DATABASE_URL = f"sqlite:///{db_path}"
 
 Base = declarative_base()
@@ -221,39 +222,64 @@ class Faculty(Base):
     last_login_at = Column(DateTime, nullable=True)
     last_login_ip = Column(String, nullable=True)
     
-    # Scheduling profile
-    rank = Column(String, nullable=False)
-    clinical_effort_pct = Column(Integer, nullable=False)
-    base_points = Column(Integer, nullable=False)
-    bonus_points = Column(Integer, default=0)
     active = Column(Boolean, default=True)
-    
-    # Moonlighting participation
+
+    # Moonlighting participation (feature-flagged via instance_config)
     moonlighter = Column(Boolean, default=False, nullable=False)
-    draft_exempt = Column(Boolean, default=False, nullable=False)  # Exclude from draft priority system
+    draft_exempt = Column(Boolean, default=False, nullable=False)
     moonlighting_priority = Column(Integer, default=2, nullable=False)  # 1=high, 2=medium, 3=low
 
-    # Service week commitments
-    micu_weeks = Column(Integer, default=0)
-    app_icu_weeks = Column(Integer, default=0)
-    procedure_weeks = Column(Integer, default=0)
-    consult_weeks = Column(Integer, default=0)
-    backup_weeks = Column(Integer, default=0)
-    
+    # Group-specific attributes — stored as JSON, defined by instance_config faculty_attributes
+    extra_config = Column(Text, default='{}', nullable=False)
+
     # Relationships
     unavailability_requests = relationship("UnavailabilityRequest", back_populates="faculty")
     service_assignments = relationship("ServiceWeekAssignment", back_populates="faculty", foreign_keys="ServiceWeekAssignment.faculty_id")
     moonlighting_signups = relationship("Signup", foreign_keys="Signup.provider_id")
     moonlighting_assignments = relationship("Assignment", foreign_keys="Assignment.provider_id")
-    
+
+    # ── Convenience accessors for extra_config fields ──────────────────────
+    def get_extra(self, key, default=None):
+        """Read a value from the extra_config JSON blob."""
+        try:
+            return json.loads(self.extra_config or '{}').get(key, default)
+        except (json.JSONDecodeError, TypeError):
+            return default
+
+    def set_extra(self, key, value, db_session=None):
+        """Write a value into the extra_config JSON blob."""
+        try:
+            config = json.loads(self.extra_config or '{}')
+        except (json.JSONDecodeError, TypeError):
+            config = {}
+        config[key] = value
+        self.extra_config = json.dumps(config)
+
+    # Properties so legacy routes that reference .base_points / .bonus_points
+    # continue to work — values now live in extra_config.
+    @property
+    def base_points(self):
+        return self.get_extra('base_points', 0)
+
+    @base_points.setter
+    def base_points(self, value):
+        self.set_extra('base_points', value)
+
+    @property
+    def bonus_points(self):
+        return self.get_extra('bonus_points', 0)
+
+    @bonus_points.setter
+    def bonus_points(self, value):
+        self.set_extra('bonus_points', value)
+
     @property
     def does_moonlighting(self):
-        """Alias for moonlighter field - used by message board access control"""
+        """Alias for moonlighter field — used by message board access control."""
         return self.moonlighter
-    
+
     @does_moonlighting.setter
     def does_moonlighting(self, value):
-        """Setter to keep fields synchronized"""
         self.moonlighter = value
 
 
@@ -551,6 +577,134 @@ class DraftWeekRequest(Base):
     __table_args__ = (
         Index('idx_draft_request_faculty_week', 'faculty_id', 'week_id'),
         Index('idx_draft_request_config', 'config_id'),
+    )
+
+
+# ==========================================
+# INSTANCE CONFIGURATION
+# ==========================================
+
+class InstanceConfig(Base):
+    """
+    Key-value store for all group-specific configuration.
+    Each key holds a JSON-encoded value.  The setup wizard writes here;
+    the rest of the app reads here instead of hardcoded constants.
+
+    Well-known keys (all values are JSON):
+      group_name          str   — display name for this deployment
+      org_name            str   — parent organisation
+      app_name            str   — shown in browser tab / wordmark
+      setup_complete      bool  — false until the wizard finishes
+      scheduling_model    str   — "weekly_blocks" | "shift_based"
+      shift_config        obj   — { shifts: [{key, label, start, end, slots_needed}] }
+      service_types       list  — [{key, label, slots_needed, point_cost}]
+      faculty_attributes  list  — [{key, label, type, options?, required?}]
+      scheduling_rules    obj   — {weeks_per_year, academic_year_start_month, ...}
+      features            obj   — {moonlighting, draft_system, service_availability, ...}
+      branding            obj   — {org_label, accent_color}
+    """
+    __tablename__ = "instance_config"
+
+    key        = Column(String, primary_key=True)
+    value      = Column(Text, nullable=False, default='null')
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# ==========================================
+# SHIFT-BASED SCHEDULING  (APP / ICU model)
+# ==========================================
+
+class SchedulePeriod(Base):
+    """
+    One atomic scheduling slot — a single shift on a single date.
+    Generated by the period generator from the instance shift_config.
+    """
+    __tablename__ = "schedule_periods"
+
+    id            = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    rotation_key  = Column(String, nullable=False, index=True)   # e.g. "micu"
+    period_date   = Column(Date, nullable=False, index=True)
+    shift_type    = Column(String, nullable=False)                # "day" | "night" | custom
+    start_time    = Column(String, nullable=False)                # "07:00"
+    end_time      = Column(String, nullable=False)                # "19:00"
+    slots_needed  = Column(Integer, nullable=False, default=2)
+    is_holiday    = Column(Boolean, default=False)
+    note          = Column(Text, nullable=True)
+    created_at    = Column(DateTime, default=datetime.utcnow)
+
+    assignments = relationship("PeriodAssignment", back_populates="period",
+                               cascade="all, delete-orphan")
+
+    __table_args__ = (
+        UniqueConstraint('rotation_key', 'period_date', 'shift_type',
+                         name='uq_period_rotation_date_shift'),
+        Index('ix_schedule_periods_date_rotation', 'period_date', 'rotation_key'),
+    )
+
+
+class PeriodAssignment(Base):
+    """
+    Links a provider to a specific shift period.
+    This is the actual schedule — one row per provider per shift.
+    """
+    __tablename__ = "period_assignments"
+
+    id          = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    period_id   = Column(String, ForeignKey("schedule_periods.id", ondelete="CASCADE"),
+                         nullable=False, index=True)
+    provider_id = Column(String, ForeignKey("faculty.id", ondelete="CASCADE"),
+                         nullable=False, index=True)
+    status      = Column(String, nullable=False, default="assigned")  # assigned|tentative|blocked
+    is_manual   = Column(Boolean, default=True)
+    assigned_by = Column(String, ForeignKey("faculty.id"), nullable=True)
+    note        = Column(Text, nullable=True)
+    created_at  = Column(DateTime, default=datetime.utcnow)
+    updated_at  = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    period   = relationship("SchedulePeriod", back_populates="assignments")
+    provider = relationship("Faculty", foreign_keys=[provider_id])
+    assigner = relationship("Faculty", foreign_keys=[assigned_by])
+
+    __table_args__ = (
+        UniqueConstraint('period_id', 'provider_id', name='uq_period_provider'),
+        Index('ix_period_assignments_provider', 'provider_id'),
+    )
+
+
+# ==========================================
+# PROVIDER CONSTRAINTS
+# ==========================================
+
+class ProviderConstraint(Base):
+    """
+    Extensible constraint store for scheduling rules per provider.
+    All constraint data lives in constraint_value as JSON so new constraint
+    types can be added without schema changes.
+
+    Known constraint_type values:
+      max_consecutive_shifts   {"max": 6}
+      shift_restriction        {"allowed": ["day"]}  or ["night"] or ["day","night"]
+      max_shifts_per_week      {"max": 4}
+      unavailable_period       {"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"}
+      prefer_not               {"shift_type": "night", "reason": "childcare"}
+    """
+    __tablename__ = "provider_constraints"
+
+    id               = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    faculty_id       = Column(String, ForeignKey("faculty.id", ondelete="CASCADE"),
+                              nullable=False, index=True)
+    constraint_type  = Column(String, nullable=False)
+    constraint_value = Column(Text, nullable=False, default='{}')
+    priority         = Column(Integer, nullable=False, default=50)  # 1=hard … 100=soft
+    is_active        = Column(Boolean, nullable=False, default=True)
+    created_by       = Column(String, ForeignKey("faculty.id"), nullable=True)
+    created_at       = Column(DateTime, default=datetime.utcnow)
+
+    faculty  = relationship("Faculty", foreign_keys=[faculty_id])
+    creator  = relationship("Faculty", foreign_keys=[created_by])
+
+    __table_args__ = (
+        Index('ix_provider_constraints_faculty', 'faculty_id', 'is_active'),
     )
 
 

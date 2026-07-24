@@ -24,51 +24,43 @@ def init_test_users():
             id="ADMIN",
             name="Administrator",
             email="admin@example.com",
-            rank="full",
-            clinical_effort_pct=0,
-            base_points=0,
             is_admin=True,
-            password_hash=hash_password("PCCM2025!"),
+            password_hash=hash_password("ChangeMe123!"),
             password_changed=False,
             registered=True,
-            active=True
+            active=True,
+            extra_config="{}",
         )
         db.add(admin)
         print("✓ Created ADMIN user")
     else:
         print("- ADMIN user already exists")
-    
-    # Test faculty members
+
+    # Test faculty members — extra_config holds any group-specific attributes
     test_faculty = [
         {
             "id": "TEST1",
             "name": "Dr. Jane Smith",
             "email": "jane.smith@example.com",
-            "rank": "assistant",
-            "clinical_effort_pct": 80,
-            "base_points": 100,
-            "is_admin": False
+            "is_admin": False,
+            "extra_config": '{"base_points": 100, "role": "APP"}',
         },
         {
             "id": "TEST2",
             "name": "Dr. John Doe",
             "email": "john.doe@example.com",
-            "rank": "associate",
-            "clinical_effort_pct": 75,
-            "base_points": 120,
-            "is_admin": False
+            "is_admin": False,
+            "extra_config": '{"base_points": 120, "role": "APP"}',
         },
         {
             "id": "TEST3",
             "name": "Dr. Sarah Johnson",
             "email": "sarah.johnson@example.com",
-            "rank": "full",
-            "clinical_effort_pct": 60,
-            "base_points": 150,
-            "is_admin": True  # Test admin
-        }
+            "is_admin": True,
+            "extra_config": '{"base_points": 150, "role": "APP"}',
+        },
     ]
-    
+
     for faculty_data in test_faculty:
         existing = db.query(Faculty).filter_by(id=faculty_data["id"]).first()
         if not existing:
@@ -76,15 +68,12 @@ def init_test_users():
                 id=faculty_data["id"],
                 name=faculty_data["name"],
                 email=faculty_data["email"],
-                rank=faculty_data["rank"],
-                clinical_effort_pct=faculty_data["clinical_effort_pct"],
-                base_points=faculty_data["base_points"],
-                bonus_points=0,
                 is_admin=faculty_data["is_admin"],
-                password_hash=hash_password("PCCM2025!"),
+                password_hash=hash_password("ChangeMe123!"),
                 password_changed=False,
                 registered=True,
-                active=True
+                active=True,
+                extra_config=faculty_data["extra_config"],
             )
             db.add(faculty)
             print(f"✓ Created {faculty_data['id']} - {faculty_data['name']}")

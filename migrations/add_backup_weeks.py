@@ -18,10 +18,10 @@ import os
 
 def find_database():
     candidates = [
-        "/data/moonlighter.db",
-        "/app/moonlighter.db",
-        "./moonlighter.db",
-        "moonlighter.db",
+        "/data/staff.db",
+        "/app/staff.db",
+        "./staff.db",
+        "staff.db",
     ]
     for path in candidates:
         if os.path.exists(path):

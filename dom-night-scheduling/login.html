@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a1628">
+  <title>Sign In</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
+
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+
+  <style>
+    :root {
+      --navy:    #0a1628;
+      --accent:  oklch(52% 0.18 245);
+      --accent-light: oklch(96% 0.04 245);
+      --accent-mid: oklch(76% 0.10 245);
+      --surface: #ffffff;
+      --surface-2: #f5f6f8;
+      --border:  #e2e5eb;
+      --text-primary: #0a1628;
+      --text-secondary: #5a6479;
+      --text-muted: #9aa0b0;
+      --red: oklch(52% 0.18 22);
+      --red-light: oklch(96% 0.04 22);
+      --amber: oklch(68% 0.14 75);
+      --amber-light: oklch(97% 0.04 75);
+      --teal: oklch(52% 0.14 195);
+      --teal-light: oklch(96% 0.04 195);
+      --radius-sm: 6px; --radius: 10px; --radius-lg: 14px;
+      --shadow-sm: 0 1px 3px rgba(10,22,40,0.06);
+      --shadow: 0 4px 12px rgba(10,22,40,0.08);
+      --shadow-lg: 0 12px 32px rgba(10,22,40,0.12), 0 4px 8px rgba(10,22,40,0.06);
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--surface-2);
+      color: var(--text-primary);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .offline-banner { display: none; background: var(--amber); color: #fff; text-align: center; padding: 8px 20px; font-size: 0.8rem; font-weight: 500; }
+    .offline-banner.show { display: block; }
+
+    header { background: var(--navy); }
+
+    .header-inner {
+      max-width: 1160px; margin: 0 auto; padding: 0 24px;
+      height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+
+    .wordmark { display: flex; align-items: baseline; gap: 10px; text-decoration: none; flex-shrink: 0; }
+    .wordmark-org { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-mid); }
+    .wordmark-divider { width: 1px; height: 14px; background: rgba(255,255,255,0.15); align-self: center; }
+    .wordmark-name { font-size: 0.95rem; font-weight: 500; color: #fff; letter-spacing: 0.01em; }
+
+    /* ===== Login layout ===== */
+    .login-main {
+      display: flex; align-items: center; justify-content: center;
+      min-height: calc(100vh - 60px);
+      padding: 40px 20px;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 380px;
+      animation: cardIn 0.4s ease both;
+    }
+
+    @keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== Logo placeholder ===== */
+    .logo-wrap { display: flex; justify-content: center; margin-bottom: 20px; }
+    .org-logo {
+      width: 64px; height: 64px; object-fit: contain;
+      border-radius: var(--radius); display: none;
+    }
+    .org-logo-fallback {
+      width: 64px; height: 64px; border-radius: var(--radius);
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 600; letter-spacing: 0.02em;
+    }
+
+    .login-card h1 { font-size: 1.3rem; font-weight: 600; text-align: center; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .login-subtitle { text-align: center; color: var(--text-secondary); font-size: 0.875rem; font-weight: 300; margin-bottom: 24px; line-height: 1.5; }
+
+    /* ===== Form ===== */
+    .field-group { margin-bottom: 18px; }
+    .field-group label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+    .field-group input {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 0.95rem; font-family: inherit; color: var(--text-primary);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field-group input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+
+    .btn-primary {
+      width: 100%; padding: 11px; background: var(--accent); color: #fff; border: none;
+      border-radius: var(--radius-sm); font-family: inherit; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; margin-top: 4px; transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ===== Alerts ===== */
+    .alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 0.85rem; margin-bottom: 16px; display: none; line-height: 1.4; }
+    .alert.show { display: block; }
+    .alert-error { background: var(--red-light); color: var(--red); border-left: 3px solid var(--red); }
+    .alert-success { background: var(--teal-light); color: var(--teal); border-left: 3px solid var(--teal); }
+
+    .help-text { text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 0.8rem; line-height: 1.5; }
+    .help-text.session-expired { color: var(--red); margin-top: 8px; }
+
+    footer { text-align: center; padding: 0 20px 32px; color: var(--text-muted); font-size: 0.78rem; letter-spacing: 0.01em; }
+    footer span { display: inline-flex; align-items: center; gap: 6px; }
+    footer .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border); }
+
+    @media (max-width: 600px) {
+      .header-inner { padding: 0 16px; height: 54px; }
+      .login-card { padding: 32px 24px; }
+    }
+
+    /* ===== Cold Start Loading Screen ===== */
+    #cold-start-loader {
+      position: fixed; inset: 0; background: var(--navy);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 9999; color: #fff; transition: opacity 0.4s ease-out;
+      font-family: 'DM Sans', system-ui, sans-serif;
+    }
+
+    #cold-start-loader.hidden { opacity: 0; pointer-events: none; }
+
+    .loader-spinner {
+      width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.15);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin-bottom: 20px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader-text { font-size: 1rem; font-weight: 500; text-align: center; margin-bottom: 6px; }
+    .loader-subtext { font-size: 0.8rem; opacity: 0.7; text-align: center; font-weight: 300; }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen for VM warmup -->
+  <div id="cold-start-loader">
+    <div class="loader-spinner"></div>
+    <div class="loader-text" id="loaderText">Loading…</div>
+    <div class="loader-subtext">This may take a moment on first load</div>
+  </div>
+
+  <div class="offline-banner" id="offlineBanner">You're offline — some features may be unavailable</div>
+
+  <header>
+    <div class="header-inner">
+      <a class="wordmark" href="/">
+        <span class="wordmark-org" id="wordmarkOrg">Faculty Hub</span>
+        <span class="wordmark-divider" id="wordmarkDivider" style="display:none;"></span>
+        <span class="wordmark-name" id="wordmarkName"></span>
+      </a>
+    </div>
+  </header>
+
+  <main class="login-main">
+    <div class="login-card">
+      <!--
+        Org logo placeholder.
+        To add your logo: drop a file at icons/logo.png in this app's folder
+        (served at /icons/logo.png) — it will appear here automatically.
+        Until then, a badge with your org's initials is shown.
+      -->
+      <div class="logo-wrap">
+        <img
+          id="orgLogo"
+          class="org-logo"
+          src="/icons/logo.png"
+          alt="Organization logo"
+          onload="this.style.display='block'; document.getElementById('orgLogoFallback').style.display='none';"
+          onerror="this.style.display='none';"
+        >
+        <div class="org-logo-fallback" id="orgLogoFallback">
+          <span id="orgLogoInitials">FH</span>
+        </div>
+      </div>
+
+      <h1 id="loginTitle">Sign in</h1>
+      <p class="login-subtitle" id="loginSubtitle">Enter your credentials to continue</p>
+
+      <div id="errorMessage" class="alert alert-error"></div>
+      <div id="successMessage" class="alert alert-success"></div>
+
+      <form id="loginForm">
+        <div class="field-group">
+          <label for="facultyId">User ID</label>
+          <input
+            type="text"
+            id="facultyId"
+            name="facultyId"
+            placeholder="Enter your user ID"
+            required
+            autocomplete="username"
+            autofocus
+          >
+        </div>
+
+        <div class="field-group">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter your password"
+            required
+            autocomplete="current-password"
+          >
+        </div>
+
+        <button type="submit" class="btn-primary" id="loginBtn">Sign In</button>
+      </form>
+
+      <p class="help-text">If you are unable to sign in, please contact your admin.</p>
+      <p class="help-text session-expired" id="sessionExpiredMsg" style="display:none;">Your session has expired. Please sign in again.</p>
+    </div>
+  </main>
+
+  <footer>
+    <span>
+      <span id="footerName">Faculty Hub</span>
+      <span class="dot"></span>
+      Built with FacultyHubAdaptable
+    </span>
+  </footer>
+
+  <script>
+    const API_URL = window.location.origin;
+
+    function getInitials(name) {
+      return (name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    }
+
+    // ── Apply public config to page chrome ─────────────────────────────────
+    function applyConfig(cfg) {
+      const org   = cfg.branding && cfg.branding.org_label ? cfg.branding.org_label : '';
+      const appNm = cfg.app_name || 'Faculty Hub';
+
+      document.title = 'Sign In — ' + (org || appNm);
+      document.getElementById('footerName').textContent = appNm;
+      document.getElementById('loginSubtitle').textContent = 'Sign in to ' + appNm;
+      document.getElementById('orgLogoInitials').textContent = getInitials(org || appNm);
+
+      if (org) {
+        document.getElementById('wordmarkOrg').textContent  = org;
+        document.getElementById('wordmarkDivider').style.display = '';
+        document.getElementById('wordmarkName').textContent = appNm;
+      } else {
+        document.getElementById('wordmarkOrg').textContent  = appNm;
+        document.getElementById('wordmarkDivider').style.display = 'none';
+        document.getElementById('wordmarkName').textContent = '';
+      }
+
+      if (cfg.branding && cfg.branding.accent_color) {
+        document.documentElement.style.setProperty('--accent', cfg.branding.accent_color);
+      }
+    }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch(API_URL + '/api/config/public');
+        if (res.ok) applyConfig(await res.json());
+      } catch (e) {}
+    }
+    loadConfig();
+
+    // Show session-expired message if redirected from admin
+    if (new URLSearchParams(window.location.search).get('session_expired') === '1') {
+      document.addEventListener('DOMContentLoaded', function() {
+        const msg = document.getElementById('sessionExpiredMsg');
+        if (msg) msg.style.display = 'block';
+      });
+    }
+
+    // Hide loader once DOM is ready and initial content loaded
+    function hideLoader() {
+      const loader = document.getElementById('cold-start-loader');
+      if (loader) {
+        loader.classList.add('hidden');
+        // Remove from DOM after transition completes
+        setTimeout(() => loader.remove(), 500);
+      }
+    }
+
+    // Hide when page is interactive
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', hideLoader);
+    } else {
+      hideLoader();
+    }
+
+    // Safety timeout - hide after 30 seconds no matter what
+    setTimeout(hideLoader, 30000);
+
+    // Check if already logged in (silently - don't show errors)
+    async function checkAuth() {
+      try {
+        const response = await fetch(`${API_URL}/api/auth/check`, {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+
+          if (data.authenticated) {
+            // Already logged in, redirect to dashboard
+            window.location.href = '/index.html';
+          }
+        }
+        // If not OK or not authenticated, just stay on login page silently
+      } catch (error) {
+        // Silently fail - backend may not be running yet (cold start)
+        console.log('Auth check skipped - backend may not be ready');
+      }
+    }
+
+    // Run auth check on page load
+    checkAuth();
+
+    // Handle login form submission
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const facultyId = document.getElementById('facultyId').value.trim().toUpperCase();
+      const password = document.getElementById('password').value;
+      const loginBtn = document.getElementById('loginBtn');
+      const errorMessage = document.getElementById('errorMessage');
+      const successMessage = document.getElementById('successMessage');
+
+      // Hide messages
+      errorMessage.classList.remove('show');
+      successMessage.classList.remove('show');
+
+      // Validate input
+      if (!facultyId || !password) {
+        errorMessage.textContent = 'Please enter both your User ID and Password';
+        errorMessage.classList.add('show');
+        return;
+      }
+
+      // Disable button and show loading state
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing in...';
+
+      try {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            username: facultyId,
+            password: password
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Success
+          successMessage.textContent = `Welcome, ${data.faculty_name}!`;
+          successMessage.classList.add('show');
+
+          // Store user info in localStorage
+          localStorage.setItem('currentUser', JSON.stringify({
+            faculty_id: data.faculty_id,
+            faculty_name: data.faculty_name,
+            is_admin: data.is_admin
+          }));
+
+          // Redirect to dashboard after a short delay
+          setTimeout(() => {
+            window.location.href = '/index.html';
+          }, 1000);
+        } else {
+          // Error from server
+          errorMessage.textContent = data.detail || 'Login failed. Please check your credentials.';
+          errorMessage.classList.add('show');
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Sign In';
+        }
+      } catch (error) {
+        // Network/connection error
+        console.error('Login error:', error);
+        errorMessage.textContent = 'Connection error. Please try again.';
+        errorMessage.classList.add('show');
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In';
+      }
+    });
+
+    // Allow Enter key to submit
+    document.getElementById('password').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+      }
+    });
+
+    // ── Offline ──
+    function syncOnline() { document.getElementById('offlineBanner').classList.toggle('show', !navigator.onLine); }
+    window.addEventListener('online', syncOnline);
+    window.addEventListener('offline', syncOnline);
+    syncOnline();
+  </script>
+</body>
+</html>

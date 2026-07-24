@@ -213,6 +213,44 @@ async function resetAll(year) {
   });
 }
 
+// ==================== INSTANCE CONFIG APIs ====================
+
+/**
+ * Load the full admin instance config and cache it on window._instanceConfig.
+ * Call once at admin panel boot; modules read from window._instanceConfig.
+ */
+async function loadInstanceConfig() {
+  try {
+    const cfg = await apiGet('/api/config');
+    window._instanceConfig = cfg;
+    return cfg;
+  } catch (e) {
+    console.warn('Could not load instance config:', e);
+    window._instanceConfig = window._instanceConfig || {};
+    return window._instanceConfig;
+  }
+}
+
+/**
+ * Fetch just the public config (no auth required). Used by index.html bootstrap.
+ */
+async function getPublicConfig() {
+  try {
+    const res = await fetch('/api/config/public');
+    return res.ok ? await res.json() : {};
+  } catch (e) {
+    console.warn('Could not load public config:', e);
+    return {};
+  }
+}
+
+/**
+ * Persist a single config key (admin only).
+ */
+async function setConfigKey(key, value) {
+  return await apiPut('/api/config/' + key, { value });
+}
+
 // ==================== REFERENCE DATA APIs ====================
 
 async function getFaculty() {

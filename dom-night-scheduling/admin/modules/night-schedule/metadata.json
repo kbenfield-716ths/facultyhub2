@@ -1,0 +1,54 @@
+{
+  "name": "Night Schedule",
+  "version": "1.0.0",
+  "description": "Quarter-based self-scheduling and builder for the Admitter / Nocturnist night lanes",
+  "module_id": "night-schedule",
+  "category": "scheduling",
+  "features": [
+    "Create quarters and generate Admitter/Nocturnist periods for every night",
+    "Import or manually mark nights a provider cannot work (blocked nights)",
+    "Set a default quota and per-provider quota overrides",
+    "Monitor which providers have submitted self-scheduling preferences",
+    "Preview and run the builder: fills holes first, then preferred, then can-work nights",
+    "View and manually adjust the final schedule grid",
+    "Export the quarter's schedule as CSV"
+  ],
+  "use_cases": [
+    "Setting up a new quarter before opening self-scheduling",
+    "Importing each provider's blocked nights from their existing quarterly schedule",
+    "Adjusting an individual provider's night quota for the quarter",
+    "Checking preference-submission status before the deadline",
+    "Running the auto-builder and reviewing unfilled slots and quota balance",
+    "Manually reassigning a night after the builder runs"
+  ],
+  "api_endpoints": [
+    "GET/POST /api/admin/night-schedule/quarters - List/create quarters",
+    "GET/PATCH /api/admin/night-schedule/quarters/{id} - Get/update a quarter",
+    "POST /api/admin/night-schedule/quarters/{id}/generate-periods - Create Admitter/Nocturnist periods",
+    "GET/POST/DELETE /api/admin/night-schedule/quarters/{id}/blocked-nights - Manage blocked nights",
+    "POST /api/admin/night-schedule/quarters/{id}/blocked-nights/import - CSV import of blocked nights",
+    "GET/PUT/DELETE /api/admin/night-schedule/quarters/{id}/quotas - Manage per-provider quotas",
+    "GET /api/admin/night-schedule/quarters/{id}/preferences-status - Preference submission status",
+    "POST /api/admin/night-schedule/quarters/{id}/preview - Preview builder plan (no writes)",
+    "POST /api/admin/night-schedule/quarters/{id}/build - Apply builder plan",
+    "GET/PUT /api/admin/night-schedule/quarters/{id}/schedule - View/edit the schedule grid",
+    "GET /api/admin/night-schedule/quarters/{id}/export - CSV export"
+  ],
+  "data_fields": {
+    "quarter": "name, start_date, end_date, default_quota, preference_deadline, status, notes",
+    "blocked_night": "provider_id, night_date, source (manual|import), note",
+    "quota": "provider_id, target_nights, note (override of default_quota)",
+    "preference": "provider_id, night_date, preference (preferred|can_work)",
+    "assignment": "period_id (date+lane), provider_id, is_manual, note"
+  },
+  "notes": [
+    "Quarter status flow: draft -> open_for_preferences -> building -> published -> archived",
+    "Blocked nights and a quota override interact with the self-scheduling API and the builder",
+    "Builder priority: fill every hole first, then preferred nights, then can-work nights, then fairness by remaining quota",
+    "Manual schedule-grid edits are preserved across re-runs of the builder"
+  ],
+  "related_modules": [
+    "faculty-management",
+    "user-management"
+  ]
+}

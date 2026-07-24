@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 def find_database():
     """Find the correct database file"""
     possible_paths = [
-        Path("/data/moonlighter.db"),  # Production
-        Path(__file__).parent.parent / "moonlighter.db",  # Development default
+        Path("/data/staff.db"),  # Production
+        Path(__file__).parent.parent / "staff.db",  # Development default
         Path(__file__).parent.parent / "faculty_hub.db",  # Alternative name
-        Path(__file__).parent / "moonlighter.db",  # In backend dir
+        Path(__file__).parent / "staff.db",  # In backend dir
         Path(__file__).parent / "faculty_hub.db",  # In backend dir
     ]
     
@@ -48,8 +48,8 @@ def migrate_database():
     if not db_path:
         logger.error("Could not find database with faculty table!")
         logger.error("\nSearched for:")
-        logger.error("  - /data/moonlighter.db")
-        logger.error("  - ./moonlighter.db")
+        logger.error("  - /data/staff.db")
+        logger.error("  - ./staff.db")
         logger.error("  - ./faculty_hub.db")
         logger.error("\nPlease ensure your database exists and has a 'faculty' table.")
         

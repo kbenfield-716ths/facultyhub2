@@ -1,0 +1,327 @@
+<div class="module-container">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">👤 User Management</h2>
+        <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
+          Search users, reset passwords, unlock accounts, manage service weeks, and troubleshoot issues
+        </p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="um-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
+      <button class="um-tab-btn active" onclick="showUserMgmtTab('search')">🔍 Search</button>
+      <button class="um-tab-btn" onclick="showUserMgmtTab('reset')">🔐 Reset Password</button>
+      <button class="um-tab-btn" onclick="showUserMgmtTab('unlock')">🔓 Unlock</button>
+      <button class="um-tab-btn" onclick="showUserMgmtTab('username')">✏️ Username</button>
+      <button class="um-tab-btn" onclick="showUserMgmtTab('query')">💾 Query</button>
+    </div>
+
+    <!-- Search Tab -->
+    <div id="um-tab-search" class="um-tab-content active">
+      <div id="umSearchAlert" class="alert"></div>
+
+      <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+        <input type="text" id="umSearchQuery" placeholder="Enter faculty ID, name, or email (leave blank for all users)"
+               style="flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+        <button onclick="searchUsers()" class="btn-primary">Search</button>
+      </div>
+
+      <div id="umSearchResults"></div>
+    </div>
+
+    <!-- Reset Password Tab -->
+    <div id="um-tab-reset" class="um-tab-content">
+      <div id="umResetAlert" class="alert"></div>
+
+      <div class="form-group">
+        <label>Faculty ID</label>
+        <input type="text" id="umResetFacultyId" placeholder="e.g., IN2C, AJB5D">
+      </div>
+
+      <button onclick="resetUserPassword()" class="btn-primary">Reset Password to PCCM2025!</button>
+
+      <div style="margin-top: 20px; padding: 16px; background: #fef3c7; border-radius: 8px;">
+        <strong>⚠️ Note:</strong> This will reset the password to <code style="background: white; padding: 2px 6px; border-radius: 4px; font-weight: 700;">PCCM2025!</code> and unlock the account.
+      </div>
+    </div>
+
+    <!-- Unlock Account Tab -->
+    <div id="um-tab-unlock" class="um-tab-content">
+      <div id="umUnlockAlert" class="alert"></div>
+
+      <div class="form-group">
+        <label>Faculty ID</label>
+        <input type="text" id="umUnlockFacultyId" placeholder="e.g., JK6JB">
+      </div>
+
+      <button onclick="unlockUserAccount()" class="btn-primary">Unlock Account</button>
+
+      <div style="margin-top: 20px; padding: 16px; background: #dbeafe; border-radius: 8px;">
+        <strong>ℹ️ Info:</strong> This will unlock the account and reset failed login attempts to 0. The user can log in immediately.
+      </div>
+    </div>
+
+    <!-- Change Username Tab -->
+    <div id="um-tab-username" class="um-tab-content">
+      <div id="umUsernameAlert" class="alert"></div>
+
+      <div class="form-group">
+        <label>Current Faculty ID</label>
+        <input type="text" id="umOldFacultyId" placeholder="e.g., OLD123">
+      </div>
+
+      <div class="form-group">
+        <label>New Faculty ID</label>
+        <input type="text" id="umNewFacultyId" placeholder="e.g., NEW456">
+      </div>
+
+      <button onclick="changeUsername()" class="btn-primary">Change Username</button>
+
+      <div style="margin-top: 20px; padding: 16px; background: #fee2e2; border-radius: 8px;">
+        <strong>⚠️ Warning:</strong> This is a permanent operation that changes the user's login ID across the entire system. Use with extreme caution.
+      </div>
+    </div>
+
+    <!-- Database Query Tab -->
+    <div id="um-tab-query" class="um-tab-content">
+      <div id="umQueryAlert" class="alert"></div>
+
+      <div class="form-group">
+        <label>SQL Query</label>
+        <textarea id="umQuerySql" rows="6" placeholder="SELECT * FROM faculty WHERE..."
+                  style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px;"></textarea>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+        <button onclick="executeQuery()" class="btn-primary">Execute Query</button>
+        <button onclick="clearQuery()" class="btn-secondary">Clear</button>
+      </div>
+
+      <div style="margin-bottom: 20px; padding: 16px; background: #fee2e2; border-radius: 8px;">
+        <strong>⚠️ DANGER:</strong> Direct database access. READ-ONLY queries are safer. Be extremely careful with UPDATE/DELETE operations.
+      </div>
+
+      <div id="umQueryResults"></div>
+    </div>
+  </div>
+</div>
+
+<!-- User Details Modal -->
+<div id="userDetailsModal" class="modal">
+  <div class="modal-content" style="max-width: 900px;">
+    <div class="modal-header">
+      <h3 class="modal-title">User Details & Management</h3>
+      <span class="close-btn" onclick="closeUserDetailsModal()">&times;</span>
+    </div>
+
+    <div id="userDetailsContent"></div>
+
+    <div style="display: flex; gap: 12px; margin-top: 24px;">
+      <button type="button" class="btn-secondary" onclick="closeUserDetailsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.um-tab-btn {
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #6b7280;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.um-tab-btn:hover {
+  color: #1f2937;
+}
+
+.um-tab-btn.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.um-tab-content {
+  display: none;
+}
+
+.um-tab-content.active {
+  display: block;
+}
+
+.user-card {
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.user-card:hover {
+  background: #f3f4f6;
+  border-color: #667eea;
+  transform: translateY(-2px);
+}
+
+.user-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.user-card-id {
+  font-weight: 700;
+  font-size: 16px;
+  color: #1f2937;
+}
+
+.user-card-badges {
+  display: flex;
+  gap: 8px;
+}
+
+.user-card-name {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.user-card-details {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.service-weeks-section {
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.service-weeks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.service-weeks-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.service-week-item {
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 4px solid;
+}
+
+.service-week-micu {
+  border-left-color: #ef4444;
+}
+
+.service-week-app-icu {
+  border-left-color: #f59e0b;
+}
+
+.service-week-procedures {
+  border-left-color: #10b981;
+}
+
+.service-week-consults {
+  border-left-color: #3b82f6;
+}
+
+.service-week-backup {
+  border-left-color: #8b5cf6;
+}
+
+.service-week-info {
+  flex: 1;
+}
+
+.service-week-label {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.service-week-dates {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.detail-item {
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.detail-label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 15px;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.query-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.query-results-table th {
+  background: #f9fafb;
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 12px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.query-results-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+}
+
+.query-results-table tr:hover {
+  background: #f9fafb;
+}
+</style>

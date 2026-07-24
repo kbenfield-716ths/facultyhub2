@@ -351,8 +351,8 @@ def main():
     parser = argparse.ArgumentParser(description="Consolidate Faculty and Provider models")
     parser.add_argument(
         "--database",
-        default="moonlighter.db",
-        help="Path to database file (default: moonlighter.db)"
+        default="staff.db",
+        help="Path to database file (default: staff.db)"
     )
     parser.add_argument(
         "--no-test",

@@ -41,6 +41,7 @@ from .routes.admin_auth import router as admin_auth_router
 from backend.routes.admin_data_management import router as data_management_router
 from backend.routes.service_week_overrides import router as service_week_overrides_router
 from backend.routes.admin_database import router as admin_database_router
+from backend.routes.config import router as config_router
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +79,8 @@ try:
             _conn.execute(text("ALTER TABLE session_tokens ADD COLUMN impersonated_by TEXT"))
             _conn.commit()
             logger.info("Migration: added impersonated_by column to session_tokens table")
+
+        # (legacy PCCM column migrations removed - columns no longer on Faculty model)
 
 except Exception as _e:
     logger.warning(f"Migration check skipped or failed: {_e}")
@@ -118,6 +121,7 @@ app.include_router(draft_waves.router)
 app.include_router(data_management_router)
 app.include_router(service_week_overrides_router)
 app.include_router(admin_database_router)
+app.include_router(config_router)
 
 # ---------- Static File Setup -----------
 STATIC_DIR = Path(__file__).resolve().parent.parent
@@ -186,7 +190,18 @@ class FeedbackSubmission(BaseModel):
 def startup_event():
     """Initialize database and seed data on startup."""
     init_db()
-    
+
+    # Seed instance config defaults
+    from .routes.config import seed_defaults as seed_config_defaults
+    db = SessionLocal()
+    try:
+        seed_config_defaults(db)
+        print("[Startup] Instance config defaults seeded")
+    except Exception as e:
+        print(f"[Startup] Config seed: {e}")
+    finally:
+        db.close()
+
     # Seed message boards
     from .models import seed_message_boards
     db = SessionLocal()
@@ -222,15 +237,13 @@ def startup_event():
                 id="ADMIN",
                 name="Administrator",
                 email=settings.ADMIN_EMAIL,
-                rank="full",
-                clinical_effort_pct=0,
-                base_points=0,
                 is_admin=True,
                 password_hash=hash_password(admin_password),
-                password_changed=False,  # Force password change
+                password_changed=False,
                 password_reset_required=True,
                 registered=True,
-                active=True
+                active=True,
+                extra_config="{}",
             )
             db.add(admin)
             db.commit()
@@ -492,11 +505,9 @@ async def create_faculty_moonlighter(
         id=faculty_data.id,
         name=faculty_data.name,
         email=faculty_data.email or "",
-        rank="assistant",
-        clinical_effort_pct=100,
-        base_points=0,
         moonlighter=True,
-        active=True
+        active=True,
+        extra_config="{}",
     )
     db.add(new_faculty)
     db.commit()
