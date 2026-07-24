@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "facultyhub",
+      "runtimeExecutable": "./venv/bin/python3",
+      "runtimeArgs": ["-m", "uvicorn", "backend.app:app", "--port", "8080"],
+      "port": 8080
+    }
+  ]
+}

@@ -627,7 +627,9 @@ class SchedulePeriod(Base):
     shift_type    = Column(String, nullable=False)                # "day" | "night" | custom
     start_time    = Column(String, nullable=False)                # "07:00"
     end_time      = Column(String, nullable=False)                # "19:00"
-    slots_needed  = Column(Integer, nullable=False, default=2)
+    slots_needed  = Column(Integer, nullable=False, default=2)   # target staffing
+    min_slots     = Column(Integer, nullable=False, default=1)   # below this = understaffed
+    max_slots     = Column(Integer, nullable=False, default=3)   # above target only manually
     is_holiday    = Column(Boolean, default=False)
     note          = Column(Text, nullable=True)
     created_at    = Column(DateTime, default=datetime.utcnow)
@@ -655,6 +657,7 @@ class PeriodAssignment(Base):
     provider_id = Column(String, ForeignKey("faculty.id", ondelete="CASCADE"),
                          nullable=False, index=True)
     status      = Column(String, nullable=False, default="assigned")  # assigned|tentative|blocked
+    role        = Column(String, nullable=False, default="provider")  # provider|student — students don't count toward staffing
     is_manual   = Column(Boolean, default=True)
     assigned_by = Column(String, ForeignKey("faculty.id"), nullable=True)
     note        = Column(Text, nullable=True)

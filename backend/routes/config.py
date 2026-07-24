@@ -37,6 +37,21 @@ DEFAULTS: dict[str, Any] = {
     },
     "service_types":       [],   # populated by setup wizard
     "faculty_attributes":  [],   # populated by setup wizard
+    # Rotations: one entry per group/schedule within this instance.
+    # Each rotation declares its own scheduling model and (for shift_based)
+    # its shift definitions with min/target/max staffing.
+    #   {
+    #     "key": "micu_app", "label": "MICU APP", "model": "shift_based",
+    #     "color": "#2563eb",
+    #     "roles": ["provider", "student"],
+    #     "shifts": [
+    #       {"key": "day",   "label": "Day",   "start": "07:00", "end": "19:00",
+    #        "min_slots": 1, "target_slots": 2, "max_slots": 3},
+    #       {"key": "night", "label": "Night", "start": "19:00", "end": "07:00",
+    #        "min_slots": 1, "target_slots": 2, "max_slots": 3}
+    #     ]
+    #   }
+    "rotations":           [],
     "scheduling_rules": {
         "weeks_per_year":              52,
         "academic_year_start_month":   7,

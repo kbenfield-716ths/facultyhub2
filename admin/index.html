@@ -191,6 +191,9 @@
         <button class="nav-item" onclick="showModule('schedule-management')" data-module="schedule-management">
           <span class="icon">📅</span><span>Schedule</span>
         </button>
+        <button class="nav-item" onclick="showModule('shift-schedule')" data-module="shift-schedule">
+          <span class="icon">🗓️</span><span>Shift Schedule</span>
+        </button>
         <button class="nav-item" onclick="showModule('schedule-summary')" data-module="schedule-summary">
           <span class="icon">📊</span><span>Reports</span>
         </button>
@@ -250,6 +253,7 @@
       <div id="module-faculty-management"  class="module-view active"></div>
       <div id="module-user-management"     class="module-view"></div>
       <div id="module-schedule-management" class="module-view"></div>
+      <div id="module-shift-schedule"      class="module-view"></div>
       <div id="module-schedule-summary"    class="module-view"></div>
       <div id="module-wave-draft"          class="module-view"></div>
       <div id="module-service-overrides"   class="module-view"></div>
@@ -272,6 +276,7 @@
       'faculty-management':  { name: 'Providers',              htmlPath: '/admin/modules/faculty-management/faculty-management.html',  jsPath: '/admin/modules/faculty-management/faculty-management.js' },
       'user-management':     { name: 'Users',                  htmlPath: '/admin/modules/user-management/user-management.html',         jsPath: '/admin/modules/user-management/user-management.js' },
       'schedule-management': { name: 'Schedule',               htmlPath: '/admin/modules/schedule-management/schedule-management.html', jsPath: '/admin/modules/schedule-management/schedule-management.js' },
+      'shift-schedule':      { name: 'Shift Schedule',         htmlPath: '/admin/modules/shift-schedule/shift-schedule.html',           jsPath: '/admin/modules/shift-schedule/shift-schedule.js' },
       'schedule-summary':    { name: 'Reports',                htmlPath: '/admin/modules/schedule-summary/schedule-summary.html',       jsPath: '/admin/modules/schedule-summary/schedule-summary.js' },
       'wave-draft':          { name: 'Wave Draft',             htmlPath: '/admin/modules/wave-draft/wave-draft.html',                   jsPath: '/admin/modules/wave-draft/wave-draft.js' },
       'service-overrides':   { name: 'Overrides',              htmlPath: '/admin/modules/service-weeks/overrides/overrides.html',       jsPath: '/admin/modules/service-weeks/overrides/overrides.js' },
@@ -370,6 +375,7 @@
         'faculty-management':  () => typeof loadFaculty          === 'function' && loadFaculty(),
         'user-management':     () => typeof initUserManagement   === 'function' && initUserManagement(),
         'schedule-management': () => typeof loadHeatmap          === 'function' && loadHeatmap(new Date().getFullYear()),
+        'shift-schedule':      () => typeof initShiftSchedule    === 'function' && initShiftSchedule(),
         'service-overrides':   () => typeof loadBlocks           === 'function' && loadBlocks(),
         'knowledge-base':      () => typeof loadKBArticles       === 'function' && loadKBArticles(),
         'instance-setup':      () => typeof initInstanceSetup    === 'function' && initInstanceSetup(),

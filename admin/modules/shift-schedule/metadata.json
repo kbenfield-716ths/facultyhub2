@@ -1,0 +1,15 @@
+{
+  "name": "Shift Schedule",
+  "version": "1.0.0",
+  "description": "Shift-based rotation scheduling — configure rotations with min/target/max staffing, generate periods, and assign providers and students on a month grid",
+  "module_id": "shift-schedule",
+  "category": "scheduling",
+  "features": [
+    "Configure rotations (e.g. MICU APP 12-hour day/night, Hospitalist Nights with Admitter/Nocturnist lanes)",
+    "Per-shift min/target/max staffing bounds",
+    "Generate schedule periods for a month per rotation",
+    "Month grid with fill-state coloring (understaffed, below target, at target, extra)",
+    "Manual assignment of providers, with optional student shifts that don't count toward staffing",
+    "Per-period staffing overrides and same-day double-booking warnings"
+  ]
+}
