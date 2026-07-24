@@ -1,0 +1,36 @@
+# fly.test.toml — STANDALONE THROWAWAY test/vuln instance.
+#
+# Deliberately separate from the PCCM production app:
+#   * distinct app name  (dom-facultyhub-test)
+#   * distinct volume     (dom_test_data, NOT moonlighter_data)
+# Deploy with:  ./deploy-test-fly.sh   (never `fly deploy` from the repo root,
+# which would use fly.toml and could target another app).
+
+app = 'dom-facultyhub-test'
+primary_region = 'iad'
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+[[http_service.checks]]
+  grace_period = "40s"
+  interval = "30s"
+  method = "GET"
+  path = "/health"
+  timeout = "10s"
+
+[mounts]
+  source = "dom_test_data"
+  destination = "/data"
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '512mb'

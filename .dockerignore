@@ -1,5 +1,43 @@
+# Fly config (passed via -c, not baked into image)
 fly.toml
+fly.test.toml
+
+# Version control / tooling
 .git/
-__pycache__/
+.gitignore
+.claude/
 .envrc
+
+# Python caches and virtual environments
+__pycache__/
+**/__pycache__/
+*.pyc
 .venv/
+venv/
+
+# Local dev databases — MUST NOT ship (would overwrite the volume's data)
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# The separate DOM night-scheduling prototype app (its own deploy)
+dom-night-scheduling/
+
+# Archived scripts, docs, and other non-runtime material
+scripts/
+documentation/
+performance-improvements/
+docs/
+*.docx
+*.pdf
+*.md
+
+# Backups and editor cruft
+*.bak
+*.bak2
+*.bak3
+.DS_Store
+.fuse_hidden*

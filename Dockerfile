@@ -1,41 +1,39 @@
-# Dockerfile
+# Dockerfile — FacultyHub Adaptable (DOM multi-division)
 
 FROM python:3.11-slim
 
-# Create app directory
 WORKDIR /app
 
-# Install Python dependencies
+# Python dependencies
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy backend code and optimizer
+# Backend code + optimizer + migrations
 COPY backend /app/backend
 COPY moonlighter_optimizer.py /app/moonlighter_optimizer.py
 COPY migrations /app/migrations
 
-# Copy faculty.csv so the app can seed providers
+# Seed data the app reads on first boot
 COPY backend/seed_data/faculty.csv /app/faculty.csv
 
-# Copy admin/utility scripts
-COPY import_sleep_schedule.py /app/import_sleep_schedule.py
-COPY sleep.csv /app/sleep.csv
-COPY block_katie_waybill.py /app/block_katie_waybill.py
-COPY import_allocations.py /app/import_allocations.py
-COPY block_new_faculty.py /app/block_new_faculty.py
-
-# Copy all static files for the frontend
-# Copy HTML files (both .html and .Html extensions)
+# Frontend: root-level static files plus the icons/ and admin/ trees.
+# (.dockerignore keeps dev artifacts — staff.db, venv, dom-night-scheduling — out.)
 COPY . /tmp/build/
-RUN find /tmp/build -maxdepth 1 -type f \( -iname "*.html" -o -iname "*.css" -o -iname "*.js" -o -iname "*.json" -o -iname "*.svg" -o -iname "*.ico" \) -exec cp {} /app/ \; && \
+RUN find /tmp/build -maxdepth 1 -type f \
+      \( -iname "*.html" -o -iname "*.css" -o -iname "*.js" -o -iname "*.json" \
+         -o -iname "*.svg" -o -iname "*.ico" \) -exec cp {} /app/ \; && \
     if [ -d /tmp/build/icons ]; then cp -r /tmp/build/icons /app/; fi && \
     if [ -d /tmp/build/admin ]; then cp -r /tmp/build/admin /app/; fi && \
     rm -rf /tmp/build
 
-# Create /data directory for volume mount
+# Volume mount point for the SQLite database
 RUN mkdir -p /data
 
-ENV PYTHONUNBUFFERED=1
+# Entrypoint seeds the test instance (idempotent) then launches the app
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
-# Fly expects the app to listen on port 8080
-CMD ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8080"]
+ENV PYTHONUNBUFFERED=1
+EXPOSE 8080
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
