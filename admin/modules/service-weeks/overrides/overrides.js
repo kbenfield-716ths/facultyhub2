@@ -221,7 +221,7 @@ async function submitAssignment(e) {
     if (data.bumped && data.bumped.length > 0) {
       const bumpedNames = data.bumped.join(', ');
       showOverrideAlert(
-        '🔄 Auto-removed to balance slot count: ' + bumpedNames,
+        'Auto-removed to balance slot count: ' + bumpedNames,
         'warning'
       );
     }
@@ -229,11 +229,11 @@ async function submitAssignment(e) {
     // Show any conflict warnings (e.g. unavailability override)
     if (data.warnings && data.warnings.length > 0) {
       data.warnings.forEach(function(warning) {
-        showOverrideAlert('⚠️ ' + warning, 'warning');
+        showOverrideAlert('' + warning, 'warning');
       });
     }
 
-    showOverrideAlert('✅ Manual assignment created successfully', 'success');
+    showOverrideAlert('Manual assignment created successfully', 'success');
 
     closeCreateAssignmentModal();
     await loadManualAssignments();

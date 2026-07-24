@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-header">
       <div>
-        <h2 class="card-title">🌙 Moonlighting Management</h2>
+        <h2 class="card-title"><span data-icon="moon"></span> Moonlighting Management</h2>
         <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
           Manage night shift signups, generate schedules, and export assignments
         </p>
@@ -12,10 +12,10 @@
     <!-- Sub-tabs -->
     <div class="sub-tabs">
       <button class="sub-tab-btn active" onclick="showMoonlightingTab('signups')">
-        📝 Signups
+        <span data-icon="file-text"></span> Signups
       </button>
       <button class="sub-tab-btn" onclick="showMoonlightingTab('assignments')">
-        📋 Assignments
+        <span data-icon="clipboard"></span> Assignments
       </button>
     </div>
 
@@ -25,7 +25,7 @@
     <!-- Signups Tab -->
     <div id="moonlighting-signups" class="sub-tab-content active">
       <div class="info-box info-box-info">
-        <strong>📝 Moonlighting Signups</strong>
+        <strong><span data-icon="file-text"></span> Moonlighting Signups</strong>
         <p>View all provider signups for moonlighting night shifts. Providers select which nights they're available, and the optimizer assigns them to maximize coverage.</p>
       </div>
 
@@ -87,9 +87,9 @@
 
       <!-- Action Panel -->
       <div class="action-panel" style="margin-bottom: 16px;">
-        <button class="btn-secondary" onclick="loadSignups()">🔄 Refresh</button>
+        <button class="btn-secondary" onclick="loadSignups()"><span data-icon="refresh"></span> Refresh</button>
         <div class="action-panel-right">
-          <button class="btn-success" onclick="exportSignupsCSV()">📊 Export to CSV</button>
+          <button class="btn-success" onclick="exportSignupsCSV()"><span data-icon="bar-chart"></span> Export to CSV</button>
         </div>
       </div>
 
@@ -117,13 +117,13 @@
     <!-- Assignments Tab -->
     <div id="moonlighting-assignments" class="sub-tab-content">
       <div class="info-box info-box-info">
-        <strong>📋 Moonlighting Assignments</strong>
+        <strong><span data-icon="clipboard"></span> Moonlighting Assignments</strong>
         <p>View generated moonlighting assignments and run the optimizer to create new schedules. The optimizer assigns providers to shifts based on their availability and preferences.</p>
       </div>
 
       <!-- Generate Section -->
       <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
-        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 16px; font-weight: 600;">🚀 Generate Schedule</h3>
+        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 16px; font-weight: 600;"><span data-icon="zap"></span> Generate Schedule</h3>
         <div class="form-grid">
           <div class="form-group">
             <label>Month to Generate</label>
@@ -144,7 +144,7 @@
           </div>
         </div>
         <button class="btn-primary" onclick="generateMoonlightingSchedule()">
-          ⚡ Run Optimizer
+          <span data-icon="zap"></span> Run Optimizer
         </button>
         <p style="margin-top: 12px; font-size: 13px; color: #6b7280;">
           This will run the PuLP optimizer to assign providers to shifts based on their signups
@@ -197,9 +197,9 @@
 
       <!-- Action Panel -->
       <div class="action-panel" style="margin-bottom: 16px;">
-        <button class="btn-secondary" onclick="loadAssignments()">🔄 Refresh</button>
+        <button class="btn-secondary" onclick="loadAssignments()"><span data-icon="refresh"></span> Refresh</button>
         <div class="action-panel-right">
-          <button class="btn-success" onclick="exportAssignmentsCSV()">📊 Export to CSV</button>
+          <button class="btn-success" onclick="exportAssignmentsCSV()"><span data-icon="bar-chart"></span> Export to CSV</button>
         </div>
       </div>
 

@@ -2,12 +2,12 @@
   <div class="card">
     <div class="card-header">
       <div>
-        <h2 class="card-title">🌊 Wave-Based Draft System</h2>
+        <h2 class="card-title"><span data-icon="waves"></span> Wave-Based Draft System</h2>
         <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
           Staggered-start availability requests with first-come-first-served capacity limits
         </p>
       </div>
-      <button class="btn-primary" onclick="showCreateConfigModal()">➕ Create New Draft Year</button>
+      <button class="btn-primary" onclick="showCreateConfigModal()"><span data-icon="plus"></span> Create New Draft Year</button>
     </div>
 
     <!-- Alert -->
@@ -16,7 +16,7 @@
     <!-- Active Config Section -->
     <div id="activeConfigSection" style="display: none;">
       <div id="configHeaderCard" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
-        <h3 style="margin-bottom: 16px;" id="configHeaderTitle">🎯 Wave Draft Configuration</h3>
+        <h3 style="margin-bottom: 16px;" id="configHeaderTitle"><span data-icon="target"></span> Wave Draft Configuration</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
           <div>
             <div style="font-size: 12px; opacity: 0.9;">Academic Year</div>
@@ -36,17 +36,17 @@
           </div>
         </div>
         <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
-          <button class="btn-success" onclick="activateConfig()" id="activateBtn" style="display: none;">🚀 Activate Draft</button>
-          <button class="btn-primary" onclick="notifyDueWaves()" id="notifyBtn" style="display: none;">📧 Send Due Notifications</button>
-          <button class="btn-warning" onclick="resetToPending()" id="resetToPendingBtn" style="display: none;">⚙️ Reset to Pending</button>
-          <button class="btn-secondary" onclick="viewWeekCapacity()">📊 View Week Capacity</button>
+          <button class="btn-success" onclick="activateConfig()" id="activateBtn" style="display: none;"><span data-icon="zap"></span> Activate Draft</button>
+          <button class="btn-primary" onclick="notifyDueWaves()" id="notifyBtn" style="display: none;"><span data-icon="mail"></span> Send Due Notifications</button>
+          <button class="btn-warning" onclick="resetToPending()" id="resetToPendingBtn" style="display: none;"><span data-icon="settings"></span> Reset to Pending</button>
+          <button class="btn-secondary" onclick="viewWeekCapacity()"><span data-icon="bar-chart"></span> View Week Capacity</button>
         </div>
       </div>
 
       <!-- Waves List -->
       <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px; display: flex; justify-content: space-between; align-items: center;">
         <span>Configured Waves</span>
-        <button class="btn-sm btn-primary" onclick="showAddWaveModal()" id="addWaveBtn">➕ Add Wave</button>
+        <button class="btn-sm btn-primary" onclick="showAddWaveModal()" id="addWaveBtn"><span data-icon="plus"></span> Add Wave</button>
       </h3>
 
       <div id="wavesList">
@@ -56,7 +56,7 @@
 
     <!-- No Active Config -->
     <div id="noActiveConfig" style="text-align: center; padding: 60px 20px; color: #6b7280;">
-      <div style="font-size: 64px; margin-bottom: 16px;">🌊</div>
+      <div style="font-size: 64px; margin-bottom: 16px;"><span data-icon="waves"></span></div>
       <h3 style="color: #1f2937; margin-bottom: 8px;">No Active Wave Draft</h3>
       <p>Create a new draft configuration to begin managing wave-based availability requests.</p>
     </div>

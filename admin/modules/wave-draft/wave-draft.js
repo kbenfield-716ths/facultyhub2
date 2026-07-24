@@ -71,14 +71,14 @@ async function displayActiveConfig(config) {
 
   if (config.status === 'pending') {
     headerCard.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-    headerTitle.textContent = '⚙️ Draft Configuration (Pending)';
+    headerTitle.textContent = 'Draft Configuration (Pending)';
     document.getElementById('activateBtn').style.display = 'inline-block';
     document.getElementById('notifyBtn').style.display = 'none';
     document.getElementById('resetToPendingBtn').style.display = 'none';
     document.getElementById('addWaveBtn').style.display = 'inline-block';
   } else if (config.status === 'active') {
     headerCard.style.background = 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)';
-    headerTitle.textContent = '🎯 Active Wave Draft';
+    headerTitle.textContent = 'Active Wave Draft';
     document.getElementById('activateBtn').style.display = 'none';
     document.getElementById('notifyBtn').style.display = 'inline-block';
     document.getElementById('resetToPendingBtn').style.display = 'inline-block';
@@ -115,7 +115,7 @@ function displayWaves(waves) {
   if (waves.length === 0) {
     container.innerHTML =
       '<div style="text-align: center; padding: 40px; color: #6b7280;">' +
-      '<div style="font-size: 48px; margin-bottom: 12px;">🌊</div>' +
+      '<div style="font-size: 48px; margin-bottom: 12px;"></div>' +
       '<p>No waves configured yet. Click "Add Wave" to create your first wave.</p>' +
       '</div>';
     return;
@@ -140,12 +140,12 @@ function displayWaves(waves) {
     // Show delete button only if config is pending
     const canDelete = currentConfigStatus === 'pending';
     const deleteBtn = canDelete ?
-      '<button class="btn-sm btn-danger" onclick="deleteWave(\'' + wave.id + '\', \'' + wave.name + '\')" style="margin-top: 12px;">🗑️ Delete Wave</button>' : '';
+      '<button class="btn-sm btn-danger" onclick="deleteWave(\'' + wave.id + '\', \'' + wave.name + '\')" style="margin-top: 12px;">Delete Wave</button>' : '';
 
     html +=
       '<div class="wave-card">' +
       '<div class="wave-header">' +
-      '<div class="wave-name">🌊 Wave ' + wave.wave_order + ': ' + wave.name + '</div>' +
+      '<div class="wave-name">Wave ' + wave.wave_order + ': ' + wave.name + '</div>' +
       '<span class="wave-badge ' + badgeClass + '">' + badgeText + '</span>' +
       '</div>' +
       '<div class="wave-info">' +
@@ -495,9 +495,9 @@ function displayWeekCapacity(weeks) {
 
     let statusBadge = '<span style="color: #10b981;">✓ Open</span>';
     if (week.unavailable_locked || week.volunteer_locked) {
-      statusBadge = '<span style="color: #ef4444;">⚠ Capacity Reached</span>';
+      statusBadge = '<span style="color: #ef4444;">Capacity Reached</span>';
     } else if (unavailablePercent > 75 || volunteerPercent > 75) {
-      statusBadge = '<span style="color: #f59e0b;">⚠ Nearly Full</span>';
+      statusBadge = '<span style="color: #f59e0b;">Nearly Full</span>';
     }
 
     html += '<tr>' +

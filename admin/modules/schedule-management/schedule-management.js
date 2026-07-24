@@ -159,7 +159,7 @@ async function generateSchedule(event) {
 async function clearAllWeeks() {
   const year = document.getElementById('configYear').value;
 
-  const confirmMessage = '⚠️ CLEAR ALL WEEKS FOR ' + year + '-' + (parseInt(year) + 1) + '?\n\n' +
+  const confirmMessage = 'CLEAR ALL WEEKS FOR ' + year + '-' + (parseInt(year) + 1) + '?\n\n' +
                         'This will permanently delete:\n' +
                         '- All 52 weeks for this year\n' +
                         '- All unavailability requests for these weeks\n' +
@@ -228,7 +228,7 @@ function renderWeeksTable() {
 
   if (allWeeks.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" class="empty-state">' +
-      '<div class="empty-state-icon">📅</div>' +
+      '<div class="empty-state-icon"></div>' +
       '<div class="empty-state-title">No Weeks Found</div>' +
       '<div class="empty-state-description">Generate a schedule first</div>' +
       '</td></tr>';
@@ -431,7 +431,7 @@ function renderAssignmentTable(schedule) {
     const dateStr = formatShortDate(startDate) + ' – ' + formatShortDate(endDate);
 
     function chipsHtml(list) {
-      if (!list || list.length === 0) return '<span style="color:#ef4444; font-size:12px;">⚠ Unassigned</span>';
+      if (!list || list.length === 0) return '<span style="color:#ef4444; font-size:12px;">Unassigned</span>';
       return list.map(function(f) {
         return '<span class="faculty-chip">' + escapeHtml(f.faculty_name) + '</span>';
       }).join('');
@@ -439,7 +439,7 @@ function renderAssignmentTable(schedule) {
 
     const statusBadge = complete
       ? '<span class="status-badge ok">✓ Full</span>'
-      : '<span class="status-badge warn">⚠ Short</span>';
+      : '<span class="status-badge warn">Short</span>';
 
     return '<tr class="' + rowClass + '">' +
       '<td style="font-weight:600; color:#6b7280;">' + week.week_number + '</td>' +
@@ -494,7 +494,7 @@ async function confirmClearAutoOnly() {
     });
     const data = await resp.json();
     if (data.success) {
-      showScheduleAlert('🧼 Cleared ' + data.assignments_deleted + ' auto-generated assignment(s). Manual and imported assignments preserved.', 'success');
+      showScheduleAlert('Cleared ' + data.assignments_deleted + ' auto-generated assignment(s). Manual and imported assignments preserved.', 'success');
       await loadAssignments();
     } else {
       showScheduleAlert('Failed to clear auto-generated assignments.', 'error');
@@ -544,7 +544,7 @@ async function runGenerateAssignments(year, clearExisting) {
 
     if (!resp.ok || !result.success) {
       document.getElementById('generateResultPanel').innerHTML =
-        '<div class="issue-panel error"><h4>❌ Generation Failed</h4><p>' +
+        '<div class="issue-panel error"><h4>Generation Failed</h4><p>' +
         escapeHtml(result.error || result.detail || 'Unknown error') + '</p></div>';
       document.getElementById('generateResultPanel').style.display = 'block';
       return;
@@ -559,7 +559,7 @@ async function runGenerateAssignments(year, clearExisting) {
   } catch (err) {
     document.getElementById('assignmentsLoading').style.display = 'none';
     document.getElementById('generateResultPanel').innerHTML =
-      '<div class="issue-panel error"><h4>❌ Network Error</h4><p>' + escapeHtml(err.message) + '</p></div>';
+      '<div class="issue-panel error"><h4>Network Error</h4><p>' + escapeHtml(err.message) + '</p></div>';
     document.getElementById('generateResultPanel').style.display = 'block';
     console.error('Error generating assignments:', err);
   } finally {
@@ -575,7 +575,7 @@ function renderGenerateResult(result) {
 
   // Success summary
   html += '<div class="issue-panel success">' +
-    '<h4>✅ Schedule Generated — ' + result.assignments_created + ' assignments across ' + result.total_weeks + ' weeks</h4>' +
+    '<h4>Schedule Generated — ' + result.assignments_created + ' assignments across ' + result.total_weeks + ' weeks</h4>' +
     '<ul>' +
     '<li>MICU: ' + result.summary.MICU + ' assignments</li>' +
     '<li>APP-ICU: ' + result.summary['APP-ICU'] + ' assignments</li>' +
@@ -588,7 +588,7 @@ function renderGenerateResult(result) {
   // Staffing issues (understaffed weeks)
   if (result.staffing_issues && result.staffing_issues.length > 0) {
     html += '<div class="issue-panel error">' +
-      '<h4>⚠️ Understaffed Weeks (' + result.staffing_issues.length + ')</h4>' +
+      '<h4>Understaffed Weeks (' + result.staffing_issues.length + ')</h4>' +
       '<ul>' +
       result.staffing_issues.map(function(issue) {
         return '<li>Week ' + issue.week + ' (' + escapeHtml(issue.week_label) + ') — ' +
@@ -600,7 +600,7 @@ function renderGenerateResult(result) {
   // Capacity issues (faculty significantly over/under target)
   if (result.capacity_issues && result.capacity_issues.length > 0) {
     html += '<div class="issue-panel warning">' +
-      '<h4>📊 Capacity Variances (' + result.capacity_issues.length + ')</h4>' +
+      '<h4>Capacity Variances (' + result.capacity_issues.length + ')</h4>' +
       '<ul>' +
       result.capacity_issues.map(function(issue) {
         const sign = issue.variance > 0 ? '+' : '';
@@ -689,7 +689,7 @@ async function cleanupBlockViolations() {
     const dryData = await dryResp.json();
 
     if (dryData.removed === 0) {
-      showScheduleAlert('✅ No block violations found — schedule is clean.', 'success');
+      showScheduleAlert('No block violations found — schedule is clean.', 'success');
       return;
     }
 
@@ -713,7 +713,7 @@ async function cleanupBlockViolations() {
     const data = await resp.json();
 
     showScheduleAlert(
-      '🧹 Removed ' + data.removed + ' block-violating assignment(s). Reloading...',
+      'Removed ' + data.removed + ' block-violating assignment(s). Reloading...',
       'success'
     );
     await loadAssignments();
@@ -743,9 +743,9 @@ async function cleanupUnavailabilityViolations() {
     const dryData = await dryResp.json();
 
     if (dryData.removed === 0) {
-      let msg = '✅ No auto-generated unavailability violations found.';
+      let msg = 'No auto-generated unavailability violations found.';
       if (dryData.manual_imported_violations > 0) {
-        msg += '\n\n⚠️ Note: ' + dryData.manual_imported_violations +
+        msg += '\n\nNote: ' + dryData.manual_imported_violations +
           ' manual/imported assignment(s) still conflict with unavailability requests — ' +
           'review those in the Overrides panel.';
         alert(msg);
@@ -764,7 +764,7 @@ async function cleanupUnavailabilityViolations() {
       lines.join('\n') +
       '\n\nRemove these now?';
     if (dryData.manual_imported_violations > 0) {
-      msg += '\n\n⚠️ Note: ' + dryData.manual_imported_violations +
+      msg += '\n\nNote: ' + dryData.manual_imported_violations +
         ' manual/imported conflict(s) will remain — handle those manually.';
     }
 
@@ -778,7 +778,7 @@ async function cleanupUnavailabilityViolations() {
     if (!resp.ok) throw new Error('Cleanup failed');
     const data = await resp.json();
 
-    let successMsg = '🚫 Removed ' + data.removed + ' unavailability-violating assignment(s). Reloading...';
+    let successMsg = 'Removed ' + data.removed + ' unavailability-violating assignment(s). Reloading...';
     if (data.manual_imported_violations > 0) {
       successMsg += ' (' + data.manual_imported_violations + ' manual/imported conflict(s) remain — check Overrides.)';
     }

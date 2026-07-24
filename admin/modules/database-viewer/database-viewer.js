@@ -280,7 +280,7 @@ function renderDuplicates(data) {
   // Duplicate IDs
   if (data.duplicate_ids.length > 0) {
     html += '<div class="duplicate-box">' +
-            '<h4 style="color: #dc2626; margin-bottom: 12px; font-size: 14px;">⚠️ Duplicate IDs Found</h4>';
+            '<h4 style="color: #dc2626; margin-bottom: 12px; font-size: 14px;">Duplicate IDs Found</h4>';
 
     data.duplicate_ids.forEach(dup => {
       html += '<div style="margin-bottom: 16px;">' +
@@ -294,7 +294,7 @@ function renderDuplicates(data) {
                 'Admin: ' + (rec.is_admin ? 'Yes' : 'No') + ' | ' +
                 'Registered: ' + (rec.registered ? 'Yes' : 'No') + '</small><br>' +
                 '<button class="btn-danger btn-sm" style="margin-top: 8px;" onclick="deleteFacultyFromDB(\'' + rec.id + '\', \'' + rec.name + '\')">' +
-                '🗑️ Delete This Record' +
+                'Delete This Record' +
                 '</button>' +
                 '</div>';
       });
@@ -308,7 +308,7 @@ function renderDuplicates(data) {
   // Duplicate Emails
   if (data.duplicate_emails.length > 0) {
     html += '<div class="duplicate-box" style="margin-top: 16px;">' +
-            '<h4 style="color: #dc2626; margin-bottom: 12px; font-size: 14px;">⚠️ Duplicate Emails Found</h4>';
+            '<h4 style="color: #dc2626; margin-bottom: 12px; font-size: 14px;">Duplicate Emails Found</h4>';
 
     data.duplicate_emails.forEach(dup => {
       html += '<div style="margin-bottom: 16px;">' +
@@ -322,7 +322,7 @@ function renderDuplicates(data) {
                 'Admin: ' + (rec.is_admin ? 'Yes' : 'No') + ' | ' +
                 'Registered: ' + (rec.registered ? 'Yes' : 'No') + '</small><br>' +
                 '<button class="btn-danger btn-sm" style="margin-top: 8px;" onclick="deleteFacultyFromDB(\'' + rec.id + '\', \'' + rec.name + '\')">' +
-                '🗑️ Delete This Record' +
+                'Delete This Record' +
                 '</button>' +
                 '</div>';
       });

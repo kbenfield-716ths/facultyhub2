@@ -45,7 +45,7 @@ function renderKBTable() {
 
   if (filtered.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state">' +
-      '<div class="empty-state-icon">📚</div>' +
+      '<div class="empty-state-icon"></div>' +
       '<div class="empty-state-title">No Articles</div>' +
       '<div class="empty-state-description">Create your first knowledge base article</div>' +
       '</td></tr>';

@@ -5,7 +5,7 @@
 
 async function resetPoints() {
   const confirmed = confirm(
-    '⚠️ RESET ALL FACULTY BONUS POINTS?\n\n' +
+    'RESET ALL FACULTY BONUS POINTS?\n\n' +
     'This will reset bonus_points to 0 for all faculty.\n' +
     'Base points will remain intact.\n\n' +
     'Continue?'
@@ -24,7 +24,7 @@ async function resetPoints() {
     if (!response.ok) throw new Error('Reset failed');
 
     const result = await response.json();
-    showTestingAlert('✅ Reset ' + result.faculty_count + ' faculty bonus points to 0', 'success');
+    showTestingAlert('Reset ' + result.faculty_count + ' faculty bonus points to 0', 'success');
 
   } catch (error) {
     showTestingAlert('Error: ' + error.message, 'error');
@@ -42,7 +42,7 @@ async function clearServiceRequests() {
     const preview = await previewResponse.json();
 
     const confirmed = confirm(
-      '⚠️ CLEAR SERVICE AVAILABILITY REQUESTS?\n\n' +
+      'CLEAR SERVICE AVAILABILITY REQUESTS?\n\n' +
       'This will delete ' + preview.count + ' unavailability requests for SERVICE WEEKS.\n' +
       'Year: ' + (year === 'all' ? 'All' : year) + '\n\n' +
       'Moonlighting signups will NOT be affected.\n\n' +
@@ -63,7 +63,7 @@ async function clearServiceRequests() {
     if (!response.ok) throw new Error('Clear failed');
 
     const result = await response.json();
-    showTestingAlert('✅ Deleted ' + result.deleted_count + ' service availability requests', 'success');
+    showTestingAlert('Deleted ' + result.deleted_count + ' service availability requests', 'success');
 
   } catch (error) {
     showTestingAlert('Error: ' + error.message, 'error');
@@ -81,7 +81,7 @@ async function clearMoonlightingSignups() {
     const preview = await previewResponse.json();
 
     const confirmed = confirm(
-      '⚠️ CLEAR MOONLIGHTING SIGNUPS?\n\n' +
+      'CLEAR MOONLIGHTING SIGNUPS?\n\n' +
       'This will delete ' + preview.count + ' moonlighting signups.\n' +
       'Filter: ' + (month === 'all' ? 'All Months' : month) + '\n\n' +
       'Service availability requests will NOT be affected.\n\n' +
@@ -102,7 +102,7 @@ async function clearMoonlightingSignups() {
     if (!response.ok) throw new Error('Clear failed');
 
     const result = await response.json();
-    showTestingAlert('✅ Deleted ' + result.deleted_count + ' moonlighting signups', 'success');
+    showTestingAlert('Deleted ' + result.deleted_count + ' moonlighting signups', 'success');
 
   } catch (error) {
     showTestingAlert('Error: ' + error.message, 'error');
@@ -120,7 +120,7 @@ async function clearServiceAssignments() {
     const preview = await previewResponse.json();
 
     const confirmed = confirm(
-      '⚠️ CLEAR SERVICE WEEK ASSIGNMENTS?\n\n' +
+      'CLEAR SERVICE WEEK ASSIGNMENTS?\n\n' +
       'This will delete ' + preview.count + ' generated service assignments.\n' +
       'Year: ' + year + '\n\n' +
       'This clears the GENERATED SCHEDULE (MICU, APP-ICU, etc).\n' +
@@ -142,7 +142,7 @@ async function clearServiceAssignments() {
     if (!response.ok) throw new Error('Clear failed');
 
     const result = await response.json();
-    showTestingAlert('✅ Deleted ' + result.deleted_count + ' service week assignments', 'success');
+    showTestingAlert('Deleted ' + result.deleted_count + ' service week assignments', 'success');
 
   } catch (error) {
     showTestingAlert('Error: ' + error.message, 'error');
@@ -153,7 +153,7 @@ async function resetAll() {
   const year = document.getElementById('resetAllYear').value;
 
   const confirmed = confirm(
-    '💣 COMPLETE RESET - ARE YOU SURE?\n\n' +
+    'COMPLETE RESET - ARE YOU SURE?\n\n' +
     'This will:\n' +
     '• Reset all faculty bonus points to 0\n' +
     '• Delete all service availability requests\n' +
@@ -185,7 +185,7 @@ async function resetAll() {
 
     const result = await response.json();
     showTestingAlert(
-      '✅ Complete reset finished:\n' +
+      'Complete reset finished:\n' +
       '• ' + result.points_reset + ' faculty points reset\n' +
       '• ' + result.requests_deleted + ' service requests deleted\n' +
       '• ' + result.signups_deleted + ' moonlighting signups deleted\n' +

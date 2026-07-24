@@ -25,7 +25,7 @@ async function loadActiveDraft() {
     if (!response.ok) throw new Error('Failed to load drafts');
 
     const data = await response.json();
-    const rounds = Array.isArray(data) ? data : (data.rounds || []);  // ✅ FIXED
+    const rounds = Array.isArray(data) ? data : (data.rounds || []);  // FIXED
 
     // Find active round (not completed)
     activeDraft = rounds.find(function(r) { return r.status !== 'completed'; });
@@ -635,7 +635,7 @@ async function loadPastDrafts() {
     if (!response.ok) return;
 
     const data = await response.json();
-    const allRounds = Array.isArray(data) ? data : (data.rounds || []);  // ✅ FIXED
+    const allRounds = Array.isArray(data) ? data : (data.rounds || []);  // FIXED
     const pastDrafts = allRounds.filter(function(r) { return r.status === 'completed'; });
 
     if (pastDrafts.length === 0) {

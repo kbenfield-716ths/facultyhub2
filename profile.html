@@ -259,7 +259,7 @@
 <body>
   <header>
     <div class="header-content">
-      <h1>👤 Profile Settings</h1>
+      <h1><span data-icon="user"></span> Profile Settings</h1>
       <a href="/index.html" class="back-link">← Back to Dashboard</a>
     </div>
   </header>
@@ -268,7 +268,7 @@
     <!-- User Information -->
     <div class="profile-section">
       <h2 class="section-title">
-        <span class="section-icon">👨‍⚕️</span>
+        <span class="section-icon"></span>
         Profile Information
       </h2>
       <div class="user-info" id="userInfo">
@@ -335,8 +335,8 @@
         </div>
         
         <div class="button-group">
-          <button type="submit" class="btn btn-primary">💾 Change Password</button>
-          <button type="button" class="btn btn-secondary" onclick="document.getElementById('passwordForm').reset()">✖️ Cancel</button>
+          <button type="submit" class="btn btn-primary"><span data-icon="save"></span> Change Password</button>
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('passwordForm').reset()">✖ Cancel</button>
         </div>
       </form>
     </div>
@@ -344,7 +344,7 @@
     <!-- Security Information -->
     <div class="profile-section">
       <h2 class="section-title">
-        <span class="section-icon">🛡️</span>
+        <span class="section-icon">🛡</span>
         Security Information
       </h2>
       <div class="user-info" id="securityInfo">
@@ -406,7 +406,7 @@
           </div>
           <div class="info-item">
             <div class="info-label">Role</div>
-            <div class="info-value">${authData.is_admin ? '🔑 Administrator' : '👨‍⚕️ Faculty'}</div>
+            <div class="info-value">${authData.is_admin ? '🔑 Administrator' : ' Faculty'}</div>
           </div>
         `;
         
@@ -420,8 +420,8 @@
           : 'Never changed';
         
         const statusBadge = status.needs_password_change 
-          ? '⚠️ Change Required' 
-          : '✅ Current';
+          ? '<span data-icon="alert-triangle"></span> Change Required' 
+          : '<span data-icon="check-circle"></span> Current';
         
         document.getElementById('securityInfo').innerHTML = `
           <div class="info-item">
@@ -436,7 +436,7 @@
 
         // Show warning if password change is required
         if (status.needs_password_change) {
-          showAlert('⚠️ You should change your password from the default.', 'error');
+          showAlert('<span data-icon="alert-triangle"></span> You should change your password from the default.', 'error');
         }
         
       } catch (error) {
@@ -455,28 +455,28 @@
       
       // Validate passwords match
       if (newPassword !== confirmPassword) {
-        showAlert('❌ New passwords do not match', 'error');
+        showAlert('<span data-icon="x-circle"></span> New passwords do not match', 'error');
         return;
       }
       
       // Validate password strength
       if (newPassword.length < 12) {
-        showAlert('❌ Password must be at least 12 characters', 'error');
+        showAlert('Password must be at least 12 characters', 'error');
         return;
       }
       
       if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword)) {
-        showAlert('❌ Password must contain both uppercase and lowercase letters', 'error');
+        showAlert('Password must contain both uppercase and lowercase letters', 'error');
         return;
       }
       
       if (!/[0-9]/.test(newPassword)) {
-        showAlert('❌ Password must contain at least one number', 'error');
+        showAlert('Password must contain at least one number', 'error');
         return;
       }
       
       if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(newPassword)) {
-        showAlert('❌ Password must contain at least one special character', 'error');
+        showAlert('<span data-icon="x-circle"></span> Password must contain at least one special character', 'error');
         return;
       }
       
@@ -496,17 +496,17 @@
         const data = await response.json();
         
         if (response.ok) {
-          showAlert('✅ Password changed successfully!', 'success');
+          showAlert('<span data-icon="check-circle"></span> Password changed successfully!', 'success');
           document.getElementById('passwordForm').reset();
           setTimeout(() => {
             loadUserInfo(); // Refresh security info
           }, 1000);
         } else {
-          showAlert('❌ ' + (data.detail || 'Failed to change password'), 'error');
+          showAlert('<span data-icon="x-circle"></span> ' + (data.detail || 'Failed to change password'), 'error');
         }
       } catch (error) {
         console.error('Error changing password:', error);
-        showAlert('❌ An error occurred. Please try again.', 'error');
+        showAlert('<span data-icon="x-circle"></span> An error occurred. Please try again.', 'error');
       }
     }
 
@@ -534,5 +534,6 @@
     });
   </script>
   <script src="/feedback-button.js"></script>
+  <script src="/admin/modules/common/icons.js"></script>
 </body>
 </html>

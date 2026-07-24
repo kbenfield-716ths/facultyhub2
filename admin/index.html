@@ -153,7 +153,7 @@
 
   <!-- Setup banner (shown when setup_complete = false) -->
   <div id="setupBanner" onclick="showModule('instance-setup')">
-    ⚙️ This instance hasn't been configured yet. Click here to run the setup wizard →
+    <span data-icon="settings"></span> This instance hasn't been configured yet. Click here to run the setup wizard →
   </div>
 
   <!-- Top Header -->
@@ -177,10 +177,10 @@
       <div class="nav-section">
         <div class="nav-section-label">People</div>
         <button class="nav-item active" onclick="showModule('faculty-management')" data-module="faculty-management">
-          <span class="icon">👥</span><span>Providers</span>
+          <span class="icon"><span data-icon="users"></span></span><span>Providers</span>
         </button>
         <button class="nav-item" onclick="showModule('user-management')" data-module="user-management">
-          <span class="icon">👤</span><span>Users</span>
+          <span class="icon"><span data-icon="user"></span></span><span>Users</span>
         </button>
       </div>
 
@@ -189,22 +189,22 @@
       <div class="nav-section">
         <div class="nav-section-label">Scheduling</div>
         <button class="nav-item" onclick="showModule('schedule-management')" data-module="schedule-management">
-          <span class="icon">📅</span><span>Schedule</span>
+          <span class="icon"><span data-icon="calendar"></span></span><span>Schedule</span>
         </button>
         <button class="nav-item" onclick="showModule('shift-schedule')" data-module="shift-schedule">
-          <span class="icon">🗓️</span><span>Shift Schedule</span>
+          <span class="icon"><span data-icon="clock"></span></span><span>Shift Schedule</span>
         </button>
         <button class="nav-item" onclick="showModule('schedule-summary')" data-module="schedule-summary">
-          <span class="icon">📊</span><span>Reports</span>
+          <span class="icon"><span data-icon="bar-chart"></span></span><span>Reports</span>
         </button>
         <button class="nav-item" onclick="showModule('wave-draft')" data-module="wave-draft">
-          <span class="icon">🌊</span><span>Wave Draft</span>
+          <span class="icon"><span data-icon="waves"></span></span><span>Wave Draft</span>
         </button>
         <button class="nav-item" onclick="showModule('service-overrides')" data-module="service-overrides">
-          <span class="icon">🛠️</span><span>Overrides</span>
+          <span class="icon"><span data-icon="wrench"></span></span><span>Overrides</span>
         </button>
         <button class="nav-item" onclick="showModule('grid-rebalancer')" data-module="grid-rebalancer">
-          <span class="icon">🔀</span><span>Grid Rebalancer</span>
+          <span class="icon"><span data-icon="shuffle"></span></span><span>Grid Rebalancer</span>
         </button>
       </div>
 
@@ -213,7 +213,7 @@
       <div class="nav-section">
         <div class="nav-section-label">Moonlighting</div>
         <button class="nav-item" onclick="showModule('moonlighting')" data-module="moonlighting">
-          <span class="icon">🌙</span><span>Signups &amp; Optimizer</span>
+          <span class="icon"><span data-icon="moon"></span></span><span>Signups &amp; Optimizer</span>
         </button>
       </div>
 
@@ -222,10 +222,10 @@
       <div class="nav-section">
         <div class="nav-section-label">Data &amp; Tools</div>
         <button class="nav-item" onclick="showModule('data-management')" data-module="data-management">
-          <span class="icon">📥</span><span>Data Management</span>
+          <span class="icon"><span data-icon="download"></span></span><span>Data Management</span>
         </button>
         <button class="nav-item" onclick="showModule('database-viewer')" data-module="database-viewer">
-          <span class="icon">🗄️</span><span>Database Console</span>
+          <span class="icon"><span data-icon="database"></span></span><span>Database Console</span>
         </button>
       </div>
 
@@ -234,7 +234,7 @@
       <div class="nav-section">
         <div class="nav-section-label">Content</div>
         <button class="nav-item" onclick="showModule('knowledge-base')" data-module="knowledge-base">
-          <span class="icon">📚</span><span>Knowledge Base</span>
+          <span class="icon"><span data-icon="book-open"></span></span><span>Knowledge Base</span>
         </button>
       </div>
 
@@ -243,7 +243,7 @@
       <div class="nav-section">
         <div class="nav-section-label">Instance</div>
         <button class="nav-item" onclick="showModule('instance-setup')" data-module="instance-setup">
-          <span class="icon">⚙️</span><span>Setup &amp; Config</span>
+          <span class="icon"><span data-icon="settings"></span></span><span>Setup &amp; Config</span>
         </button>
       </div>
 
@@ -438,5 +438,6 @@
       await showModule(startModule);
     });
   </script>
+  <script src="/admin/modules/common/icons.js"></script>
 </body>
 </html>

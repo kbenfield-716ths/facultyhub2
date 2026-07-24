@@ -370,7 +370,7 @@
 <body>
   <nav class="top-nav">
     <div class="logo-section">
-      <div class="logo">💬</div>
+      <div class="logo"><span data-icon="mail"></span></div>
       <div class="logo-text">
         <h1>Message Boards</h1>
         <p>Faculty Discussion</p>
@@ -391,7 +391,7 @@
       <div id="boardView" style="display: none;">
         <div class="content-header">
           <h1 class="content-title" id="boardTitle">Loading...</h1>
-          <button class="btn-new-thread" onclick="showComposer()">➕ New Thread</button>
+          <button class="btn-new-thread" onclick="showComposer()"><span data-icon="plus"></span> New Thread</button>
         </div>
         
         <div class="composer" id="composer">
@@ -528,7 +528,7 @@
         if (threads.length === 0) {
           list.innerHTML = `
             <div class="empty-state">
-              <div class="empty-state-icon">💬</div>
+              <div class="empty-state-icon"><span data-icon="mail"></span></div>
               <div class="empty-state-title">No threads yet</div>
               <div>Be the first to start a discussion!</div>
             </div>
@@ -552,8 +552,8 @@
               <div class="thread-subject">${thread.subject}</div>
               <div class="thread-preview">${truncate(thread.content, 200)}</div>
               <div class="thread-footer">
-                <div class="thread-stat">💬 ${thread.reply_count} replies</div>
-                ${thread.reaction_count > 0 ? `<div class="thread-stat">❤️ ${thread.reaction_count} reactions</div>` : ''}
+                <div class="thread-stat"><span data-icon="mail"></span> ${thread.reply_count} replies</div>
+                ${thread.reaction_count > 0 ? `<div class="thread-stat">❤ ${thread.reaction_count} reactions</div>` : ''}
               </div>
             </li>
           `;
@@ -610,11 +610,11 @@
           <button class="reaction-btn" onclick="addReaction('${thread.id}', '👍')">
             👍 ${thread.reaction_counts['👍'] || 0}
           </button>
-          <button class="reaction-btn" onclick="addReaction('${thread.id}', '❤️')">
-            ❤️ ${thread.reaction_counts['❤️'] || 0}
+          <button class="reaction-btn" onclick="addReaction('${thread.id}', '❤')">
+            ❤ ${thread.reaction_counts['❤'] || 0}
           </button>
-          <button class="reaction-btn" onclick="addReaction('${thread.id}', '🎉')">
-            🎉 ${thread.reaction_counts['🎉'] || 0}
+          <button class="reaction-btn" onclick="addReaction('${thread.id}', '')">
+            <span data-icon="star"></span> ${thread.reaction_counts['<span data-icon="star"></span>'] || 0}
           </button>
         </div>
       `;
@@ -646,11 +646,11 @@
                 <button class="reaction-btn" onclick="addReaction('${reply.id}', '👍')">
                   👍 ${reply.reaction_counts['👍'] || 0}
                 </button>
-                <button class="reaction-btn" onclick="addReaction('${reply.id}', '❤️')">
-                  ❤️ ${reply.reaction_counts['❤️'] || 0}
+                <button class="reaction-btn" onclick="addReaction('${reply.id}', '❤')">
+                  ❤ ${reply.reaction_counts['❤'] || 0}
                 </button>
-                <button class="reaction-btn" onclick="addReaction('${reply.id}', '🎉')">
-                  🎉 ${reply.reaction_counts['🎉'] || 0}
+                <button class="reaction-btn" onclick="addReaction('${reply.id}', '')">
+                  <span data-icon="star"></span> ${reply.reaction_counts['<span data-icon="star"></span>'] || 0}
                 </button>
               </div>
             </div>
@@ -758,5 +758,6 @@
       return text.substring(0, length) + '...';
     }
   </script>
+  <script src="/admin/modules/common/icons.js"></script>
 </body>
 </html>

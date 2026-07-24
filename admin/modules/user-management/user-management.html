@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-header">
       <div>
-        <h2 class="card-title">👤 User Management</h2>
+        <h2 class="card-title"><span data-icon="user"></span> User Management</h2>
         <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
           Search users, reset passwords, unlock accounts, manage service weeks, and troubleshoot issues
         </p>
@@ -11,11 +11,11 @@
 
     <!-- Tabs -->
     <div class="um-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
-      <button class="um-tab-btn active" onclick="showUserMgmtTab('search')">🔍 Search</button>
-      <button class="um-tab-btn" onclick="showUserMgmtTab('reset')">🔐 Reset Password</button>
-      <button class="um-tab-btn" onclick="showUserMgmtTab('unlock')">🔓 Unlock</button>
-      <button class="um-tab-btn" onclick="showUserMgmtTab('username')">✏️ Username</button>
-      <button class="um-tab-btn" onclick="showUserMgmtTab('query')">💾 Query</button>
+      <button class="um-tab-btn active" onclick="showUserMgmtTab('search')"><span data-icon="search"></span> Search</button>
+      <button class="um-tab-btn" onclick="showUserMgmtTab('reset')"><span data-icon="lock"></span> Reset Password</button>
+      <button class="um-tab-btn" onclick="showUserMgmtTab('unlock')"><span data-icon="lock"></span> Unlock</button>
+      <button class="um-tab-btn" onclick="showUserMgmtTab('username')"><span data-icon="pencil"></span> Username</button>
+      <button class="um-tab-btn" onclick="showUserMgmtTab('query')"><span data-icon="save"></span> Query</button>
     </div>
 
     <!-- Search Tab -->
@@ -43,7 +43,7 @@
       <button onclick="resetUserPassword()" class="btn-primary">Reset Password to PCCM2025!</button>
 
       <div style="margin-top: 20px; padding: 16px; background: #fef3c7; border-radius: 8px;">
-        <strong>⚠️ Note:</strong> This will reset the password to <code style="background: white; padding: 2px 6px; border-radius: 4px; font-weight: 700;">PCCM2025!</code> and unlock the account.
+        <strong><span data-icon="alert-triangle"></span> Note:</strong> This will reset the password to <code style="background: white; padding: 2px 6px; border-radius: 4px; font-weight: 700;">PCCM2025!</code> and unlock the account.
       </div>
     </div>
 
@@ -59,7 +59,7 @@
       <button onclick="unlockUserAccount()" class="btn-primary">Unlock Account</button>
 
       <div style="margin-top: 20px; padding: 16px; background: #dbeafe; border-radius: 8px;">
-        <strong>ℹ️ Info:</strong> This will unlock the account and reset failed login attempts to 0. The user can log in immediately.
+        <strong><span data-icon="info"></span> Info:</strong> This will unlock the account and reset failed login attempts to 0. The user can log in immediately.
       </div>
     </div>
 
@@ -80,7 +80,7 @@
       <button onclick="changeUsername()" class="btn-primary">Change Username</button>
 
       <div style="margin-top: 20px; padding: 16px; background: #fee2e2; border-radius: 8px;">
-        <strong>⚠️ Warning:</strong> This is a permanent operation that changes the user's login ID across the entire system. Use with extreme caution.
+        <strong><span data-icon="alert-triangle"></span> Warning:</strong> This is a permanent operation that changes the user's login ID across the entire system. Use with extreme caution.
       </div>
     </div>
 
@@ -100,7 +100,7 @@
       </div>
 
       <div style="margin-bottom: 20px; padding: 16px; background: #fee2e2; border-radius: 8px;">
-        <strong>⚠️ DANGER:</strong> Direct database access. READ-ONLY queries are safer. Be extremely careful with UPDATE/DELETE operations.
+        <strong><span data-icon="alert-triangle"></span> DANGER:</strong> Direct database access. READ-ONLY queries are safer. Be extremely careful with UPDATE/DELETE operations.
       </div>
 
       <div id="umQueryResults"></div>

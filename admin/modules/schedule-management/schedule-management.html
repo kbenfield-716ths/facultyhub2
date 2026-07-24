@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-header">
       <div>
-        <h2 class="card-title">📅 Schedule Management</h2>
+        <h2 class="card-title"><span data-icon="calendar"></span> Schedule Management</h2>
         <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
           Generate and configure 52-week service schedule with special periods
         </p>
@@ -12,16 +12,16 @@
     <!-- Sub-tabs -->
     <div class="sub-tabs">
       <button class="sub-tab-btn active" onclick="showScheduleTab('overview')">
-        📊 Overview
+        <span data-icon="bar-chart"></span> Overview
       </button>
       <button class="sub-tab-btn" onclick="showScheduleTab('configure')">
-        ⚙️ Generate Schedule
+        <span data-icon="settings"></span> Generate Schedule
       </button>
       <button class="sub-tab-btn" onclick="showScheduleTab('weeks')">
-        📝 Manage Weeks
+        <span data-icon="file-text"></span> Manage Weeks
       </button>
       <button class="sub-tab-btn" onclick="showScheduleTab('assignments')">
-        🏥 Assignments
+        Assignments
       </button>
     </div>
 
@@ -31,7 +31,7 @@
     <!-- Overview Tab (Heatmap) -->
     <div id="schedule-overview" class="sub-tab-content active">
       <div class="info-box info-box-info">
-        <strong>📊 Schedule Heatmap</strong>
+        <strong><span data-icon="bar-chart"></span> Schedule Heatmap</strong>
         <p>View week-by-week staffing status. Higher unavailability counts (red) indicate popular weeks where many faculty request time off.</p>
       </div>
 
@@ -63,7 +63,7 @@
     <!-- Configure Tab -->
     <div id="schedule-configure" class="sub-tab-content">
       <div class="info-box info-box-warning">
-        <strong>⚠️ Important</strong>
+        <strong><span data-icon="alert-triangle"></span> Important</strong>
         <p>Generating a new schedule will create 52 weeks for the academic year. If weeks already exist for this year, you must clear them first.</p>
       </div>
 
@@ -83,7 +83,7 @@
           <small>Academic year begins first Tuesday of July</small>
         </div>
 
-        <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px; font-weight: 600;">🏖️ Special Periods</h3>
+        <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px; font-weight: 600;">🏖 Special Periods</h3>
 
         <div class="form-grid">
           <div class="form-group">
@@ -97,7 +97,7 @@
           </div>
         </div>
 
-        <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px; font-weight: 600;">🎉 Holidays</h3>
+        <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px; font-weight: 600;"><span data-icon="star"></span> Holidays</h3>
 
         <div class="form-grid">
           <div class="form-group">
@@ -117,7 +117,7 @@
           </div>
         </div>
 
-        <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px; font-weight: 600;">🫁 Conferences</h3>
+        <h3 style="margin: 30px 0 20px; color: #1f2937; font-size: 18px; font-weight: 600;"><span data-icon="users"></span> Conferences</h3>
 
         <div class="form-grid">
           <div class="form-group">
@@ -147,7 +147,7 @@
     <!-- Assignments Tab -->
     <div id="schedule-assignments" class="sub-tab-content">
       <div class="info-box info-box-info">
-        <strong>🏥 Faculty Service Assignments</strong>
+        <strong>Faculty Service Assignments</strong>
         <p>Generate the inpatient service schedule. Respects unavailability requests, FacultyBlocks (hard stops), and the no back-to-back constraint. Includes MICU, APP-ICU, Procedures, Consults, and Backup.</p>
       </div>
 
@@ -162,16 +162,16 @@
           </select>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button class="btn-secondary" onclick="loadAssignments()">🔄 Refresh</button>
-          <button class="btn-secondary" onclick="exportScheduleCSV()">⬇️ Export Schedule CSV</button>
-          <button class="btn-secondary" style="background: #f0fdf4; color: #166534; border-color: #86efac;" onclick="exportFacultyGrid()">👥 Export Faculty Grid</button>
-          <button class="btn-secondary" style="background: #eff6ff; color: #1d4ed8; border-color: #93c5fd;" onclick="exportScheduleInputs()">📋 Export Inputs (Unavail + Volunteers)</button>
-          <button class="btn-secondary" style="background: #fdf4ff; color: #7e22ce; border-color: #d8b4fe; font-weight: 700;" onclick="showModule('grid-rebalancer')">🔀 Open Grid Rebalancer</button>
-          <button class="btn-secondary" style="background: #fef3c7; color: #92400e; border-color: #f59e0b;" onclick="cleanupBlockViolations()">🧹 Remove Block Violations</button>
-          <button class="btn-secondary" style="background: #fce7f3; color: #9d174d; border-color: #f472b6;" onclick="cleanupUnavailabilityViolations()">🚫 Remove Unavailability Violations</button>
-          <button class="btn-primary" onclick="confirmGenerateAssignments()">⚡ Generate Assignments</button>
-          <button class="btn-secondary" style="background:#f0fdf4;color:#166534;border-color:#86efac;" onclick="confirmClearAutoOnly()">🧼 Clear Auto-Generated</button>
-          <button class="btn-danger" onclick="confirmClearAssignments()">🗑️ Clear Everything</button>
+          <button class="btn-secondary" onclick="loadAssignments()"><span data-icon="refresh"></span> Refresh</button>
+          <button class="btn-secondary" onclick="exportScheduleCSV()"><span data-icon="download"></span> Export Schedule CSV</button>
+          <button class="btn-secondary" style="background: #f0fdf4; color: #166534; border-color: #86efac;" onclick="exportFacultyGrid()"><span data-icon="users"></span> Export Faculty Grid</button>
+          <button class="btn-secondary" style="background: #eff6ff; color: #1d4ed8; border-color: #93c5fd;" onclick="exportScheduleInputs()"><span data-icon="clipboard"></span> Export Inputs (Unavail + Volunteers)</button>
+          <button class="btn-secondary" style="background: #fdf4ff; color: #7e22ce; border-color: #d8b4fe; font-weight: 700;" onclick="showModule('grid-rebalancer')"><span data-icon="shuffle"></span> Open Grid Rebalancer</button>
+          <button class="btn-secondary" style="background: #fef3c7; color: #92400e; border-color: #f59e0b;" onclick="cleanupBlockViolations()"><span data-icon="x-circle"></span> Remove Block Violations</button>
+          <button class="btn-secondary" style="background: #fce7f3; color: #9d174d; border-color: #f472b6;" onclick="cleanupUnavailabilityViolations()"><span data-icon="ban"></span> Remove Unavailability Violations</button>
+          <button class="btn-primary" onclick="confirmGenerateAssignments()"><span data-icon="zap"></span> Generate Assignments</button>
+          <button class="btn-secondary" style="background:#f0fdf4;color:#166534;border-color:#86efac;" onclick="confirmClearAutoOnly()"><span data-icon="x-circle"></span> Clear Auto-Generated</button>
+          <button class="btn-danger" onclick="confirmClearAssignments()"><span data-icon="trash"></span> Clear Everything</button>
         </div>
       </div>
 
@@ -205,10 +205,10 @@
 
       <!-- No Schedule State -->
       <div id="assignmentsEmpty" style="display: none; text-align: center; padding: 60px 20px; color: #6b7280;">
-        <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+        <div style="font-size: 48px; margin-bottom: 16px;"><span data-icon="clipboard"></span></div>
         <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #374151;">No assignments yet</div>
         <div style="font-size: 14px; margin-bottom: 24px;">Generate the schedule to assign faculty to each service week.</div>
-        <button class="btn-primary" onclick="confirmGenerateAssignments()">⚡ Generate Assignments</button>
+        <button class="btn-primary" onclick="confirmGenerateAssignments()"><span data-icon="zap"></span> Generate Assignments</button>
       </div>
 
       <!-- Schedule Table -->
@@ -236,7 +236,7 @@
     <!-- Weeks Tab -->
     <div id="schedule-weeks" class="sub-tab-content">
       <div class="info-box info-box-info">
-        <strong>📝 Manage Individual Weeks</strong>
+        <strong><span data-icon="file-text"></span> Manage Individual Weeks</strong>
         <p>Edit individual week properties including labels, types, and point costs/rewards. Changes take effect immediately.</p>
       </div>
 
@@ -249,7 +249,7 @@
             <option value="2027">2027-2028</option>
           </select>
         </div>
-        <button class="btn-secondary" onclick="loadWeeks()">🔄 Refresh</button>
+        <button class="btn-secondary" onclick="loadWeeks()"><span data-icon="refresh"></span> Refresh</button>
       </div>
 
       <div id="weeksLoading" class="loading">Loading weeks...</div>

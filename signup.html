@@ -16,7 +16,7 @@
   <header style="background:#232f3e; color:white; padding:16px 20px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
     <div style="max-width:900px; margin:0 auto; display:flex; align-items:center; gap:16px;">
       <a href="Scheduling.html" style="background:rgba(255,255,255,0.1); color:white; border:none; padding:8px 16px; border-radius:6px; text-decoration:none; font-size:0.9rem; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">← Back</a>
-      <h1 style="margin:0; font-size:1.3rem; font-weight:600;">📅 Moonlighter Signup</h1>
+      <h1 style="margin:0; font-size:1.3rem; font-weight:600;"><span data-icon="calendar"></span> Moonlighter Signup</h1>
     </div>
   </header>
 
@@ -57,7 +57,7 @@
         <input type="number" id="desired" min="0" max="20" value="4">
       </label>
 
-      <button id="saveBtn">💾 Save My Signup</button>
+      <button id="saveBtn"><span data-icon="save"></span> Save My Signup</button>
     </div>
   </div>
 
@@ -257,10 +257,10 @@
           }
         }
 
-        alert("✅ Signup saved successfully!");
+        alert("<span data-icon="check-circle"></span> Signup saved successfully!");
       } catch (err) {
         console.error(err);
-        alert(`❌ There was a problem saving your signup: ${err.message}`);
+        alert(`<span data-icon="x-circle"></span> There was a problem saving your signup: ${err.message}`);
       }
     });
 
@@ -299,5 +299,6 @@
     loadCurrentUser();
     renderCalendar();
   </script>
+  <script src="/admin/modules/common/icons.js"></script>
 </body>
 </html>

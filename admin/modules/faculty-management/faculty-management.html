@@ -2,15 +2,15 @@
   <div class="card">
     <div class="card-header">
       <div>
-        <h2 class="card-title">👥 Provider Management</h2>
+        <h2 class="card-title"><span data-icon="users"></span> Provider Management</h2>
         <p style="margin-top:8px;color:#6b7280;font-size:14px;" id="fmSubtitle">
           Manage providers, roles, and service tracking
         </p>
       </div>
       <div style="display:flex;align-items:center;gap:16px;">
         <span id="facultyCount" style="color:#6b7280;font-weight:500;">Loading...</span>
-        <button class="btn-secondary btn-sm" onclick="loadFaculty()">🔄 Refresh</button>
-        <button class="btn-primary btn-sm" onclick="toggleAddForm()">➕ Add Provider</button>
+        <button class="btn-secondary btn-sm" onclick="loadFaculty()"><span data-icon="refresh"></span> Refresh</button>
+        <button class="btn-primary btn-sm" onclick="toggleAddForm()"><span data-icon="plus"></span> Add Provider</button>
       </div>
     </div>
 
@@ -110,7 +110,7 @@
       <div class="form-group" id="moonlightingPriorityGroup" style="display:none;">
         <label>Moonlighting Priority</label>
         <select id="editFacultyMoonlightingPriority">
-          <option value="1">⭐ High — honored first</option>
+          <option value="1">High — honored first</option>
           <option value="2" selected>Medium — standard</option>
           <option value="3">Low — filled after higher priority</option>
         </select>

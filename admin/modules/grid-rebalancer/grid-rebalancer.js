@@ -245,7 +245,7 @@ function grRenderTable() {
       ].filter(Boolean).join(' ');
 
       var tip = grEsc(f.name) + '  ·  Wk ' + week.week_number + '  ·  ' + val +
-                (locked ? '  🔒 locked' : '  ↕ drag to move');
+                (locked ? '  locked' : '  ↕ drag to move');
 
       body += '<td class="' + cls + '"' +
         ' style="background:' + cellBg + '; border-color:' + cellBord + ';"' +
@@ -459,7 +459,7 @@ function grUpdateToolbar() {
   if (banner) {
     banner.style.display = hasEdits ? 'block' : 'none';
     if (bannerTx && hasEdits) {
-      bannerTx.textContent = '⚠ ' + changes.size + ' unsaved change' + (changes.size !== 1 ? 's' : '');
+      bannerTx.textContent = '' + changes.size + ' unsaved change' + (changes.size !== 1 ? 's' : '');
     }
   }
 }
@@ -499,7 +499,7 @@ async function grSave() {
   });
 
   var saveBtn = document.getElementById('grSaveBtn');
-  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '💾 Saving…'; }
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
   grHideAlert();
 
   try {
@@ -521,14 +521,14 @@ async function grSave() {
     grRenderTable();
     grRenderSidebar();
     grUpdateToolbar();
-    grShowAlert('✅ Saved ' + data.applied + ' change(s) to the database.' +
+    grShowAlert('Saved ' + data.applied + ' change(s) to the database.' +
       (data.skipped ? ' (' + data.skipped + ' skipped — locked cells)' : ''), 'success');
 
   } catch (err) {
-    grShowAlert('❌ Save failed: ' + err.message, 'error');
+    grShowAlert('Save failed: ' + err.message, 'error');
     console.error('[Grid Rebalancer] save error:', err);
   } finally {
-    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save to DB'; }
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save to DB'; }
     grUpdateToolbar();
   }
 }

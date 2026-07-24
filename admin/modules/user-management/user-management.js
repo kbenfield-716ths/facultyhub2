@@ -144,10 +144,10 @@ async function searchUsers() {
         badges += '<span class="badge badge-danger">Inactive</span>';
       }
       if (user.locked) {
-        badges += '<span class="badge badge-warning">🔒 Locked</span>';
+        badges += '<span class="badge badge-warning">Locked</span>';
       }
       if (user.moonlighter) {
-        badges += '<span class="badge badge-warning">🌙 Moonlighter</span>';
+        badges += '<span class="badge badge-warning">Moonlighter</span>';
       }
 
       const totalPoints = (user.base_points || 0) + (user.bonus_points || 0);
@@ -160,12 +160,12 @@ async function searchUsers() {
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div class="user-card-badges">${badges}</div>
-            <button class="btn-primary btn-sm" onclick="event.stopPropagation(); editUserFromHere('${user.id}')" style="white-space: nowrap;">✏️ Edit</button>
+            <button class="btn-primary btn-sm" onclick="event.stopPropagation(); editUserFromHere('${user.id}')" style="white-space: nowrap;">Edit</button>
           </div>
         </div>
         <div class="user-card-details" style="margin-top: 8px; flex-wrap: wrap; gap: 8px;">
-          <span>📧 ${user.email || 'No email'}</span>
-          <span title="Base + Bonus points">📊 Points: ${totalPoints}</span>
+          <span>${user.email || 'No email'}</span>
+          <span title="Base + Bonus points">Points: ${totalPoints}</span>
           <span>MICU: ${user.micu_weeks || 0}</span>
           <span>APP-ICU: ${user.app_icu_weeks || 0}</span>
           <span>Procedures: ${user.procedure_weeks || 0}</span>
@@ -258,14 +258,14 @@ async function viewUserDetails(facultyId) {
           <div class="detail-label">Status</div>
           <div class="detail-value">
             ${user.active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}
-            ${user.locked ? '<span class="badge badge-warning">🔒 Locked</span>' : ''}
+            ${user.locked ? '<span class="badge badge-warning">Locked</span>' : ''}
           </div>
         </div>
         <div class="detail-item">
           <div class="detail-label">Privileges</div>
           <div class="detail-value">
             ${user.is_admin ? '<span class="badge badge-info">Admin</span>' : ''}
-            ${user.moonlighter ? '<span class="badge badge-warning">🌙 Moonlighter</span>' : ''}
+            ${user.moonlighter ? '<span class="badge badge-warning">Moonlighter</span>' : ''}
           </div>
         </div>
       </div>
@@ -295,7 +295,7 @@ async function viewUserDetails(facultyId) {
       html += `
         <div class="service-weeks-section">
           <div class="service-weeks-header">
-            <h3 class="service-weeks-title">📅 Service Weeks ${userMgmtCurrentYear}</h3>
+            <h3 class="service-weeks-title">Service Weeks ${userMgmtCurrentYear}</h3>
             <span style="color: #6b7280; font-size: 14px;">${serviceWeeks.length} assignments</span>
           </div>
       `;
@@ -319,7 +319,7 @@ async function viewUserDetails(facultyId) {
     } else {
       html += `
         <div style="background: #f9fafb; padding: 20px; border-radius: 8px; text-align: center; color: #6b7280; margin-top: 20px;">
-          <div style="font-size: 48px; margin-bottom: 12px;">📅</div>
+          <div style="font-size: 48px; margin-bottom: 12px;"></div>
           <div style="font-weight: 600; margin-bottom: 4px;">No Service Weeks Assigned</div>
           <div style="font-size: 14px;">This faculty member has no service weeks for ${userMgmtCurrentYear}</div>
         </div>
@@ -367,7 +367,7 @@ async function resetUserPassword() {
       throw new Error(error.detail || 'Failed to reset password');
     }
 
-    showUserMgmtAlert('umResetAlert', `✅ Password reset successfully for ${facultyId}`, 'success');
+    showUserMgmtAlert('umResetAlert', `Password reset successfully for ${facultyId}`, 'success');
     document.getElementById('umResetFacultyId').value = '';
 
   } catch (error) {
@@ -402,7 +402,7 @@ async function unlockUserAccount() {
       throw new Error(error.detail || 'Failed to unlock account');
     }
 
-    showUserMgmtAlert('umUnlockAlert', `✅ Account unlocked successfully for ${facultyId}`, 'success');
+    showUserMgmtAlert('umUnlockAlert', `Account unlocked successfully for ${facultyId}`, 'success');
     document.getElementById('umUnlockFacultyId').value = '';
 
   } catch (error) {
@@ -421,7 +421,7 @@ async function changeUsername() {
     return;
   }
 
-  if (!confirm(`⚠️ PERMANENT CHANGE\n\nChange username from ${oldId} to ${newId}?\n\nThis will update the user's login ID across the entire system.`)) {
+  if (!confirm(`PERMANENT CHANGE\n\nChange username from ${oldId} to ${newId}?\n\nThis will update the user's login ID across the entire system.`)) {
     return;
   }
 
@@ -438,7 +438,7 @@ async function changeUsername() {
       throw new Error(error.detail || 'Failed to change username');
     }
 
-    showUserMgmtAlert('umUsernameAlert', `✅ Username changed from ${oldId} to ${newId}`, 'success');
+    showUserMgmtAlert('umUsernameAlert', `Username changed from ${oldId} to ${newId}`, 'success');
     document.getElementById('umOldFacultyId').value = '';
     document.getElementById('umNewFacultyId').value = '';
 
@@ -458,7 +458,7 @@ async function executeQuery() {
     return;
   }
 
-  if (!confirm('⚠️ Execute this database query?\n\n' + sql)) {
+  if (!confirm('Execute this database query?\n\n' + sql)) {
     return;
   }
 
@@ -507,11 +507,11 @@ async function executeQuery() {
 
       html += '</tbody></table></div>';
       resultsDiv.innerHTML = html;
-      showUserMgmtAlert('umQueryAlert', '✅ Query executed successfully', 'success');
+      showUserMgmtAlert('umQueryAlert', 'Query executed successfully', 'success');
 
     } else {
       resultsDiv.innerHTML = '<div class="loading">Query executed successfully (0 rows returned)</div>';
-      showUserMgmtAlert('umQueryAlert', '✅ Query executed (0 rows)', 'info');
+      showUserMgmtAlert('umQueryAlert', 'Query executed (0 rows)', 'info');
     }
 
   } catch (error) {

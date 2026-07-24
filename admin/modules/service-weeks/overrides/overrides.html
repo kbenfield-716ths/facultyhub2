@@ -2,24 +2,24 @@
 <div class="module-container" id="service-overrides-module">
   <div class="card">
     <div class="card-header">
-      <h2 class="card-title">🛠️ Service Week Overrides</h2>
+      <h2 class="card-title"><span data-icon="wrench"></span> Service Week Overrides</h2>
       <p style="color: #6b7280; font-size: 14px;">Block faculty from specific weeks or manually assign them (overrides automated scheduler)</p>
     </div>
 
     <!-- Tab Navigation -->
     <div class="sub-tabs" style="margin-bottom: 24px;">
       <button class="sub-tab-btn active" onclick="showOverrideTab('blocks')">
-        🚫 Faculty Blocks
+        <span data-icon="ban"></span> Faculty Blocks
       </button>
       <button class="sub-tab-btn" onclick="showOverrideTab('assignments')">
-        📌 Manual Assignments
+        <span data-icon="map-pin"></span> Manual Assignments
       </button>
     </div>
 
     <!-- Blocks Tab -->
     <div id="override-tab-blocks" class="sub-tab-content active">
       <div style="margin-bottom: 24px; padding: 16px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px;">
-        <strong style="color: #92400e;">🚫 Faculty Blocks</strong>
+        <strong style="color: #92400e;"><span data-icon="ban"></span> Faculty Blocks</strong>
         <p style="color: #78350f; margin: 8px 0 0 0; font-size: 13px;">
           Block faculty from specific weeks (e.g., remote faculty who can't do in-person services).
           Scheduler will skip blocked combinations when generating assignments.
@@ -29,7 +29,7 @@
       <!-- Create New Block -->
       <div class="action-panel" style="margin-bottom: 24px;">
         <button class="btn-primary" onclick="showCreateBlockModal()">
-          ➕ Create New Block
+          <span data-icon="plus"></span> Create New Block
         </button>
       </div>
 
@@ -60,7 +60,7 @@
     <!-- Manual Assignments Tab -->
     <div id="override-tab-assignments" class="sub-tab-content">
       <div style="margin-bottom: 24px; padding: 16px; background: #dbeafe; border-left: 4px solid #3b82f6; border-radius: 8px;">
-        <strong style="color: #1e40af;">📌 Manual Assignments</strong>
+        <strong style="color: #1e40af;"><span data-icon="map-pin"></span> Manual Assignments</strong>
         <p style="color: #1e3a8a; margin: 8px 0 0 0; font-size: 13px;">
           Manually assign faculty to specific service/week combinations. These take precedence over automated assignments.
           Use for special circumstances not captured by the optimizer.
@@ -70,7 +70,7 @@
       <!-- Create New Assignment -->
       <div class="action-panel" style="margin-bottom: 24px;">
         <button class="btn-primary" onclick="showCreateAssignmentModal()">
-          ➕ Create Manual Assignment
+          <span data-icon="plus"></span> Create Manual Assignment
         </button>
       </div>
 

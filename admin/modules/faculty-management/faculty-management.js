@@ -100,7 +100,7 @@ function renderFacultyTable() {
 
   if (allFaculty.length === 0) {
     tbody.innerHTML = '<tr><td colspan="' + totalCols + '" class="empty-state">' +
-      '<div class="empty-state-icon">👥</div>' +
+      '<div class="empty-state-icon"></div>' +
       '<div class="empty-state-title">No Providers</div>' +
       '<div class="empty-state-description">Add your first provider using the form above</div></td></tr>';
     return;
@@ -114,7 +114,7 @@ function renderFacultyTable() {
 
     const statusBadge    = f.active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>';
     const adminBadge     = f.is_admin ? ' <span class="badge badge-info">Admin</span>' : '';
-    const moonBadge      = f.moonlighter ? ' <span class="badge badge-warning">🌙 Moonlighter</span>' : '';
+    const moonBadge      = f.moonlighter ? ' <span class="badge badge-warning">Moonlighter</span>' : '';
 
     let html = '<td style="font-weight:600;">' + (f.id || '') + '</td>' +
                '<td>' + (f.name || '') + adminBadge + moonBadge + '</td>' +

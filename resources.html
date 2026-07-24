@@ -456,7 +456,7 @@
 <body>
   <nav class="top-nav">
     <div class="logo-section">
-      <div class="logo">📚</div>
+      <div class="logo"><span data-icon="book-open"></span></div>
       <div class="logo-text">
         <h1>Faculty Knowledge Base</h1>
         <p>Resources & Documentation</p>
@@ -583,7 +583,7 @@
         console.error('Error loading articles:', error);
         document.getElementById('articlesContainer').innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">⚠️</div>
+            <div class="empty-state-icon"><span data-icon="alert-triangle"></span></div>
             <div class="empty-state-title">Error loading articles</div>
             <div>Please try refreshing the page</div>
           </div>
@@ -705,5 +705,6 @@
       return div.innerHTML;
     }
   </script>
+  <script src="/admin/modules/common/icons.js"></script>
 </body>
 </html>

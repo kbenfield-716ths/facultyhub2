@@ -2,12 +2,12 @@
   <div class="card">
     <div class="card-header">
       <div>
-        <h2 class="card-title">📋 Draft System</h2>
+        <h2 class="card-title"><span data-icon="clipboard"></span> Draft System</h2>
         <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
           Manage availability request draft rounds with priority-based time slots
         </p>
       </div>
-      <button class="btn-primary" onclick="showCreateDraftModal()">➕ Create New Draft</button>
+      <button class="btn-primary" onclick="showCreateDraftModal()"><span data-icon="plus"></span> Create New Draft</button>
     </div>
 
     <!-- Alert -->
@@ -16,7 +16,7 @@
     <!-- Active Draft Section -->
     <div id="activeDraftSection" style="display: none;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
-        <h3 style="margin-bottom: 16px;">🎯 Active Draft</h3>
+        <h3 style="margin-bottom: 16px;"><span data-icon="target"></span> Active Draft</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
           <div>
             <div style="font-size: 12px; opacity: 0.9;">Year</div>
@@ -40,11 +40,11 @@
           </div>
         </div>
         <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
-          <button class="btn-secondary" onclick="pauseDraft()" id="pauseBtn" style="display: none;">⏸️ Pause Draft</button>
-          <button class="btn-success" onclick="resumeDraft()" id="resumeBtn" style="display: none;">▶️ Resume Draft</button>
-          <button class="btn-primary" onclick="startDraft()" id="startBtn" style="display: none;">🚀 Start Draft</button>
-          <button class="btn-secondary" onclick="checkExpiredSlots()">🔄 Check Expired</button>
-          <button class="btn-danger" onclick="completeDraft()" id="completeBtn">✅ Mark Complete</button>
+          <button class="btn-secondary" onclick="pauseDraft()" id="pauseBtn" style="display: none;">⏸ Pause Draft</button>
+          <button class="btn-success" onclick="resumeDraft()" id="resumeBtn" style="display: none;">▶ Resume Draft</button>
+          <button class="btn-primary" onclick="startDraft()" id="startBtn" style="display: none;"><span data-icon="zap"></span> Start Draft</button>
+          <button class="btn-secondary" onclick="checkExpiredSlots()"><span data-icon="refresh"></span> Check Expired</button>
+          <button class="btn-danger" onclick="completeDraft()" id="completeBtn"><span data-icon="check-circle"></span> Mark Complete</button>
         </div>
       </div>
 
@@ -94,14 +94,14 @@
 
     <!-- No Active Draft -->
     <div id="noActiveDraft" style="text-align: center; padding: 60px 20px; color: #6b7280;">
-      <div style="font-size: 64px; margin-bottom: 16px;">📋</div>
+      <div style="font-size: 64px; margin-bottom: 16px;"><span data-icon="clipboard"></span></div>
       <h3 style="color: #1f2937; margin-bottom: 8px;">No Active Draft</h3>
       <p>Create a new draft round to begin the availability selection process.</p>
     </div>
 
     <!-- Past Drafts -->
     <div id="pastDraftsSection" style="margin-top: 40px; display: none;">
-      <h3 style="margin-bottom: 20px; color: #1f2937; font-size: 18px;">📚 Previous Draft Rounds</h3>
+      <h3 style="margin-bottom: 20px; color: #1f2937; font-size: 18px;"><span data-icon="book-open"></span> Previous Draft Rounds</h3>
       <div id="pastDraftsList"></div>
     </div>
   </div>

@@ -180,10 +180,10 @@ function ssRenderCell(period, rotation) {
 
   const chip = a =>
     `<span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #d1d5db;border-radius:12px;padding:1px 8px;margin:1px;font-size:12px;${a.role === 'student' ? 'border-style:dashed;color:#6b7280;' : ''}">` +
-    `${a.role === 'student' ? '🎓 ' : ''}${a.provider_name}` +
+    `${a.role === 'student' ? '<span data-icon="graduation-cap" title="Student"></span>' : ''}${a.provider_name}` +
     `<a href="#" onclick="ssRemoveAssignment('${a.id}');return false;" title="Remove" style="color:#9ca3af;text-decoration:none;">×</a></span>`;
 
-  const holiday = period.is_holiday ? ' <span title="Holiday">🎉</span>' : '';
+  const holiday = period.is_holiday ? ' <span data-icon="star" title="Holiday"></span>' : '';
   const count = `<a href="#" onclick="ssEditPeriod('${period.id}');return false;" title="Staffing: ${period.provider_count}/${period.target_slots} (min ${period.min_slots}, max ${period.max_slots}). Click to edit."
      style="font-size:11px;color:#374151;text-decoration:none;font-weight:600;">${period.provider_count}/${period.target_slots}${holiday}</a>`;
 
@@ -322,8 +322,8 @@ function ssRenderRotationsList() {
       <td style="font-size:13px;">${shiftsDesc}</td>
       <td>${(r.roles || []).join(', ')}</td>
       <td>
-        <button class="btn-secondary btn-sm" onclick="ssEditRotation('${r.key}')">✏️ Edit</button>
-        <button class="btn-danger btn-sm" onclick="ssDeleteRotation('${r.key}')">🗑️</button>
+        <button class="btn-secondary btn-sm" onclick="ssEditRotation('${r.key}')"><span data-icon="pencil"></span> Edit</button>
+        <button class="btn-danger btn-sm" onclick="ssDeleteRotation('${r.key}')" title="Delete"><span data-icon="trash"></span></button>
       </td>
     </tr>`;
   }).join('');

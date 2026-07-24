@@ -215,7 +215,7 @@ async function deleteSelectedWeekData() {
 
   const week = availableWeeks.get(selectedWeekId);
   const confirmed = confirm(
-    `⚠️ DELETE ALL ENTRIES FOR ${selectedWeekLabel}?\n\n` +
+    `DELETE ALL ENTRIES FOR ${selectedWeekLabel}?\n\n` +
     `This will permanently delete ${week.count} service availability request(s).\n\n` +
     `This action cannot be undone. Continue?`
   );
@@ -248,7 +248,7 @@ async function deleteSelectedWeekData() {
     }
 
     const result = await response.json();
-    showDataAlert(`✅ Deleted ${result.deleted_count} entries from ${selectedWeekLabel}`, 'success');
+    showDataAlert(`Deleted ${result.deleted_count} entries from ${selectedWeekLabel}`, 'success');
 
     // Clear selection and reload
     clearWeekSelection();
@@ -289,7 +289,7 @@ function renderUnavailabilityTable() {
       ? '<span class="badge badge-inactive">Unavailable</span>'
       : '<span class="badge badge-active">Available</span>';
     const sourceBadge = isWaveDraft
-      ? '<span style="font-size:11px; background:#ede9fe; color:#5b21b6; padding:2px 7px; border-radius:10px; font-weight:600;">🌊 Wave Draft</span>'
+      ? '<span style="font-size:11px; background:#ede9fe; color:#5b21b6; padding:2px 7px; border-radius:10px; font-weight:600;">Wave Draft</span>'
       : '<span style="font-size:11px; background:#e0f2fe; color:#0369a1; padding:2px 7px; border-radius:10px; font-weight:600;">Direct</span>';
 
     const rowStyle = isSelected ? 'background:#dbeafe;' : '';
@@ -399,11 +399,11 @@ async function deleteSelectedUnavail() {
   const selectedRecords = unavailabilityData.filter(req => selectedUnavail.has(String(req.id)));
   const waveDraftCount = selectedRecords.filter(r => r.source === 'Wave Draft').length;
   const waveDraftWarning = waveDraftCount > 0
-    ? `\n⚠️ ${waveDraftCount} of these are Wave Draft entries.\n`
+    ? `\n${waveDraftCount} of these are Wave Draft entries.\n`
     : '';
 
   const confirmed = confirm(
-    `⚠️ DELETE ${selectedUnavail.size} UNAVAILABILITY REQUEST(S)?\n` +
+    `DELETE ${selectedUnavail.size} UNAVAILABILITY REQUEST(S)?\n` +
     waveDraftWarning +
     `\nThis will permanently delete ${selectedUnavail.size} service availability record(s).\n` +
     `This action cannot be undone. Continue?`
@@ -434,7 +434,7 @@ async function deleteSelectedUnavail() {
     }
 
     const result = await response.json();
-    showDataAlert(`✅ Deleted ${result.deleted_count} requests successfully`, 'success');
+    showDataAlert(`Deleted ${result.deleted_count} requests successfully`, 'success');
 
     // Reload data
     await loadUnavailabilityData();
@@ -611,7 +611,7 @@ async function deleteSelectedMoonlight() {
   }
 
   const confirmed = confirm(
-    `⚠️ DELETE ${selectedMoonlight.size} MOONLIGHTING SIGNUPS?\n\n` +
+    `DELETE ${selectedMoonlight.size} MOONLIGHTING SIGNUPS?\n\n` +
     `This will permanently delete ${selectedMoonlight.size} moonlighting signup records.\n\n` +
     `This action cannot be undone. Continue?`
   );
@@ -636,7 +636,7 @@ async function deleteSelectedMoonlight() {
     }
 
     const result = await response.json();
-    showDataAlert(`✅ Deleted ${result.deleted_count} signups successfully`, 'success');
+    showDataAlert(`Deleted ${result.deleted_count} signups successfully`, 'success');
 
     // Reload data
     await loadMoonlightingData();
@@ -778,7 +778,7 @@ async function deleteSelectedAssignments() {
   if (selectedAssignments.size === 0) { showDataAlert('No items selected', 'warning'); return; }
 
   const confirmed = confirm(
-    `⚠️ DELETE ${selectedAssignments.size} SERVICE ASSIGNMENT(S)?\n\n` +
+    `DELETE ${selectedAssignments.size} SERVICE ASSIGNMENT(S)?\n\n` +
     `This removes actual schedule blocks — the provider will no longer be assigned to those weeks.\n\n` +
     `This action cannot be undone. Continue?`
   );
@@ -794,7 +794,7 @@ async function deleteSelectedAssignments() {
     });
     if (!response.ok) { const e = await response.json(); throw new Error(e.detail || 'Delete failed'); }
     const result = await response.json();
-    showDataAlert(`✅ Deleted ${result.deleted_count} assignment(s)`, 'success');
+    showDataAlert(`Deleted ${result.deleted_count} assignment(s)`, 'success');
     await loadAssignmentsData();
   } catch (error) {
     showDataAlert(`Error: ${error.message}`, 'error');

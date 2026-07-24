@@ -139,7 +139,7 @@ function renderHolidayCoverage(coverage) {
 
   allKeys.forEach(function (holidayType) {
     const weeks = coverage[holidayType] || [];
-    const label = holidayLabels[holidayType] || ('🗓️ ' + holidayType.replace(/_/g, ' '));
+    const label = holidayLabels[holidayType] || ('' + holidayType.replace(/_/g, ' '));
 
     const card = document.createElement('div');
     card.className = 'holiday-card';
@@ -152,7 +152,7 @@ function renderHolidayCoverage(coverage) {
         const assignments = week.assignments || [];
         let assignmentLines = '';
         if (assignments.length === 0) {
-          assignmentLines = '<span style="color: #ef4444;">⚠️ No assignments yet</span>';
+          assignmentLines = '<span style="color: #ef4444;">No assignments yet</span>';
         } else {
           // Group by service type
           const byService = {};

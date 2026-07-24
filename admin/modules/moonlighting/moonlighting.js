@@ -112,7 +112,7 @@ function renderSignups(signups) {
 
   if (signups.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-state">' +
-      '<div class="empty-state-icon">🌙</div>' +
+      '<div class="empty-state-icon"></div>' +
       '<div class="empty-state-title">No Signups</div>' +
       '<div class="empty-state-description">No moonlighting signups found for selected filters</div>' +
       '</td></tr>';
@@ -233,7 +233,7 @@ function renderAssignments(assignments) {
 
   if (assignments.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state">' +
-      '<div class="empty-state-icon">📋</div>' +
+      '<div class="empty-state-icon"></div>' +
       '<div class="empty-state-title">No Assignments</div>' +
       '<div class="empty-state-description">No moonlighting assignments found. Generate a schedule to create assignments.</div>' +
       '</td></tr>';

@@ -2,14 +2,14 @@
   <div class="card">
     <div class="card-header">
       <div>
-        <h2 class="card-title">🗓️ Shift Schedule</h2>
+        <h2 class="card-title"><span data-icon="calendar"></span> Shift Schedule</h2>
         <p style="margin-top:8px;color:#6b7280;font-size:14px;">
           Shift-based rotations — generate periods, assign providers, track staffing
         </p>
       </div>
       <div style="display:flex;align-items:center;gap:12px;">
         <select id="ssRotationSelect" onchange="ssOnRotationChange()" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;min-width:190px;"></select>
-        <button class="btn-secondary btn-sm" onclick="ssRefresh()">🔄 Refresh</button>
+        <button class="btn-secondary btn-sm" onclick="ssRefresh()"><span data-icon="refresh"></span> Refresh</button>
       </div>
     </div>
 
@@ -35,7 +35,7 @@
             <span style="background:#d1fae5;padding:2px 8px;border-radius:4px;">at target</span>
             <span style="background:#dbeafe;padding:2px 8px;border-radius:4px;">extra staffed</span>
           </span>
-          <button class="btn-primary btn-sm" onclick="ssGenerateMonth()">⚙️ Generate This Month</button>
+          <button class="btn-primary btn-sm" onclick="ssGenerateMonth()"><span data-icon="settings"></span> Generate This Month</button>
         </div>
       </div>
       <div id="ssGridEmpty" class="info-box" style="display:none;">
@@ -56,7 +56,7 @@
       <div class="action-panel">
         <span id="ssRotationCount" style="color:#6b7280;"></span>
         <div class="action-panel-right">
-          <button class="btn-primary btn-sm" onclick="ssNewRotation()">➕ New Rotation</button>
+          <button class="btn-primary btn-sm" onclick="ssNewRotation()"><span data-icon="plus"></span> New Rotation</button>
         </div>
       </div>
 
@@ -109,10 +109,10 @@
             <tbody id="ssShiftRows"></tbody>
           </table>
         </div>
-        <button class="btn-secondary btn-sm" style="margin-top:8px;" onclick="ssAddShiftRow()">➕ Add Shift</button>
+        <button class="btn-secondary btn-sm" style="margin-top:8px;" onclick="ssAddShiftRow()"><span data-icon="plus"></span> Add Shift</button>
 
         <div style="display:flex;gap:12px;margin-top:20px;">
-          <button class="btn-primary" onclick="ssSaveRotation()">💾 Save Rotation</button>
+          <button class="btn-primary" onclick="ssSaveRotation()"><span data-icon="save"></span> Save Rotation</button>
           <button class="btn-secondary" onclick="ssCancelEdit()">Cancel</button>
         </div>
       </div>
