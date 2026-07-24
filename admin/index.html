@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel</title>
-  <link rel="stylesheet" href="/admin/modules/common/styles.css">
+  <link rel="stylesheet" href="/admin/modules/common/styles.css?v=2">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
 
@@ -164,6 +164,8 @@
       <span class="admin-wordmark-name" id="headerName">Admin Panel</span>
     </div>
     <div class="header-right">
+      <select id="divisionPicker" onchange="onDivisionChange()" title="Working division"
+              style="display:none;background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);padding:6px 10px;border-radius:6px;font-size:13px;max-width:180px;"></select>
       <span class="user-info" id="userInfo">Loading...</span>
       <a href="/" class="header-btn">← App</a>
     </div>
@@ -234,7 +236,7 @@
       <div class="nav-section">
         <div class="nav-section-label">Content</div>
         <button class="nav-item" onclick="showModule('knowledge-base')" data-module="knowledge-base">
-          <span class="icon"><span data-icon="book-open"></span></span><span>Knowledge Base</span>
+          <span class="icon"><span data-icon="book-open"></span></span><span>Policies</span>
         </button>
       </div>
 
@@ -267,8 +269,8 @@
 
   </div>
 
-  <script src="/admin/modules/common/common.js"></script>
-  <script src="/admin/modules/common/api.js"></script>
+  <script src="/admin/modules/common/common.js?v=2"></script>
+  <script src="/admin/modules/common/api.js?v=2"></script>
 
   <script>
     // ── Module registry ──────────────────────────────────────────────────────
@@ -284,7 +286,7 @@
       'moonlighting':        { name: 'Moonlighting',           htmlPath: '/admin/modules/moonlighting/moonlighting.html',               jsPath: '/admin/modules/moonlighting/moonlighting.js' },
       'data-management':     { name: 'Data Management',        htmlPath: '/admin/modules/data-management/data-management.html',         jsPath: '/admin/modules/data-management/data-management.js' },
       'database-viewer':     { name: 'Database Console',       htmlPath: '/admin/modules/database-viewer/database-viewer.html',         jsPath: '/admin/modules/database-viewer/database-viewer.js' },
-      'knowledge-base':      { name: 'Knowledge Base',         htmlPath: '/admin/modules/knowledge-base/knowledge-base.html',           jsPath: '/admin/modules/knowledge-base/knowledge-base.js' },
+      'knowledge-base':      { name: 'Policies',         htmlPath: '/admin/modules/knowledge-base/knowledge-base.html',           jsPath: '/admin/modules/knowledge-base/knowledge-base.js' },
       'instance-setup':      { name: 'Setup & Config',         htmlPath: '/admin/modules/instance-setup/instance-setup.html',           jsPath: '/admin/modules/instance-setup/instance-setup.js' },
     };
 
@@ -415,9 +417,36 @@
       }
     }
 
+    // ── Division picker (admins work on one division at a time) ─────────────
+    async function loadDivisionPicker() {
+      const sel = document.getElementById('divisionPicker');
+      let divisions = [];
+      try {
+        divisions = await getDivisions();
+      } catch { return; }
+      if (!divisions.length) return;   // no divisions configured yet — hide picker
+      const current = getCurrentDivision();
+      sel.innerHTML = '<option value="">All divisions</option>' +
+        divisions.map(d =>
+          `<option value="${d.key}" ${d.key === current ? 'selected' : ''}>${d.label}${d.member_count != null ? ' (' + d.member_count + ')' : ''}</option>`
+        ).join('');
+      sel.style.display = '';
+    }
+
+    async function onDivisionChange() {
+      setCurrentDivision(document.getElementById('divisionPicker').value);
+      // Re-render the active module under the new division context
+      if (currentModule) {
+        const m = currentModule;
+        currentModule = null;          // force showModule to re-run
+        await showModule(m);
+      }
+    }
+
     // ── Boot ─────────────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
       await loadUserInfo();
+      await loadDivisionPicker();
 
       // Load and cache instance config
       const cfg = await loadInstanceConfig();
@@ -438,6 +467,6 @@
       await showModule(startModule);
     });
   </script>
-  <script src="/admin/modules/common/icons.js"></script>
+  <script src="/admin/modules/common/icons.js?v=2"></script>
 </body>
 </html>

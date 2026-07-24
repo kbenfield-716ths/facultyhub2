@@ -10,6 +10,7 @@ let ssViewYear = new Date().getFullYear();
 let ssViewMonth = new Date().getMonth();   // 0-based
 let ssPeriods = [];
 let ssEditingKey = null;                   // rotation key being edited, null = new
+let ssDivisions = [];
 
 const SS_FILL_COLORS = {
   understaffed: '#fee2e2',
@@ -45,6 +46,11 @@ async function initShiftSchedule() {
     ssProviders = [];
     console.warn('Could not load providers:', e);
   }
+  try {
+    ssDivisions = await getDivisions();
+  } catch (e) {
+    ssDivisions = [];
+  }
   await ssLoadRotations();
   ssRenderRotationSelect();
   ssRenderRotationsList();
@@ -62,10 +68,18 @@ async function ssLoadRotations() {
     ssRotations = [];
     return handleApiError(e, 'ssAlert');
   }
-  const shiftBased = ssRotations.filter(r => r.model === 'shift_based');
+  const shiftBased = ssVisibleRotations();
   if (!ssCurrentRotationKey || !shiftBased.find(r => r.key === ssCurrentRotationKey)) {
     ssCurrentRotationKey = shiftBased.length ? shiftBased[0].key : null;
   }
+}
+
+// Rotations visible under the admin's working division ('' = all).
+// Untagged rotations stay visible everywhere so nothing silently disappears.
+function ssVisibleRotations() {
+  const division = getCurrentDivision();
+  return ssRotations.filter(r => r.model === 'shift_based' &&
+    (!division || !r.division_key || r.division_key === division));
 }
 
 function ssCurrentRotation() {
@@ -80,7 +94,7 @@ function ssActiveProviders() {
 
 function ssRenderRotationSelect() {
   const sel = document.getElementById('ssRotationSelect');
-  const shiftBased = ssRotations.filter(r => r.model === 'shift_based');
+  const shiftBased = ssVisibleRotations();
   sel.innerHTML = shiftBased.length
     ? shiftBased.map(r => `<option value="${r.key}" ${r.key === ssCurrentRotationKey ? 'selected' : ''}>${r.label}</option>`).join('')
     : '<option value="">No rotations yet</option>';
@@ -206,9 +220,14 @@ function ssShowAssignForm(periodId) {
   const rotation = ssCurrentRotation();
   const period = ssPeriods.find(p => p.id === periodId);
   const assignedIds = new Set((period ? period.assignments : []).map(a => a.provider_id));
-  const options = ssActiveProviders()
-    .filter(p => !assignedIds.has(p.id))
-    .map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  // Division members first, then everyone else (cross-division coverage stays possible)
+  const div = rotation.division_key;
+  const candidates = ssActiveProviders().filter(p => !assignedIds.has(p.id));
+  const inDiv = div ? candidates.filter(p => p.division_key === div || !p.division_key) : candidates;
+  const outDiv = div ? candidates.filter(p => p.division_key && p.division_key !== div) : [];
+  const opt = p => `<option value="${p.id}">${p.name}</option>`;
+  const options = inDiv.map(opt).join('') +
+    (outDiv.length ? `<optgroup label="Other divisions">${outDiv.map(opt).join('')}</optgroup>` : '');
   const roleSelect = (rotation.roles || []).includes('student')
     ? `<select id="ssAssignRole-${periodId}" style="font-size:12px;padding:2px;"><option value="provider">Provider</option><option value="student">Student</option></select>`
     : `<input type="hidden" id="ssAssignRole-${periodId}" value="provider">`;
@@ -308,7 +327,7 @@ function ssRenderRotationsList() {
   const count = document.getElementById('ssRotationCount');
   count.textContent = `${ssRotations.length} rotation${ssRotations.length === 1 ? '' : 's'} configured`;
   if (!ssRotations.length) {
-    body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:20px;">No rotations yet — create one to get started.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6b7280;padding:20px;">No rotations yet — create one to get started.</td></tr>';
     return;
   }
   body.innerHTML = ssRotations.map(r => {
@@ -318,6 +337,7 @@ function ssRenderRotationsList() {
     return `<tr>
       <td><code>${r.key}</code></td>
       <td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${r.color || '#9ca3af'};margin-right:6px;"></span>${r.label}</td>
+      <td>${ssDivisionLabel(r.division_key)}</td>
       <td>${r.model}</td>
       <td style="font-size:13px;">${shiftsDesc}</td>
       <td>${(r.roles || []).join(', ')}</td>
@@ -329,6 +349,17 @@ function ssRenderRotationsList() {
   }).join('');
 }
 
+function ssDivisionOptions(selected) {
+  const sel = document.getElementById('ssEditDivision');
+  sel.innerHTML = '<option value="">— None (department-wide) —</option>' +
+    ssDivisions.map(d => `<option value="${d.key}" ${d.key === selected ? 'selected' : ''}>${d.label}</option>`).join('');
+}
+
+function ssDivisionLabel(key) {
+  const d = ssDivisions.find(x => x.key === key);
+  return d ? d.label : (key || '—');
+}
+
 function ssNewRotation() {
   ssEditingKey = null;
   document.getElementById('ssEditorTitle').textContent = 'New Rotation';
@@ -337,6 +368,7 @@ function ssNewRotation() {
   document.getElementById('ssEditLabel').value = '';
   document.getElementById('ssEditColor').value = '#2563eb';
   document.getElementById('ssEditStudentRole').checked = false;
+  ssDivisionOptions(getCurrentDivision() || '');
   document.getElementById('ssShiftRows').innerHTML = '';
   ssAddShiftRow({ key: 'day', label: 'Day', start: '07:00', end: '19:00', min_slots: 1, target_slots: 2, max_slots: 3 });
   ssAddShiftRow({ key: 'night', label: 'Night', start: '19:00', end: '07:00', min_slots: 1, target_slots: 2, max_slots: 3 });
@@ -353,6 +385,7 @@ function ssEditRotation(key) {
   document.getElementById('ssEditLabel').value = r.label;
   document.getElementById('ssEditColor').value = r.color || '#2563eb';
   document.getElementById('ssEditStudentRole').checked = (r.roles || []).includes('student');
+  ssDivisionOptions(r.division_key || '');
   document.getElementById('ssShiftRows').innerHTML = '';
   (r.shifts || []).forEach(s => ssAddShiftRow(s));
   document.getElementById('ssRotationEditor').style.display = '';
@@ -408,6 +441,7 @@ async function ssSaveRotation() {
   const rotation = {
     key, label,
     model: 'shift_based',
+    division_key: document.getElementById('ssEditDivision').value || null,
     color: document.getElementById('ssEditColor').value,
     roles, shifts,
   };

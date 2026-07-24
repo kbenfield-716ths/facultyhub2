@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#232f3e">
-  <title>Login - PCCM Faculty Hub</title>
+  <title>Login - Faculty Hub</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="/manifest.json">
   <style>
@@ -228,14 +228,14 @@
   <!-- Loading Screen for VM warmup -->
   <div id="cold-start-loader">
     <div class="loader-spinner"></div>
-    <div class="loader-text">PCCM Faculty Hub</div>
+    <div class="loader-text" id="loaderText">Faculty Hub</div>
     <div class="loader-subtext">Waking up the system...</div>
   </div>
 
   <div class="login-container">
     <div class="logo">
-      <div class="logo-icon">UVA PCCM</div>
-      <h1>Faculty Hub</h1>
+      <div class="logo-icon" id="logoOrg">Faculty Hub</div>
+      <h1 id="logoName">Faculty Hub</h1>
     </div>
 
     <h2>Sign in to continue</h2>
@@ -340,6 +340,21 @@
     checkAuth();
 
     // Handle login form submission
+    // Branding from instance config (org label + app name)
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/config/public`);
+        if (!res.ok) return;
+        const cfg = await res.json();
+        const org = (cfg.branding && cfg.branding.org_label) || cfg.group_name || '';
+        const app = cfg.app_name || 'Faculty Hub';
+        if (org) document.getElementById('logoOrg').textContent = org;
+        document.getElementById('logoName').textContent = app;
+        document.getElementById('loaderText').textContent = (org ? org + ' ' : '') + app;
+        document.title = 'Login - ' + (org ? org + ' ' : '') + app;
+      } catch { /* keep defaults */ }
+    })();
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       

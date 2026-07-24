@@ -43,6 +43,7 @@ from backend.routes.service_week_overrides import router as service_week_overrid
 from backend.routes.admin_database import router as admin_database_router
 from backend.routes.config import router as config_router
 from backend.routes.schedule_periods import router as schedule_periods_router
+from backend.routes.divisions import router as divisions_router
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +125,7 @@ app.include_router(service_week_overrides_router)
 app.include_router(admin_database_router)
 app.include_router(config_router)
 app.include_router(schedule_periods_router)
+app.include_router(divisions_router)
 
 # ---------- Static File Setup -----------
 STATIC_DIR = Path(__file__).resolve().parent.parent

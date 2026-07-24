@@ -63,8 +63,8 @@ DEFAULTS: dict[str, Any] = {
         "moonlighting":          False,
         "draft_system":          False,
         "service_availability":  True,
-        "knowledge_base":        True,
-        "messages":              True,
+        "knowledge_base":        True,   # surfaced in the UI as "Policies"
+        "messages":              False,  # removed from the DOM-wide app
     },
     "branding": {
         "org_label":     "",

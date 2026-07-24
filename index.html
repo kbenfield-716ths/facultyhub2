@@ -256,19 +256,9 @@
           variant: 'resources',
           href: 'resources.html',
           icon: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
-          title: 'Knowledge Base',
+          title: 'Policies',
           badge: '',
-          desc: 'Access FAQs, policies, procedures, and helpful resources.',
-        },
-        {
-          key: 'messages',
-          variant: 'messages',
-          href: 'Messages.html',
-          icon: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
-          title: 'Messages',
-          badge: '',
-          desc: 'Faculty discussion boards and announcements.',
-          authRequired: true,
+          desc: 'Scheduling policies, procedures, and helpful resources for your division.',
         },
       ];
 
@@ -291,23 +281,6 @@
         grid.appendChild(el);
       });
 
-      // Messages card (shown after auth confirms logged in)
-      if (isAdmin === null) {
-        // still loading — messages card added with id for later show/hide
-        const msgCard = document.createElement('a');
-        msgCard.href = 'Messages.html';
-        msgCard.id = 'messageBoardCard';
-        msgCard.className = 'card';
-        msgCard.dataset.variant = 'messages';
-        msgCard.style.display = 'none';
-        msgCard.style.animationDelay = delay + 's';
-        delay += 0.05;
-        msgCard.innerHTML =
-          '<div class="card-icon-wrap"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>' +
-          '<div class="card-title-row"><h3>Messages</h3></div>' +
-          '<p>Faculty discussion boards and announcements.</p>' + ARROW;
-        grid.appendChild(msgCard);
-      }
 
       // Admin card (always injected, hidden until admin confirmed)
       const adminCard = document.createElement('a');
@@ -363,10 +336,6 @@
           document.getElementById('logoutButton').style.display = 'inline-flex';
           document.getElementById('loginButton').style.display = 'none';
 
-          const msgCard = document.getElementById('messageBoardCard');
-          if (msgCard && cfg.features && cfg.features.messages !== false) {
-            msgCard.style.display = 'block';
-          }
           if (data.is_admin) {
             const ac = document.getElementById('adminCard');
             if (ac) ac.style.display = 'block';

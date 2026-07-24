@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-header">
       <div>
-        <h2 class="card-title"><span data-icon="book-open"></span> Knowledge Base</h2>
+        <h2 class="card-title"><span data-icon="book-open"></span> Policies</h2>
         <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
           Manage articles, policies, and documentation for faculty
         </p>
@@ -45,6 +45,7 @@
           <tr>
             <th>Title</th>
             <th>Category</th>
+            <th>Division</th>
             <th>Status</th>
             <th>Author</th>
             <th>Updated</th>
@@ -81,6 +82,12 @@
       </div>
 
       <div class="form-grid">
+        <div class="form-group">
+          <label>Division</label>
+          <select id="articleDivision">
+            <option value="">All divisions (department-wide)</option>
+          </select>
+        </div>
         <div class="form-group">
           <label>Category *</label>
           <select id="articleCategory" required>

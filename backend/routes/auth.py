@@ -52,6 +52,7 @@ class FacultyInfo(BaseModel):
     email: str
     is_admin: bool
     password_changed: bool
+    division_key: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -147,6 +148,7 @@ async def get_current_user_info(
             email=current_user.email,
             is_admin=current_user.is_admin,
             password_changed=current_user.password_changed,
+            division_key=current_user.division_key,
         )
     )
 

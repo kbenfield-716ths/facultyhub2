@@ -59,6 +59,7 @@ class RotationDef(BaseModel):
     key: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_]+$")
     label: str = Field(min_length=1, max_length=80)
     model: str = Field(default="shift_based")  # shift_based | weekly_blocks
+    division_key: Optional[str] = None         # which division owns this rotation
     color: Optional[str] = None
     roles: list[str] = Field(default_factory=lambda: ["provider"])
     shifts: list[ShiftDef] = Field(default_factory=list)

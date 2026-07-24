@@ -305,3 +305,23 @@ function showAlert(elementId, message, type) {
     }, 5000);
   }
 }
+
+// ── Divisions ─────────────────────────────────────────────────────────────────
+// One department instance, many divisions. Admins pick a "working division"
+// in the header; '' means all divisions.
+
+async function getDivisions() {
+  return apiGet('/api/divisions');
+}
+
+function getCurrentDivision() {
+  return localStorage.getItem('adminDivision') || '';
+}
+
+function setCurrentDivision(key) {
+  if (key) {
+    localStorage.setItem('adminDivision', key);
+  } else {
+    localStorage.removeItem('adminDivision');
+  }
+}

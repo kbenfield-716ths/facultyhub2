@@ -33,6 +33,7 @@ class FacultyCreate(BaseModel):
     moonlighter: bool = False
     draft_exempt: bool = False
     moonlighting_priority: int = 2
+    division_key: Optional[str] = None
     extra_config: Dict[str, Any] = {}
 
 
@@ -44,6 +45,7 @@ class FacultyUpdate(BaseModel):
     moonlighter: Optional[bool] = None
     draft_exempt: Optional[bool] = None
     moonlighting_priority: Optional[int] = None
+    division_key: Optional[str] = None
     extra_config: Optional[Dict[str, Any]] = None
 
 
@@ -58,6 +60,7 @@ class FacultyResponse(BaseModel):
     moonlighter: bool
     draft_exempt: bool
     moonlighting_priority: int
+    division_key: Optional[str] = None
     extra_config: Dict[str, Any]
     service_week_counts: Dict[str, int]
 
@@ -120,6 +123,7 @@ def _faculty_response(faculty: Faculty, db: Session) -> FacultyResponse:
         moonlighter=faculty.moonlighter,
         draft_exempt=faculty.draft_exempt or False,
         moonlighting_priority=faculty.moonlighting_priority or 2,
+        division_key=faculty.division_key,
         extra_config=extra,
         service_week_counts=_service_week_counts(faculty.id, db),
     )
@@ -132,12 +136,15 @@ def _faculty_response(faculty: Faculty, db: Session) -> FacultyResponse:
 @router.get("/faculty", response_model=List[FacultyResponse])
 def list_faculty(
     active_only: bool = False,
+    division: Optional[str] = None,
     admin_user: Faculty = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     query = db.query(Faculty)
     if active_only:
         query = query.filter_by(active=True)
+    if division:
+        query = query.filter_by(division_key=division)
     return [_faculty_response(f, db) for f in query.order_by(Faculty.name).all()]
 
 
@@ -195,6 +202,7 @@ def create_faculty(
         moonlighter=faculty_data.moonlighter,
         draft_exempt=faculty_data.draft_exempt,
         moonlighting_priority=faculty_data.moonlighting_priority,
+        division_key=faculty_data.division_key,
         extra_config=json.dumps(faculty_data.extra_config),
         password_hash=hash_password("ChangeMe123!"),
         password_changed=False,

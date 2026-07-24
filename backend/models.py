@@ -75,6 +75,25 @@ class PasswordResetToken(Base):
 
 
 # ==========================================
+# DIVISIONS
+# ==========================================
+
+class Division(Base):
+    """
+    One group inside the department — PCCM, MICU APPs, Hospitalists, etc.
+    All users live in the single faculty table with a division_key flag;
+    each division decides its own scheduling style via rotations config.
+    """
+    __tablename__ = "divisions"
+
+    key        = Column(String, primary_key=True)      # "pccm", "micu_app"
+    label      = Column(String, nullable=False)        # "PCCM"
+    color      = Column(String, nullable=True)
+    is_active  = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ==========================================
 # KNOWLEDGE BASE
 # ==========================================
 
@@ -89,6 +108,9 @@ class KnowledgeBaseArticle(Base):
     
     is_published = Column(Boolean, default=True)
     display_order = Column(Integer, default=0)
+
+    # null = visible department-wide; set = policies for one division only
+    division_key = Column(String, ForeignKey("divisions.key"), nullable=True, index=True)
     
     created_by = Column(String, ForeignKey("faculty.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -223,6 +245,9 @@ class Faculty(Base):
     last_login_ip = Column(String, nullable=True)
     
     active = Column(Boolean, default=True)
+
+    # Which division this user belongs to (null = unassigned; admins see all)
+    division_key = Column(String, ForeignKey("divisions.key"), nullable=True, index=True)
 
     # Moonlighting participation (feature-flagged via instance_config)
     moonlighter = Column(Boolean, default=False, nullable=False)

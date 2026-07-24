@@ -5,6 +5,7 @@
 
 let allFaculty      = [];
 let currentEditingId = null;
+let fmDivisions      = [];
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,18 @@ function fmFacultyAttrs() {
 
 function fmServiceTypes() {
   return fmConfig().service_types || [];
+}
+
+function fmDivisionLabel(key) {
+  const d = fmDivisions.find(function(x) { return x.key === key; });
+  return d ? d.label : (key || '—');
+}
+
+function fmDivisionSelect(id, selected) {
+  return '<select id="' + id + '"><option value="">— Unassigned —</option>' +
+    fmDivisions.map(function(d) {
+      return '<option value="' + d.key + '"' + (d.key === selected ? ' selected' : '') + '>' + d.label + '</option>';
+    }).join('') + '</select>';
 }
 
 // Build a form-group block for one extra_config attribute
@@ -69,7 +82,7 @@ function buildTableHeader() {
   const head = document.getElementById('facultyTableHead');
   if (!head) return;
 
-  let html = '<tr><th style="width:100px;">ID</th><th>Name</th><th>Email</th>';
+  let html = '<tr><th style="width:100px;">ID</th><th>Name</th><th>Email</th><th style="width:110px;">Division</th>';
 
   attrs.forEach(function(attr) {
     html += '<th style="width:120px;">' + (attr.label || attr.key) + '</th>';
@@ -84,7 +97,7 @@ function buildTableHeader() {
   head.innerHTML = html;
 
   // Update colspan on any empty-state rows
-  const totalCols = 4 + attrs.length + serviceTypes.length;
+  const totalCols = 5 + attrs.length + serviceTypes.length;
   document.querySelectorAll('#facultyTableBody td[colspan]').forEach(function(td) {
     td.setAttribute('colspan', totalCols);
   });
@@ -96,7 +109,7 @@ function renderFacultyTable() {
   const tbody = document.getElementById('facultyTableBody');
   const attrs  = fmFacultyAttrs();
   const stypes = fmServiceTypes();
-  const totalCols = 4 + attrs.length + stypes.length;
+  const totalCols = 5 + attrs.length + stypes.length;
 
   if (allFaculty.length === 0) {
     tbody.innerHTML = '<tr><td colspan="' + totalCols + '" class="empty-state">' +
@@ -118,7 +131,8 @@ function renderFacultyTable() {
 
     let html = '<td style="font-weight:600;">' + (f.id || '') + '</td>' +
                '<td>' + (f.name || '') + adminBadge + moonBadge + '</td>' +
-               '<td style="font-size:13px;">' + (f.email || '—') + '</td>';
+               '<td style="font-size:13px;">' + (f.email || '—') + '</td>' +
+               '<td style="text-align:center;font-size:13px;">' + fmDivisionLabel(f.division_key) + '</td>';
 
     // Extra config attribute columns
     attrs.forEach(function(attr) {
@@ -159,7 +173,12 @@ function renderFacultyTable() {
 async function loadFaculty() {
   try {
     showAlert('facultyAlert', '', 'clear');
-    const response = await fetch('/api/admin/faculty', { credentials: 'same-origin' });
+    if (!fmDivisions.length) {
+      try { fmDivisions = await getDivisions(); } catch (e) { fmDivisions = []; }
+    }
+    const division = getCurrentDivision();
+    const url = '/api/admin/faculty' + (division ? '?division=' + encodeURIComponent(division) : '');
+    const response = await fetch(url, { credentials: 'same-origin' });
     if (!response.ok) throw new Error('Failed to load faculty');
     const data = await response.json();
     allFaculty = Array.isArray(data) ? data : (data.faculty || []);
@@ -183,16 +202,14 @@ function toggleAddForm() {
     // Inject dynamic attribute fields
     const container = document.getElementById('newFacultyExtraFields');
     const attrs = fmFacultyAttrs();
-    if (attrs.length > 0) {
-      let html = '<div class="form-grid" style="margin-top:12px;">';
-      attrs.forEach(function(attr) {
-        html += renderAttrField(attr, 'new', undefined);
-      });
-      html += '</div>';
-      container.innerHTML = html;
-    } else {
-      container.innerHTML = '';
-    }
+    let html = '<div class="form-grid" style="margin-top:12px;">';
+    html += '<div class="form-group"><label>Division</label>' +
+            fmDivisionSelect('newFacultyDivision', getCurrentDivision()) + '</div>';
+    attrs.forEach(function(attr) {
+      html += renderAttrField(attr, 'new', undefined);
+    });
+    html += '</div>';
+    container.innerHTML = html;
   }
 }
 
@@ -215,7 +232,10 @@ async function addFaculty() {
       credentials: 'same-origin',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, name, email, extra_config: extra })
+      body: JSON.stringify({
+        id, name, email, extra_config: extra,
+        division_key: (document.getElementById('newFacultyDivision') || {}).value || null,
+      })
     });
     if (!response.ok) {
       const err = await response.json();
@@ -252,8 +272,10 @@ function openEditFaculty(facultyId) {
   const container = document.getElementById('editFacultyExtraFields');
   const attrs  = fmFacultyAttrs();
   const extra  = f.extra_config || {};
-  if (attrs.length > 0) {
+  {
     let html = '<div class="form-grid">';
+    html += '<div class="form-group"><label>Division</label>' +
+            fmDivisionSelect('editFacultyDivision', f.division_key || '') + '</div>';
     attrs.forEach(function(attr) {
       html += renderAttrField(attr, 'edit', extra[attr.key]);
     });
@@ -264,8 +286,6 @@ function openEditFaculty(facultyId) {
     });
     html += '</div>';
     container.innerHTML = html;
-  } else {
-    container.innerHTML = '';
   }
 
   document.getElementById('editFacultyModal').classList.add('show');
@@ -294,6 +314,7 @@ async function submitEditFaculty(event) {
     moonlighter:            document.getElementById('editFacultyMoonlighter').checked,
     draft_exempt:           document.getElementById('editFacultyDraftExempt').checked,
     moonlighting_priority:  parseInt(document.getElementById('editFacultyMoonlightingPriority').value) || 2,
+    division_key:           (document.getElementById('editFacultyDivision') || {}).value || null,
     extra_config:           extra,
   };
 

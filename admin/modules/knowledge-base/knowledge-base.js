@@ -15,7 +15,26 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Load all articles (admin endpoint - includes unpublished)
+let kbDivisions = [];
+
+function kbDivisionLabel(key) {
+  const d = kbDivisions.find(function(x) { return x.key === key; });
+  return d ? d.label : (key ? key : 'All');
+}
+
+function kbPopulateDivisionSelect(selected) {
+  const sel = document.getElementById('articleDivision');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">All divisions (department-wide)</option>' +
+    kbDivisions.map(function(d) {
+      return '<option value="' + d.key + '"' + (d.key === selected ? ' selected' : '') + '>' + d.label + '</option>';
+    }).join('');
+}
+
 async function loadKBArticles() {
+  if (!kbDivisions.length) {
+    try { kbDivisions = await getDivisions(); } catch (e) { kbDivisions = []; }
+  }
   try {
     showKBAlert('', 'clear');
 
@@ -63,6 +82,7 @@ function renderKBTable() {
 
     row.innerHTML = '<td style="font-weight: 600;">' + article.title + '<br><small style="color: #6b7280; font-weight: 400;">' + truncate(article.description, 80) + '</small></td>' +
                     '<td><span class="badge">' + article.category + '</span></td>' +
+                    '<td style="font-size:13px;">' + kbDivisionLabel(article.division_key) + '</td>' +
                     '<td>' + statusBadge + '</td>' +
                     '<td>' + (article.author_name || 'Unknown') + '</td>' +
                     '<td>' + formatDate(article.updated_at) + '</td>' +
@@ -123,6 +143,7 @@ function editKBArticle(articleId) {
   document.getElementById('articleTitle').value = article.title;
   document.getElementById('articleDescription').value = article.description;
   document.getElementById('articleCategory').value = article.category;
+  kbPopulateDivisionSelect(article.division_key || '');
   document.getElementById('articleOrder').value = article.display_order || 0;
   document.getElementById('articlePublished').checked = article.is_published;
   document.getElementById('articleContent').value = article.content;
@@ -168,6 +189,7 @@ async function submitArticle(event) {
     description: document.getElementById('articleDescription').value.trim(),
     content: document.getElementById('articleContent').value,
     category: document.getElementById('articleCategory').value,
+    division_key: document.getElementById('articleDivision').value || '',
     is_published: document.getElementById('articlePublished').checked,
     display_order: parseInt(document.getElementById('articleOrder').value) || 0
   };
