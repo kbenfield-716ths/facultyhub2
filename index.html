@@ -382,6 +382,30 @@
       badge.style.display = '';
       document.getElementById('welcomeSubtitle').textContent =
         'Your ' + label + ' schedule, tools, and policies are below.';
+
+      // Self-scheduling: surface a sign-up card when the division uses FCFS
+      const cfg = (d && d.scheduling_config) || {};
+      if (cfg.method === 'fcfs') {
+        const open = !!cfg.self_scheduling_open;
+        const card = document.createElement('a');
+        card.href = 'self-schedule.html';
+        card.className = 'card';
+        card.dataset.variant = 'scheduling';
+        card.style.animationDelay = '0.02s';
+        card.innerHTML =
+          '<div class="card-icon-wrap"><svg viewBox="0 0 24 24">' +
+          '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>' +
+          '<path d="M9 16l2 2 4-4"/></svg></div>' +
+          '<div class="card-title-row"><h3>Shift Sign-Up</h3>' +
+          (open ? '<span class="card-badge">Open</span>'
+                : '<span class="card-badge soon">View only</span>') + '</div>' +
+          '<p>' + (open
+            ? 'Claim your ' + label + ' shifts — first come, first served.'
+            : 'View the ' + label + ' shift schedule (sign-up is currently closed).') +
+          '</p><div class="card-arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>';
+        const grid = document.getElementById('cardsGrid');
+        grid.insertBefore(card, grid.firstChild);
+      }
     }
 
     // ── Auth check ─────────────────────────────────────────────────────────

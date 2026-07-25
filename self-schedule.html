@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shift Sign-Up — Faculty Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent: oklch(52% 0.18 245);
+      --accent-light: oklch(96% 0.04 245);
+      --surface: #ffffff;
+      --surface-2: #f5f6f8;
+      --border: #e2e5eb;
+      --text-primary: #0a1628;
+      --text-secondary: #5a6479;
+      --text-muted: #9aa0b0;
+      --red: oklch(52% 0.18 22);
+      --red-light: oklch(96% 0.04 22);
+      --amber: oklch(70% 0.15 75);
+      --amber-light: oklch(95% 0.05 75);
+      --green: oklch(62% 0.15 155);
+      --green-light: oklch(95% 0.05 155);
+      --blue-light: oklch(95% 0.04 245);
+      --radius: 10px; --radius-sm: 7px; --radius-lg: 14px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--surface-2); color: var(--text-primary); min-height: 100vh; }
+
+    header { background: #0a1628; }
+    .header-inner { max-width: 1000px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .wordmark { display: flex; align-items: baseline; gap: 8px; text-decoration: none; }
+    .wordmark-org { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: oklch(76% 0.10 245); }
+    .wordmark-name { font-size: 0.95rem; font-weight: 600; color: #fff; }
+    .header-btn { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.12); padding: 6px 14px; border-radius: var(--radius-sm); font-family: inherit; font-size: 0.82rem; font-weight: 500; cursor: pointer; text-decoration: none; }
+    .header-btn:hover { background: rgba(255,255,255,0.16); }
+
+    main { max-width: 1000px; margin: 0 auto; padding: 28px 24px 60px; }
+    .page-header-eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+    .page-header h2 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.02em; }
+    .page-header p { margin-top: 8px; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; font-weight: 300; }
+
+    .notice { margin: 20px 0; padding: 16px 18px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
+    .notice.closed { background: var(--amber-light); border-color: transparent; color: oklch(40% 0.09 75); }
+    .notice.info { background: var(--accent-light); border-color: transparent; }
+
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 22px 0 14px; flex-wrap: wrap; }
+    .month-nav { display: flex; align-items: center; gap: 10px; }
+    .month-nav button { width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 1rem; color: var(--text-secondary); }
+    .month-nav button:hover { border-color: var(--accent); color: var(--accent); }
+    .month-label { font-weight: 600; min-width: 150px; text-align: center; }
+    .legend { display: flex; gap: 6px; flex-wrap: wrap; font-size: 0.72rem; }
+    .legend span { padding: 3px 9px; border-radius: 999px; }
+    .lg-open { background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); }
+    .lg-mine { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+    .lg-full { background: var(--green-light); color: oklch(40% 0.1 155); }
+
+    .quota { font-size: 0.85rem; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; }
+    .quota strong { color: var(--text-primary); }
+
+    .day-group { margin-bottom: 8px; }
+    .day-head { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 18px 0 8px; }
+    .shift-row { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; }
+    .shift-row.mine { border-color: var(--accent); background: linear-gradient(0deg, var(--accent-light), var(--surface)); }
+    .fill-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .fill-understaffed { background: var(--red); }
+    .fill-below_target { background: var(--amber); }
+    .fill-at_target, .fill-above_target { background: var(--green); }
+    .shift-main { flex: 1; min-width: 0; }
+    .shift-title { font-weight: 600; font-size: 0.95rem; }
+    .shift-sub { font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px; }
+    .shift-colleagues { font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; }
+    .shift-count { font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; }
+    .btn { border: none; border-radius: var(--radius-sm); padding: 8px 16px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-claim { background: var(--accent); color: #fff; }
+    .btn-claim:hover { filter: brightness(1.08); }
+    .btn-release { background: var(--surface); color: var(--red); border: 1px solid var(--red); }
+    .btn-release:hover { background: var(--red-light); }
+    .btn-full { background: var(--green-light); color: oklch(40% 0.1 155); cursor: default; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0a1628; color: #fff; padding: 12px 20px; border-radius: var(--radius); font-size: 0.88rem; opacity: 0; transition: opacity 0.2s; pointer-events: none; max-width: 90%; }
+    .toast.show { opacity: 1; }
+    .toast.err { background: var(--red); }
+    .empty { text-align: center; color: var(--text-muted); padding: 40px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a class="wordmark" href="/">
+        <span class="wordmark-org" id="wordmarkOrg">Faculty Hub</span>
+        <span class="wordmark-name" id="wordmarkName"></span>
+      </a>
+      <a href="/" class="header-btn">← Dashboard</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-header">
+      <div class="page-header-eyebrow" id="eyebrow">Shift Sign-Up</div>
+      <h2 id="title">Shift Sign-Up</h2>
+      <p id="subtitle">Loading…</p>
+    </div>
+
+    <div id="stateNotice" class="notice" style="display:none;"></div>
+
+    <div id="scheduleArea" style="display:none;">
+      <div class="toolbar">
+        <div class="month-nav">
+          <button id="prevMonth" aria-label="Previous month">‹</button>
+          <span class="month-label" id="monthLabel"></span>
+          <button id="nextMonth" aria-label="Next month">›</button>
+        </div>
+        <div class="legend">
+          <span class="lg-open">Open</span>
+          <span class="lg-mine">You're on</span>
+          <span class="lg-full">Full</span>
+        </div>
+        <div class="quota" id="quota"></div>
+      </div>
+      <div id="shiftList"></div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const API = window.location.origin;
+    let ctx = null;
+    let viewYear, viewMonth;   // month 1-12
+
+    function toast(msg, isErr) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show' + (isErr ? ' err' : '');
+      setTimeout(() => { t.className = 'toast'; }, 2800);
+    }
+
+    async function api(path, opts) {
+      const res = await fetch(API + path, Object.assign({ credentials: 'include' }, opts || {}));
+      if (res.status === 401) { window.location.href = '/login.html'; throw new Error('unauthenticated'); }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || ('Error ' + res.status));
+      return data;
+    }
+
+    async function applyBranding() {
+      try {
+        const cfg = await (await fetch(API + '/api/config/public')).json();
+        const org = (cfg.branding && cfg.branding.org_label) || cfg.group_name || '';
+        document.getElementById('wordmarkOrg').textContent = org || (cfg.app_name || 'Faculty Hub');
+        document.getElementById('wordmarkName').textContent = org ? (cfg.app_name || 'Faculty Hub') : '';
+      } catch (e) {}
+    }
+
+    function methodLabel(m) {
+      return ({ manual: 'admin-assigned', fcfs: 'first-come, first-served',
+                priority: 'priority / preference', wave: 'wave draft' })[m] || m;
+    }
+
+    async function init() {
+      await applyBranding();
+      try {
+        ctx = await api('/api/self-schedule/context');
+      } catch (e) { showNotice('Could not load your scheduling info: ' + e.message, ''); return; }
+
+      if (!ctx.has_division) {
+        showNotice("You're not assigned to a division yet. Ask an admin to add you to one.", '');
+        return;
+      }
+
+      document.getElementById('title').textContent = ctx.division.label + ' — Shift Sign-Up';
+      document.getElementById('eyebrow').textContent = ctx.division.label;
+
+      // Only FCFS is self-serve today
+      if (ctx.method !== 'fcfs') {
+        document.getElementById('subtitle').textContent =
+          'Your division uses ' + methodLabel(ctx.method) + ' scheduling.';
+        showNotice('Your division (' + ctx.division.label + ') schedules by ' + methodLabel(ctx.method) +
+          ', which isn’t self-serve here yet. Your admin manages it.', 'info');
+        return;
+      }
+
+      if (!ctx.rotations.length) {
+        document.getElementById('subtitle').textContent = 'No rotations are set up for your division yet.';
+        showNotice('No shift rotations exist for ' + ctx.division.label + ' yet. Check back once your admin adds them.', '');
+        return;
+      }
+
+      const now = new Date();
+      viewYear = now.getFullYear();
+      viewMonth = now.getMonth() + 1;
+
+      document.getElementById('subtitle').textContent = ctx.open
+        ? 'Claim the shifts you want. First come, first served — grab them before they fill.'
+        : 'Sign-up is currently closed. You can view the schedule below.';
+      if (!ctx.open) showNotice('Self-scheduling is closed right now, so shifts can’t be claimed. This is view-only until your admin opens the window.', 'closed');
+      if (ctx.notes) showNotice(ctx.notes, 'info', true);
+
+      document.getElementById('scheduleArea').style.display = '';
+      document.getElementById('prevMonth').onclick = () => shiftMonth(-1);
+      document.getElementById('nextMonth').onclick = () => shiftMonth(1);
+      await loadMonth();
+    }
+
+    function showNotice(msg, kind, append) {
+      const n = document.getElementById('stateNotice');
+      n.className = 'notice' + (kind ? ' ' + kind : '');
+      n.style.display = '';
+      if (append && n.dataset.has) { n.innerHTML += '<div style="margin-top:8px;">' + msg + '</div>'; }
+      else { n.textContent = msg; n.dataset.has = '1'; }
+    }
+
+    function shiftMonth(delta) {
+      viewMonth += delta;
+      if (viewMonth < 1) { viewMonth = 12; viewYear--; }
+      if (viewMonth > 12) { viewMonth = 1; viewYear++; }
+      loadMonth();
+    }
+
+    const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    async function loadMonth() {
+      document.getElementById('monthLabel').textContent = MON[viewMonth-1] + ' ' + viewYear;
+      let data;
+      try {
+        data = await api('/api/self-schedule/periods?year=' + viewYear + '&month=' + viewMonth);
+      } catch (e) { toast(e.message, true); return; }
+      renderShifts(data.periods, data.can_claim);
+    }
+
+    function renderShifts(periods, canClaim) {
+      const list = document.getElementById('shiftList');
+      const mine = periods.filter(p => p.claimed_by_me).length;
+      document.getElementById('quota').innerHTML = 'You’re on <strong>' + mine + '</strong> shift' + (mine === 1 ? '' : 's') + ' this month';
+
+      if (!periods.length) {
+        list.innerHTML = '<div class="empty">No shifts scheduled for this month yet.</div>';
+        return;
+      }
+
+      // Group by date
+      const byDate = {};
+      periods.forEach(p => { (byDate[p.period_date] = byDate[p.period_date] || []).push(p); });
+
+      let html = '';
+      Object.keys(byDate).sort().forEach(dateStr => {
+        const d = new Date(dateStr + 'T00:00:00');
+        html += '<div class="day-group"><div class="day-head">' +
+          DOW[d.getDay()] + ' · ' + MON[d.getMonth()] + ' ' + d.getDate() + '</div>';
+        byDate[dateStr].forEach(p => { html += shiftRow(p, canClaim); });
+        html += '</div>';
+      });
+      list.innerHTML = html;
+
+      list.querySelectorAll('[data-claim]').forEach(b =>
+        b.onclick = () => doClaim(b.getAttribute('data-claim')));
+      list.querySelectorAll('[data-release]').forEach(b =>
+        b.onclick = () => doRelease(b.getAttribute('data-release')));
+    }
+
+    function shiftRow(p, canClaim) {
+      const colleagues = p.colleagues.filter(Boolean);
+      const others = colleagues.filter(n => !p.claimed_by_me || colleagues.length > 1);
+      let action;
+      if (p.claimed_by_me && p.my_claim_is_self) {
+        action = '<button class="btn btn-release" data-release="' + p.id + '"' + (canClaim ? '' : ' disabled') + '>Drop</button>';
+      } else if (p.claimed_by_me) {
+        action = '<span class="shift-count">Assigned by admin</span>';
+      } else if (p.provider_count >= p.max_slots) {
+        action = '<button class="btn btn-full" disabled>Full</button>';
+      } else if (canClaim) {
+        action = '<button class="btn btn-claim" data-claim="' + p.id + '">Claim</button>';
+      } else {
+        action = '<button class="btn btn-claim" disabled>Claim</button>';
+      }
+
+      return '<div class="shift-row' + (p.claimed_by_me ? ' mine' : '') + '">' +
+        '<span class="fill-dot fill-' + p.fill_state + '"></span>' +
+        '<div class="shift-main">' +
+          '<div class="shift-title">' + p.shift_label + ' <span style="font-weight:400;color:var(--text-muted);">' + p.start_time + '–' + p.end_time + '</span></div>' +
+          '<div class="shift-sub">' + p.provider_count + ' of ' + p.target_slots + ' filled · up to ' + p.max_slots + '</div>' +
+          (colleagues.length ? '<div class="shift-colleagues">On shift: ' + colleagues.join(', ') + '</div>' : '') +
+        '</div>' +
+        action +
+      '</div>';
+    }
+
+    async function doClaim(pid) {
+      try {
+        const r = await api('/api/self-schedule/claim', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ period_id: pid }) });
+        toast(r.warning || 'Shift claimed.');
+      } catch (e) { toast(e.message, true); }
+      await loadMonth();
+    }
+
+    async function doRelease(pid) {
+      try {
+        await api('/api/self-schedule/release', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ period_id: pid }) });
+        toast('Shift dropped.');
+      } catch (e) { toast(e.message, true); }
+      await loadMonth();
+    }
+
+    init();
+  </script>
+</body>
+</html>
