@@ -27,10 +27,14 @@ from backend.auth import hash_password
 ADMIN_PW = os.getenv("ADMIN_SEED_PASSWORD", "ChangeMe123!")
 TEST_PW = os.getenv("TEST_SEED_PASSWORD", "TestUser123!")
 
+import json
+
+# (key, label, color, method, cadence) — distinct policies so the test
+# instance demonstrates the per-division scheduling settings out of the box.
 DIVISIONS = [
-    ("pccm", "PCCM", "#7c3aed"),
-    ("micu_app", "MICU APPs", "#2563eb"),
-    ("hospitalist", "Hospitalists", "#059669"),
+    ("pccm", "PCCM", "#7c3aed", "priority", "annual"),
+    ("micu_app", "MICU APPs", "#2563eb", "fcfs", "monthly"),
+    ("hospitalist", "Hospitalists", "#059669", "wave", "quarterly"),
 ]
 
 
@@ -48,10 +52,16 @@ def main():
     init_db()  # ensure tables exist (fresh volume => full current schema)
     db = SessionLocal()
     try:
-        # Divisions
-        for key, label, color in DIVISIONS:
+        # Divisions (with a starter self-scheduling policy each)
+        for key, label, color, method, cadence in DIVISIONS:
             if not db.query(Division).filter_by(key=key).first():
-                db.add(Division(key=key, label=label, color=color))
+                db.add(Division(
+                    key=key, label=label, color=color,
+                    scheduling_config=json.dumps({
+                        "method": method, "cadence": cadence,
+                        "self_scheduling_open": False, "notes": "",
+                    }),
+                ))
         db.commit()
 
         # Admin

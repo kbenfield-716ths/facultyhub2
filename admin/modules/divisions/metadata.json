@@ -1,0 +1,13 @@
+{
+  "name": "Divisions",
+  "version": "1.0.0",
+  "description": "Manage divisions and set each division's self-scheduling policy (method + cadence)",
+  "module_id": "divisions",
+  "category": "people",
+  "features": [
+    "Create, rename, recolor, and deactivate divisions",
+    "Set how each division opens scheduling to its people (manual, first-come-first-served, priority, wave)",
+    "Set schedule-making cadence per division (annual, quarterly, monthly)",
+    "Toggle each division's self-scheduling window open or closed"
+  ]
+}

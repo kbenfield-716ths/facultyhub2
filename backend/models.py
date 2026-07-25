@@ -90,6 +90,12 @@ class Division(Base):
     label      = Column(String, nullable=False)        # "PCCM"
     color      = Column(String, nullable=True)
     is_active  = Column(Boolean, nullable=False, default=True)
+    # Per-division self-scheduling policy (JSON): how end users get onto the
+    # schedule and at what cadence. Shape:
+    #   {"method": "manual|fcfs|priority|wave",
+    #    "cadence": "annual|quarterly|monthly",
+    #    "self_scheduling_open": bool, "notes": str}
+    scheduling_config = Column(Text, nullable=False, default='{}')
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

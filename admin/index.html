@@ -184,6 +184,9 @@
         <button class="nav-item" onclick="showModule('user-management')" data-module="user-management">
           <span class="icon"><span data-icon="user"></span></span><span>Users</span>
         </button>
+        <button class="nav-item" onclick="showModule('divisions')" data-module="divisions">
+          <span class="icon"><span data-icon="grid"></span></span><span>Divisions</span>
+        </button>
       </div>
 
       <div class="nav-divider"></div>
@@ -254,6 +257,7 @@
     <main class="admin-content">
       <div id="module-faculty-management"  class="module-view active"></div>
       <div id="module-user-management"     class="module-view"></div>
+      <div id="module-divisions"           class="module-view"></div>
       <div id="module-schedule-management" class="module-view"></div>
       <div id="module-shift-schedule"      class="module-view"></div>
       <div id="module-schedule-summary"    class="module-view"></div>
@@ -277,6 +281,7 @@
     const modules = {
       'faculty-management':  { name: 'Providers',              htmlPath: '/admin/modules/faculty-management/faculty-management.html',  jsPath: '/admin/modules/faculty-management/faculty-management.js' },
       'user-management':     { name: 'Users',                  htmlPath: '/admin/modules/user-management/user-management.html',         jsPath: '/admin/modules/user-management/user-management.js' },
+      'divisions':           { name: 'Divisions',              htmlPath: '/admin/modules/divisions/divisions.html',                     jsPath: '/admin/modules/divisions/divisions.js' },
       'schedule-management': { name: 'Schedule',               htmlPath: '/admin/modules/schedule-management/schedule-management.html', jsPath: '/admin/modules/schedule-management/schedule-management.js' },
       'shift-schedule':      { name: 'Shift Schedule',         htmlPath: '/admin/modules/shift-schedule/shift-schedule.html',           jsPath: '/admin/modules/shift-schedule/shift-schedule.js' },
       'schedule-summary':    { name: 'Reports',                htmlPath: '/admin/modules/schedule-summary/schedule-summary.html',       jsPath: '/admin/modules/schedule-summary/schedule-summary.js' },
@@ -378,6 +383,7 @@
         'user-management':     () => typeof initUserManagement   === 'function' && initUserManagement(),
         'schedule-management': () => typeof loadHeatmap          === 'function' && loadHeatmap(new Date().getFullYear()),
         'shift-schedule':      () => typeof initShiftSchedule    === 'function' && initShiftSchedule(),
+        'divisions':           () => typeof initDivisions        === 'function' && initDivisions(),
         'service-overrides':   () => typeof loadBlocks           === 'function' && loadBlocks(),
         'knowledge-base':      () => typeof loadKBArticles       === 'function' && loadKBArticles(),
         'instance-setup':      () => typeof initInstanceSetup    === 'function' && initInstanceSetup(),

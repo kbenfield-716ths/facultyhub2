@@ -9,9 +9,10 @@ One shared faculty table holds every user with a division_key flag; regular
 users see only their division, admins pick a division in the admin header.
 """
 
+import json
 import logging
 from datetime import date, timedelta
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -25,18 +26,81 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/divisions", tags=["divisions"])
 
 
+# ── Self-scheduling policy catalogs ───────────────────────────────────────────
+# How end users get onto the schedule, and how far ahead a schedule is built.
+# Each division picks one of each; the enforcing engines are built per method.
+
+SCHEDULING_METHODS = [
+    {"key": "manual", "label": "Admin-assigned (manual)",
+     "description": "Only admins place people on the schedule. No self-scheduling."},
+    {"key": "fcfs", "label": "First come, first served",
+     "description": "Open shifts are claimable; the first eligible person to claim a slot gets it."},
+    {"key": "priority", "label": "Priority / preference",
+     "description": "Users submit preferences; assignments run by priority, seniority, or quota."},
+    {"key": "wave", "label": "Wave draft",
+     "description": "Users pick in ordered rounds (waves), each round giving everyone a turn."},
+]
+
+SCHEDULING_CADENCES = [
+    {"key": "annual", "label": "Annual",
+     "description": "One schedule built for the whole year."},
+    {"key": "quarterly", "label": "Quarterly",
+     "description": "Schedule built a quarter (3 months) at a time."},
+    {"key": "monthly", "label": "Monthly",
+     "description": "Schedule built a month at a time."},
+]
+
+METHOD_KEYS = {m["key"] for m in SCHEDULING_METHODS}
+CADENCE_KEYS = {c["key"] for c in SCHEDULING_CADENCES}
+
+DEFAULT_SCHEDULING_CONFIG = {
+    "method": "manual",
+    "cadence": "monthly",
+    "self_scheduling_open": False,
+    "notes": "",
+}
+
+
+class SchedulingConfig(BaseModel):
+    method: str = "manual"
+    cadence: str = "monthly"
+    self_scheduling_open: bool = False
+    notes: str = ""
+
+
 class DivisionDef(BaseModel):
     key: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_]+$")
     label: str = Field(min_length=1, max_length=80)
     color: Optional[str] = None
     is_active: bool = True
+    scheduling_config: Optional[SchedulingConfig] = None
+
+
+def _parse_scheduling_config(d: Division) -> dict:
+    try:
+        cfg = json.loads(d.scheduling_config or "{}")
+    except (json.JSONDecodeError, TypeError):
+        cfg = {}
+    return {**DEFAULT_SCHEDULING_CONFIG, **(cfg or {})}
 
 
 def _serialize(d: Division, member_count: int = None) -> dict:
-    out = {"key": d.key, "label": d.label, "color": d.color, "is_active": d.is_active}
+    out = {
+        "key": d.key,
+        "label": d.label,
+        "color": d.color,
+        "is_active": d.is_active,
+        "scheduling_config": _parse_scheduling_config(d),
+    }
     if member_count is not None:
         out["member_count"] = member_count
     return out
+
+
+@router.get("/scheduling-options")
+def scheduling_options(admin=Depends(require_admin)):
+    """Catalogs for the division scheduling-policy panel (method + cadence)."""
+    return {"methods": SCHEDULING_METHODS, "cadences": SCHEDULING_CADENCES}
 
 
 @router.get("")
@@ -131,6 +195,15 @@ def upsert_division(
     db: Session = Depends(get_db),
     admin=Depends(require_admin),
 ):
+    # Validate the scheduling policy if provided
+    if body.scheduling_config is not None:
+        if body.scheduling_config.method not in METHOD_KEYS:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Unknown scheduling method. Valid: {sorted(METHOD_KEYS)}")
+        if body.scheduling_config.cadence not in CADENCE_KEYS:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Unknown cadence. Valid: {sorted(CADENCE_KEYS)}")
+
     d = db.query(Division).filter_by(key=body.key).first()
     if d:
         d.label = body.label
@@ -139,6 +212,12 @@ def upsert_division(
     else:
         d = Division(key=body.key, label=body.label, color=body.color, is_active=body.is_active)
         db.add(d)
+
+    if body.scheduling_config is not None:
+        d.scheduling_config = json.dumps(body.scheduling_config.model_dump())
+    elif not d.scheduling_config:
+        d.scheduling_config = json.dumps(DEFAULT_SCHEDULING_CONFIG)
+
     db.commit()
     logger.info("Division '%s' saved by admin %s", body.key, admin.id)
     return _serialize(d)
