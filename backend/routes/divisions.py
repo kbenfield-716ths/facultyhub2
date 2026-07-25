@@ -10,13 +10,14 @@ users see only their division, admins pick a division in the admin header.
 """
 
 import logging
+from datetime import date, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from backend.models import Division, Faculty, get_db
+from backend.models import Division, Faculty, PeriodAssignment, SchedulePeriod, get_db
 from backend.auth import get_current_user, require_admin
 from backend.routes.config import _get
 
@@ -50,6 +51,78 @@ def list_divisions(
             counts[k] = counts.get(k, 0) + 1
         return [_serialize(d, counts.get(d.key, 0)) for d in divisions]
     return [_serialize(d) for d in divisions if d.is_active]
+
+
+@router.get("/stats")
+def division_stats(
+    horizon_days: int = Query(default=30, ge=1, le=180),
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin),
+):
+    """
+    Per-division dashboard stats for the admin landing page:
+      member_count      active users in the division
+      rotation_count    shift-based rotations owned by the division
+      understaffed      upcoming shifts (next `horizon_days`) below min staffing
+    """
+    divisions = db.query(Division).order_by(Division.label).all()
+
+    # Active member counts per division
+    members: dict[str, int] = {}
+    for (k,) in db.query(Faculty.division_key).filter(
+        Faculty.division_key.isnot(None), Faculty.active == True  # noqa: E712
+    ).all():
+        members[k] = members.get(k, 0) + 1
+
+    # Map rotations to their divisions
+    rotations = _get(db, "rotations") or []
+    rotation_count: dict[str, int] = {}
+    rotation_division: dict[str, str] = {}
+    for r in rotations:
+        dk = r.get("division_key")
+        key = r.get("key")
+        if not key:
+            continue
+        rotation_division[key] = dk
+        if dk:
+            rotation_count[dk] = rotation_count.get(dk, 0) + 1
+
+    # Understaffed upcoming shifts, tallied per division
+    today = date.today()
+    end = today + timedelta(days=horizon_days)
+    understaffed: dict[str, int] = {}
+    keys_with_division = [k for k, dk in rotation_division.items() if dk]
+    if keys_with_division:
+        periods = (
+            db.query(SchedulePeriod)
+            .options(joinedload(SchedulePeriod.assignments))
+            .filter(
+                SchedulePeriod.rotation_key.in_(keys_with_division),
+                SchedulePeriod.period_date >= today,
+                SchedulePeriod.period_date <= end,
+            )
+            .all()
+        )
+        for p in periods:
+            provider_count = sum(1 for a in p.assignments if a.role == "provider")
+            if provider_count < p.min_slots:
+                dk = rotation_division.get(p.rotation_key)
+                if dk:
+                    understaffed[dk] = understaffed.get(dk, 0) + 1
+
+    return [
+        {
+            "key": d.key,
+            "label": d.label,
+            "color": d.color,
+            "is_active": d.is_active,
+            "member_count": members.get(d.key, 0),
+            "rotation_count": rotation_count.get(d.key, 0),
+            "understaffed": understaffed.get(d.key, 0),
+            "horizon_days": horizon_days,
+        }
+        for d in divisions
+    ]
 
 
 @router.post("")

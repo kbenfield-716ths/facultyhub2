@@ -171,6 +171,7 @@ async def check_auth(
             "faculty_id": current_user.id,
             "faculty_name": current_user.name,
             "is_admin": current_user.is_admin,
+            "division_key": current_user.division_key,
             "is_impersonating": bool(impersonated_by)
         }
     else:

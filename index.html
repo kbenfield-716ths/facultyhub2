@@ -82,6 +82,11 @@
     .page-header-eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
     .page-header h2 { font-size: 1.6rem; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; }
     .page-header p { margin-top: 8px; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; font-weight: 300; }
+    .division-badge { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; padding: 5px 12px; border-radius: 999px; background: var(--surface-2); font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); }
+    .division-badge .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .division-stat { display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--text-secondary); font-weight: 400; }
+    .division-stat.alert { color: var(--red); font-weight: 600; }
+    .division-stat-sep { color: var(--border); margin: 0 8px; }
 
     .section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; }
 
@@ -170,9 +175,16 @@
       <div class="page-header-eyebrow">Dashboard</div>
       <h2 id="welcomeTitle">Welcome</h2>
       <p id="welcomeSubtitle">Select a tool below to get started.</p>
+      <span id="divisionBadge" class="division-badge" style="display:none;"></span>
     </div>
 
-    <div class="section-label">Tools &amp; Resources</div>
+    <!-- Divisions (admins only) -->
+    <div id="divisionsSection" style="display:none;">
+      <div class="section-label">Divisions</div>
+      <div class="cards-grid" id="divisionsGrid"></div>
+    </div>
+
+    <div class="section-label" id="toolsLabel">Tools &amp; Resources</div>
 
     <div class="cards-grid" id="cardsGrid">
       <!-- Cards injected by JS based on config.features -->
@@ -309,6 +321,69 @@
       grid.appendChild(rptCard);
     }
 
+    // ── Divisions ──────────────────────────────────────────────────────────
+    // Admin: a tile per division with quick stats; click enters that division.
+    async function renderDivisionsForAdmin() {
+      let stats = [];
+      try {
+        const res = await fetch(API + '/api/divisions/stats', { credentials: 'include' });
+        if (res.ok) stats = await res.json();
+      } catch (e) {}
+      if (!stats.length) return;
+
+      const grid = document.getElementById('divisionsGrid');
+      grid.innerHTML = '';
+      stats.forEach((d, i) => {
+        const el = document.createElement('a');
+        el.className = 'card';
+        el.href = '#';
+        el.style.animationDelay = (0.05 * i) + 's';
+
+        const members = d.member_count + ' member' + (d.member_count === 1 ? '' : 's');
+        const rotations = d.rotation_count + ' rotation' + (d.rotation_count === 1 ? '' : 's');
+        const understaffed = d.understaffed > 0
+          ? '<span class="division-stat-sep">·</span><span class="division-stat alert">' +
+            d.understaffed + ' understaffed</span>'
+          : '';
+
+        el.innerHTML =
+          '<div class="card-icon-wrap" style="--card-icon-color:' + (d.color || 'var(--accent)') + ';">' +
+          '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>' +
+          '<rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>' +
+          '<div class="card-title-row"><h3>' + d.label + '</h3></div>' +
+          '<p><span class="division-stat">' + members + '</span>' +
+          '<span class="division-stat-sep">·</span><span class="division-stat">' + rotations + '</span>' +
+          understaffed + '</p>';
+
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          try { localStorage.setItem('adminDivision', d.key); } catch (err) {}
+          window.location.href = 'admin/index.html?module=shift-schedule';
+        });
+        grid.appendChild(el);
+      });
+      document.getElementById('divisionsSection').style.display = '';
+    }
+
+    // Regular user: badge their division and scope the greeting to it.
+    async function showUserDivision(divisionKey) {
+      if (!divisionKey) return;
+      let divisions = [];
+      try {
+        const res = await fetch(API + '/api/divisions', { credentials: 'include' });
+        if (res.ok) divisions = await res.json();
+      } catch (e) {}
+      const d = divisions.find(x => x.key === divisionKey);
+      const label = d ? d.label : divisionKey;
+
+      const badge = document.getElementById('divisionBadge');
+      badge.innerHTML = '<span class="dot"></span>Your division: ' +
+        '<strong style="color:var(--text-primary);font-weight:600;">' + label + '</strong>';
+      badge.style.display = '';
+      document.getElementById('welcomeSubtitle').textContent =
+        'Your ' + label + ' schedule, tools, and policies are below.';
+    }
+
     // ── Auth check ─────────────────────────────────────────────────────────
     async function init() {
       // Load public config first (no auth needed)
@@ -339,6 +414,9 @@
           if (data.is_admin) {
             const ac = document.getElementById('adminCard');
             if (ac) ac.style.display = 'block';
+            await renderDivisionsForAdmin();
+          } else {
+            await showUserDivision(data.division_key);
           }
         } else {
           window.location.href = '/login.html';
