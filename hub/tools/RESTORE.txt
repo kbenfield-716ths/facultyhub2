@@ -1,0 +1,38 @@
+FACULTY HUB: RESTORE FROM A BACKUP
+
+Backups are pulled nightly to the Mac mini by tools/backup-pull.sh (files named staff-YYYYMMDD-HHMM.db in ~/FacultyHubBackups,
+plus files-YYYYMMDD-HHMM.tgz with photos and archived review files). Every copy was checked with tools/backup-verify.py before it was kept.
+
+ENCRYPTION KEY. Annual review answers, the note returned to a faculty member, license numbers and archived signed reviews are stored encrypted
+with the key in the HUB_DATA_KEY secret. A backup is unreadable for those items without that key, and a lost key cannot be recovered, so keep
+a copy of the key on the Mac mini (in the login keychain or a locked note), separate from the backup folder. The drill below needs the key:
+add  HUB_DATA_KEY=<the key>  to the command in step 2. To rotate the key, set HUB_DATA_KEY to "<new key>,<old key>", restart, and remove the old one
+only after confirming the app reads everything. Make a key with:
+   python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+   fly secrets set -a facultyhub HUB_DATA_KEY=<the key>
+On the next start the app encrypts everything that is still plaintext and prints how many items it converted.
+
+KEY ESCROW (so one lost keychain cannot make every backup unreadable). Split the key between custodians; any two (or the threshold you choose) rebuild it,
+and one alone learns nothing. The key is read from the HUB_DATA_KEY environment variable or a hidden prompt, never from the command line:
+   python3 hub/tools/key-escrow.py split --threshold 2 --shares 3
+Give each printed share to a different custodian (for example the Mac mini keychain, a second administrator, a sealed envelope in a department safe) and keep
+none of them beside the backups. To rebuild:   python3 hub/tools/key-escrow.py combine SHARE SHARE     (or paste the lines on stdin)
+The rebuilt key is checked against a fingerprint stored in every share. To confirm the shares match the key that is live now, compare
+   python3 hub/tools/key-escrow.py fingerprint     (hidden prompt) with the fingerprint printed by `split`.
+After any key rotation (a new key put first in HUB_DATA_KEY), split again and replace every share; old shares rebuild only the old key.
+
+A. Restore drill (do this once now and after any big change; it touches nothing live)
+   1. On the Mac mini, copy the newest backup to a scratch folder:   mkdir -p /tmp/hubdrill && cp ~/FacultyHubBackups/staff-LATEST.db /tmp/hubdrill/staff.db
+   2. Start the app against it:   cd hub/backend && HUB_DATA=/tmp/hubdrill HUB_DATA_KEY=<the key> HUB_DEV_AUTH=1 HUB_SEED_DEMO=0 python3 -m uvicorn app:app --port 8100
+   3. Open http://localhost:8100 and check that people, CVs and the IRPA calendar are there. Stop it with Ctrl+C. Delete /tmp/hubdrill.
+   Write the date of the drill below the line at the end of this file.
+
+B. Restore to the live site (only after a real loss; this replaces the live database with the backup)
+   1. Put the copy on the volume:   fly ssh sftp shell -a facultyhub      then:   put ~/FacultyHubBackups/staff-LATEST.db /data/incoming.db
+   2. Swap it in and restart:   fly ssh console -a facultyhub -C "sh -c 'rm -f /data/staff.db-wal /data/staff.db-shm && mv /data/staff.db /data/staff.db.before-restore && mv /data/incoming.db /data/staff.db && chown app:app /data/staff.db'"
+      then   fly apps restart facultyhub
+   3. Photos and archived review files:   put files-LATEST.tgz to /data/files.tgz and run   fly ssh console -a facultyhub -C "sh -c 'tar xzf /data/files.tgz -C /data && chown -R app:app /data && rm /data/files.tgz'"
+   4. Sign in and check the newest data. The replaced database stays on the volume as staff.db.before-restore until you delete it.
+   Changes made after the backup was taken are lost; the nightly schedule limits that to at most one day.
+
+Drills completed (date, who, result):
